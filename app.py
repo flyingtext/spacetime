@@ -1,5 +1,6 @@
 import difflib
 import json
+import re
 import markdown
 from datetime import datetime
 from xml.etree.ElementTree import Element
@@ -52,6 +53,48 @@ def fetch_bibtex_by_title(title: str) -> str | None:
     if resp.status_code != 200:
         return None
     return resp.text.strip()
+
+
+def suggest_citations(markdown_text: str) -> dict[str, list[dict]]:
+    """Split markdown text into sentences and return BibTeX suggestions.
+
+    Each sentence is queried against Crossref sequentially. For every result
+    the BibTeX is fetched and parsed into a dict with ``text`` and ``part``
+    (fields without ID/ENTRYTYPE). Sentences with no suggestions are skipped.
+    """
+
+    sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", markdown_text) if s.strip()]
+    results: dict[str, list[dict]] = {}
+    for sentence in sentences:
+        try:
+            query_res = cr.works(query=sentence, limit=3)
+        except Exception:
+            continue
+        items = query_res.get("message", {}).get("items", [])
+        candidates: list[dict] = []
+        for item in items:
+            doi = item.get("DOI")
+            if not doi:
+                continue
+            url = f"https://api.crossref.org/works/{doi}/transform/application/x-bibtex"
+            try:
+                resp = requests.get(url, timeout=10)
+            except Exception:
+                continue
+            if resp.status_code != 200:
+                continue
+            bibtex = resp.text.strip()
+            try:
+                bib_db = bibtexparser.loads(bibtex)
+                entry = bib_db.entries[0] if bib_db.entries else {}
+            except Exception:
+                entry = {}
+            entry.pop("ID", None)
+            entry.pop("ENTRYTYPE", None)
+            candidates.append({"text": bibtex, "part": entry, "doi": doi})
+        if candidates:
+            results[sentence] = candidates
+    return results
 
 
 def map_link(lat: float, lon: float) -> str:
@@ -415,8 +458,17 @@ def document(language: str, doc_path: str):
         metadata=post_meta,
         user_metadata=user_meta,
         citations=citations,
-        user_citations=user_citations,
+    user_citations=user_citations,
     )
+
+
+@app.route('/citation/suggest', methods=['POST'])
+def citation_suggest():
+    data = request.get_json() or {}
+    text = data.get('text', '').strip()
+    if not text:
+        return {'error': 'Text is required'}, 400
+    return {'results': suggest_citations(text)}
 
 
 @app.route('/citation/fetch', methods=['POST'])
