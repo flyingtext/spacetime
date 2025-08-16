@@ -93,6 +93,7 @@
     const list = document.getElementById('post-list');
     if (list) {
       const item = document.createElement('li');
+      item.classList.add('list-group-item');
       const link = document.createElement('a');
       link.href = "/docs/" + data.language + "/" + data.path;
       link.textContent = data.title;
