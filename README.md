@@ -51,6 +51,10 @@ The application creates `wiki.db` SQLite database on first run.
 
 Open browser at `http://${HOST}:${PORT}/`.
 
+## API
+
+See [API.md](API.md) for a list of HTTP endpoints.
+
 ## Testing
 
 Run the test suite with [pytest](https://docs.pytest.org/):
