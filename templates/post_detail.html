@@ -9,6 +9,27 @@
     <a href="{{ url_for('tag_filter', name=tag.name) }}">{{ tag.name }}</a>
   {% endfor %}
 </p>
+{% if metadata or user_metadata %}
+<section>
+  <h2>Metadata</h2>
+  {% if metadata %}
+  <h3>Common</h3>
+  <ul>
+    {% for key, value in metadata.items() %}
+      <li><strong>{{ key }}:</strong> {{ value|format_metadata }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if user_metadata %}
+  <h3>Your Metadata</h3>
+  <ul>
+    {% for key, value in user_metadata.items() %}
+      <li><strong>{{ key }}:</strong> {{ value|format_metadata }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+{% endif %}
 {% if translations %}
 <p>Other languages:
   {% for t in translations %}

@@ -12,6 +12,7 @@ from flask_login import (LoginManager, login_user, login_required,
 from werkzeug.security import generate_password_hash, check_password_hash
 from markdown.extensions import Extension
 from markdown.inlinepatterns import InlineProcessor
+from markupsafe import Markup, escape
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dev-secret'
@@ -21,6 +22,26 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+
+def map_link(lat: float, lon: float) -> str:
+    """Return an OpenStreetMap link for given coordinates."""
+    return f"https://www.openstreetmap.org/?mlat={lat}&mlon={lon}#map=12/{lat}/{lon}"
+
+
+def format_metadata_value(value):
+    if isinstance(value, dict):
+        lat = value.get('lat') or value.get('latitude')
+        lon = value.get('lon') or value.get('lng') or value.get('longitude')
+        if lat is not None and lon is not None:
+            return Markup(f'<a href="{map_link(lat, lon)}">{lat}, {lon}</a>')
+        return Markup(escape(json.dumps(value)))
+    if isinstance(value, list):
+        return Markup(escape(json.dumps(value)))
+    return Markup(escape(str(value)))
+
+
+app.jinja_env.filters['format_metadata'] = format_metadata_value
 
 
 class WikiLinkInlineProcessor(InlineProcessor):
@@ -226,21 +247,35 @@ def create_post():
 @app.route('/post/<int:post_id>')
 def post_detail(post_id: int):
     post = Post.query.get_or_404(post_id)
+    post_meta = json.loads(post.metadata.data) if post.metadata else {}
+    user_meta = {}
+    if current_user.is_authenticated:
+        user_meta_obj = UserPostMetadata.query.filter_by(post_id=post.id, user_id=current_user.id).first()
+        if user_meta_obj and user_meta_obj.data:
+            user_meta = json.loads(user_meta_obj.data)
     base = url_for('document', language=post.language, doc_path='')
     html_body = markdown.markdown(post.body,
                                   extensions=[WikiLinkExtension(base_url=base)])
-    return render_template('post_detail.html', post=post, html_body=html_body)
+    return render_template('post_detail.html', post=post, html_body=html_body,
+                           metadata=post_meta, user_metadata=user_meta)
 
 
 @app.route('/docs/<string:language>/<path:doc_path>')
 def document(language: str, doc_path: str):
     post = Post.query.filter_by(language=language, path=doc_path).first_or_404()
+    post_meta = json.loads(post.metadata.data) if post.metadata else {}
+    user_meta = {}
+    if current_user.is_authenticated:
+        user_meta_obj = UserPostMetadata.query.filter_by(post_id=post.id, user_id=current_user.id).first()
+        if user_meta_obj and user_meta_obj.data:
+            user_meta = json.loads(user_meta_obj.data)
     base = url_for('document', language=language, doc_path='')
     html_body = markdown.markdown(post.body,
                                   extensions=[WikiLinkExtension(base_url=base)])
     translations = Post.query.filter(Post.path == doc_path, Post.language != language).all()
     return render_template('post_detail.html', post=post, html_body=html_body,
-                           translations=translations)
+                           translations=translations, metadata=post_meta,
+                           user_metadata=user_meta)
 
 
 @app.route('/post/<int:post_id>/edit', methods=['GET', 'POST'])
