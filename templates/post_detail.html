@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ post.title }}{% endblock %}
 {% block content %}
+<nav id="reading-breadcrumb" aria-label="breadcrumb" class="mb-2" style="display:none;">
+  <ol class="breadcrumb mb-0"></ol>
+</nav>
 <div class="d-flex justify-content-between align-items-center">
   <h1 class="mb-0">{{ post.title }} ({{ post.language }})</h1>
   <div class="text-muted">
@@ -328,9 +331,49 @@
       | <form action="{{ url_for('watch_post', post_id=post.id) }}" method="post" class="d-inline">
         <button type="submit" class="btn btn-link p-0">{{ _('Watch') }}</button>
       </form>
-    {% endif %}
+  {% endif %}
   {% endif %}
 </p>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const key = 'postBreadcrumb';
+  const maxItems = 10;
+  const title = {{ post.title|tojson }};
+  const url = window.location.pathname;
+  let items;
+  try {
+    items = JSON.parse(localStorage.getItem(key)) || [];
+  } catch (e) {
+    items = [];
+  }
+  items = items.filter(item => item.url !== url);
+  items.push({ title, url });
+  if (items.length > maxItems) {
+    items = items.slice(items.length - maxItems);
+  }
+  localStorage.setItem(key, JSON.stringify(items));
+  const nav = document.getElementById('reading-breadcrumb');
+  const ol = nav ? nav.querySelector('ol') : null;
+  if (nav && ol && items.length > 0) {
+    nav.style.display = 'block';
+    items.forEach((item, index) => {
+      const li = document.createElement('li');
+      li.classList.add('breadcrumb-item');
+      if (index === items.length - 1) {
+        li.textContent = item.title;
+        li.classList.add('active');
+        li.setAttribute('aria-current', 'page');
+      } else {
+        const a = document.createElement('a');
+        a.href = item.url;
+        a.textContent = item.title;
+        li.appendChild(a);
+      }
+      ol.appendChild(li);
+    });
+  }
+});
+</script>
 {% if geodata %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
