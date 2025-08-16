@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <title>{% block title %}Wiki Board{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
 <body>
 <nav>
@@ -33,7 +34,26 @@
   {% endif %}
 {% endwith %}
 {% block content %}{% endblock %}
+<div class="modal fade" id="ogModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="ogTitle"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <img id="ogImage" class="img-fluid mb-3" style="display:none;">
+        <p id="ogDescription"></p>
+      </div>
+      <div class="modal-footer">
+        <a id="ogContinue" href="#" class="btn btn-primary">Continue</a>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 <script src="https://cdn.socket.io/4.7.4/socket.io.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
   const socket = io();
   const currentUserId = {{ current_user.id if current_user.is_authenticated else 'null' }};
@@ -60,6 +80,34 @@
         link.textContent = `Notifications (${count})`;
       }
     }
+  });
+</script>
+<script>
+  document.addEventListener('click', function (e) {
+    const anchor = e.target.closest('a');
+    if (!anchor) return;
+    const url = anchor.href;
+    if (!url.startsWith('http') || anchor.host === window.location.host) return;
+    e.preventDefault();
+    fetch(`/og?url=${encodeURIComponent(url)}`)
+      .then(r => r.json())
+      .then(data => {
+        document.getElementById('ogTitle').textContent = data.title || url;
+        document.getElementById('ogDescription').textContent = data.description || '';
+        const img = document.getElementById('ogImage');
+        if (data.image) {
+          img.src = data.image;
+          img.style.display = 'block';
+        } else {
+          img.style.display = 'none';
+        }
+        const cont = document.getElementById('ogContinue');
+        cont.onclick = () => { window.location.href = url; };
+        cont.href = url;
+        const modal = new bootstrap.Modal(document.getElementById('ogModal'));
+        modal.show();
+      })
+      .catch(() => { window.location.href = url; });
   });
 </script>
 </body>

@@ -6,7 +6,7 @@ from datetime import datetime
 from xml.etree.ElementTree import Element
 
 from flask import (Flask, render_template, redirect, url_for, request, flash,
-                   abort)
+                   abort, jsonify)
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (LoginManager, login_user, login_required,
                          logout_user, current_user, UserMixin)
@@ -94,9 +94,36 @@ def suggest_citations(markdown_text: str) -> dict[str, list[dict]]:
             entry.pop("ID", None)
             entry.pop("ENTRYTYPE", None)
             candidates.append({"text": bibtex, "part": entry, "doi": doi})
-        if candidates:
-            results[sentence] = candidates
+    if candidates:
+        results[sentence] = candidates
     return results
+
+
+def fetch_open_graph(url: str) -> dict[str, str]:
+    """Fetch basic Open Graph metadata for a URL."""
+    if not url:
+        return {}
+    try:
+        resp = requests.get(url, timeout=5)
+    except Exception:
+        return {}
+    if resp.status_code != 200:
+        return {}
+    html = resp.text
+
+    def _find(prop: str) -> str:
+        pattern = (
+            r"""<meta[^>]+property=['"]og:""" + re.escape(prop) +
+            r"""['"][^>]+content=['"]([^'"]+)['"]"""
+        )
+        match = re.search(pattern, html, re.IGNORECASE)
+        return match.group(1) if match else ''
+
+    return {
+        'title': _find('title'),
+        'description': _find('description'),
+        'image': _find('image'),
+    }
 
 
 def map_link(lat: float, lon: float) -> str:
@@ -548,6 +575,12 @@ def markdown_preview():
     text = data.get('text', '')
     html = Markup(markdown.markdown(escape(text)))
     return {'html': str(html)}
+
+
+@app.route('/og')
+def og_preview():
+    url = request.args.get('url', '').strip()
+    return jsonify(fetch_open_graph(url))
 
 
 @app.route('/citation/suggest', methods=['POST'])
