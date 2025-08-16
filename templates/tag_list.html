@@ -7,7 +7,10 @@
 <style>
   .container { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
 </style>
-<div id="tag-info" class="p-3 border-bottom"></div>
+<div id="tag-info" class="p-3 border-bottom position-relative" style="display:none">
+  <button id="tag-info-close" type="button" class="btn-close" aria-label="Close" style="position:absolute; top:8px; right:8px;"></button>
+  <div id="tag-info-content"></div>
+</div>
 <div id="tag-map"></div>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
@@ -20,6 +23,9 @@ mapDiv.style.left = '0';
 mapDiv.style.right = '0';
 mapDiv.style.bottom = '0';
 const infoDiv = document.getElementById('tag-info');
+const infoContent = document.getElementById('tag-info-content');
+const closeBtn = document.getElementById('tag-info-close');
+
 infoDiv.style.position = 'fixed';
 infoDiv.style.top = navHeight + 'px';
 infoDiv.style.left = '0';
@@ -28,8 +34,11 @@ infoDiv.style.background = 'rgba(255,255,255,0.9)';
 infoDiv.style.zIndex = '1000';
 infoDiv.style.maxHeight = '30vh';
 infoDiv.style.overflowY = 'auto';
-infoDiv.style.display = 'none';
 infoDiv.style.color = '#000';
+
+closeBtn.addEventListener('click', () => {
+  infoDiv.style.display = 'none';
+});
 const tagLocations = {{ tag_locations_json|safe }};
 const tagPosts = {{ tag_posts_json|safe }};
 const map = L.map('tag-map').setView([0,0],2);
@@ -60,7 +69,7 @@ tagLocations.forEach(t => {
       info.posts.forEach(p => {
         html += `<div class="mb-2"><a href="${p.url}">${p.title}</a><div class="small text-muted">${p.author} · ${p.views} views</div><p class="small mb-0">${p.snippet}</p></div>`;
       });
-      infoDiv.innerHTML = html;
+      infoContent.innerHTML = html;
       infoDiv.style.display = 'block';
     }
   });
