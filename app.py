@@ -1,57 +1,22 @@
+import difflib
 import markdown
-from flask import Flask, render_template, redirect, url_for, request, flash
-from flask_sqlalchemy import SQLAlchemy
+
+from flask import (Flask, render_template, redirect, url_for, request, flash,
+                   abort)
 from flask_login import (LoginManager, login_user, login_required,
-                         logout_user, current_user, UserMixin)
-from werkzeug.security import generate_password_hash, check_password_hash
+                         logout_user, current_user)
+
+from models import db, User, Post, Tag, Revision
+from wikilinks import WikiLinkExtension
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dev-secret'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///wiki.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db = SQLAlchemy(app)
+db.init_app(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
-
-
-class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=False)
-    role = db.Column(db.String(20), default='user')
-
-    def set_password(self, password: str) -> None:
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password: str) -> bool:
-        return check_password_hash(self.password_hash, password)
-
-    def is_admin(self) -> bool:
-        return self.role == 'admin'
-
-
-class Post(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    body = db.Column(db.Text, nullable=False)
-    path = db.Column(db.String(200), nullable=False)
-    language = db.Column(db.String(8), nullable=False, default='en')
-    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    author = db.relationship('User', backref='posts')
-    tags = db.relationship('Tag', secondary='post_tag', backref='posts')
-    __table_args__ = (db.UniqueConstraint('path', 'language', name='uix_path_language'),)
-
-
-class Tag(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), unique=True, nullable=False)
-
-
-class PostTag(db.Model):
-    __tablename__ = 'post_tag'
-    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), primary_key=True)
-    tag_id = db.Column(db.Integer, db.ForeignKey('tag.id'), primary_key=True)
 
 
 @login_manager.user_loader
@@ -121,6 +86,10 @@ def create_post():
         post = Post(title=title, body=body, path=path, language=language,
                     author=current_user, tags=tags)
         db.session.add(post)
+        db.session.flush()
+        rev = Revision(post=post, user=current_user, title=title, body=body,
+                       path=path, language=language)
+        db.session.add(rev)
         db.session.commit()
         return redirect(url_for('document', language=post.language, doc_path=post.path))
     return render_template('post_form.html', action='Create')
@@ -129,14 +98,18 @@ def create_post():
 @app.route('/post/<int:post_id>')
 def post_detail(post_id: int):
     post = Post.query.get_or_404(post_id)
-    html_body = markdown.markdown(post.body)
+    base = url_for('document', language=post.language, doc_path='')
+    html_body = markdown.markdown(post.body,
+                                  extensions=[WikiLinkExtension(base_url=base)])
     return render_template('post_detail.html', post=post, html_body=html_body)
 
 
 @app.route('/docs/<string:language>/<path:doc_path>')
 def document(language: str, doc_path: str):
     post = Post.query.filter_by(language=language, path=doc_path).first_or_404()
-    html_body = markdown.markdown(post.body)
+    base = url_for('document', language=language, doc_path='')
+    html_body = markdown.markdown(post.body,
+                                  extensions=[WikiLinkExtension(base_url=base)])
     translations = Post.query.filter(Post.path == doc_path, Post.language != language).all()
     return render_template('post_detail.html', post=post, html_body=html_body,
                            translations=translations)
@@ -150,6 +123,9 @@ def edit_post(post_id: int):
         flash('Permission denied.')
         return redirect(url_for('document', language=post.language, doc_path=post.path))
     if request.method == 'POST':
+        rev = Revision(post=post, user=current_user, title=post.title,
+                       body=post.body, path=post.path, language=post.language)
+        db.session.add(rev)
         post.title = request.form['title']
         post.body = request.form['body']
         post.path = request.form['path']
@@ -166,6 +142,29 @@ def edit_post(post_id: int):
         return redirect(url_for('document', language=post.language, doc_path=post.path))
     tags_str = ', '.join([t.name for t in post.tags])
     return render_template('post_form.html', action='Edit', post=post, tags=tags_str)
+
+
+@app.route('/post/<int:post_id>/history')
+def history(post_id: int):
+    post = Post.query.get_or_404(post_id)
+    revisions = Revision.query.filter_by(post_id=post_id).order_by(Revision.created_at.desc()).all()
+    return render_template('history.html', post=post, revisions=revisions)
+
+
+@app.route('/post/<int:post_id>/diff/<int:rev_id>')
+def revision_diff(post_id: int, rev_id: int):
+    post = Post.query.get_or_404(post_id)
+    revision = Revision.query.get_or_404(rev_id)
+    if revision.post_id != post.id:
+        abort(404)
+    diff = difflib.unified_diff(
+        revision.body.splitlines(),
+        post.body.splitlines(),
+        fromfile=f'rev {revision.id}',
+        tofile='current',
+        lineterm='',
+    )
+    return render_template('diff.html', post=post, revision=revision, diff='\n'.join(diff))
 
 
 @app.route('/tags')
