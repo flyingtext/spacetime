@@ -63,7 +63,7 @@
         {{ c.created_at.strftime('%Y-%m-%d %H:%M') }}
         {% if current_user.is_authenticated and (current_user.id == c.user_id or current_user.is_admin()) %}
           <a href="{{ url_for('edit_citation', post_id=post.id, cid=c.id) }}" class="btn btn-sm btn-secondary">{{ _('Edit') }}</a>
-          <form action="{{ url_for('delete_citation', post_id=post.id, cid=c.id) }}" method="post" class="d-inline">
+          <form action="{{ url_for('delete_citation', post_id=post.id, cid=c.id) }}" method="post" class="d-inline" onsubmit="return confirm('{{ _('Are you sure?') }}');">
             <button type="submit" class="btn btn-sm btn-danger">{{ _('Delete') }}</button>
           </form>
         {% endif %}
@@ -81,7 +81,7 @@
         &mdash; <a href="{{ url_for('profile', username=c.user.username) }}">{{ c.user.username }}</a>,
         {{ c.created_at.strftime('%Y-%m-%d %H:%M') }}
         <a href="{{ url_for('edit_citation', post_id=post.id, cid=c.id) }}" class="btn btn-sm btn-secondary">{{ _('Edit') }}</a>
-        <form action="{{ url_for('delete_citation', post_id=post.id, cid=c.id) }}" method="post" class="d-inline">
+        <form action="{{ url_for('delete_citation', post_id=post.id, cid=c.id) }}" method="post" class="d-inline" onsubmit="return confirm('{{ _('Are you sure?') }}');">
           <button type="submit" class="btn btn-sm btn-danger">{{ _('Delete') }}</button>
         </form>
       </li>
@@ -109,6 +109,13 @@
     </div>
   </form>
   <script>
+  const citationTitle = document.getElementById('citation-title');
+  citationTitle.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+          e.preventDefault();
+          document.getElementById('fetch-citation').click();
+      }
+  });
   document.getElementById('fetch-citation').addEventListener('click', function() {
       const title = document.getElementById('citation-title').value;
       fetch('{{ url_for('fetch_citation') }}', {
@@ -125,6 +132,11 @@
           document.getElementById('citation-text').value = data.text;
       });
   });
+  document.getElementById('citation-form').addEventListener('submit', function(e) {
+      if (!confirm('{{ _('Are you sure?') }}')) {
+          e.preventDefault();
+      }
+  });
   </script>
 </section>
 {% endif %}
@@ -140,7 +152,7 @@
   | <a href="{{ url_for('post_backlinks', post_id=post.id) }}">{{ _('Backlinks') }}</a>
   {% if current_user.is_authenticated and (current_user.id == post.author_id or current_user.is_admin()) %}
     | <a href="{{ url_for('edit_post', post_id=post.id) }}">{{ _('Edit') }}</a>
-    | <form action="{{ url_for('delete_post', post_id=post.id) }}" method="post" class="d-inline">
+    | <form action="{{ url_for('delete_post', post_id=post.id) }}" method="post" class="d-inline" onsubmit="return confirm('{{ _('Are you sure?') }}');">
         <button type="submit" class="btn btn-link text-danger p-0">{{ _('Delete') }}</button>
       </form>
   {% endif %}
