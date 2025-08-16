@@ -10,7 +10,7 @@
   </tr>
   {% for item in stats %}
   <tr>
-    <td>{% if item.doi %}{{ item.doi }}{% else %}{{ item.citation_text }}{% endif %}</td>
+    <td>{% if item.doi %}<a href="https://doi.org/{{ item.doi }}">{{ item.doi }}</a>{% else %}{{ item.citation_text }}{% endif %}</td>
     <td>{{ item.count }}</td>
     <td>
       {% for post in item.posts %}
