@@ -2,6 +2,9 @@
 {% block title %}{{ _('Posts') }}{% endblock %}
 {% block content %}
 <h1>{% if tag %}{{ _('Posts tagged "%(tag)s"', tag=tag.name) }}{% else %}{{ _('All Posts') }}{% endif %}</h1>
+{% if current_user.is_authenticated %}
+  <p><a href="{{ url_for('create_post') }}" class="btn btn-primary">{{ _('New Post') }}</a></p>
+{% endif %}
 <ul id="post-list">
   {% for post in posts %}
       <li><a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.title }}</a> - {{ post.path }} ({{ post.language }}) {{ _('by') }} <a href="{{ url_for('profile', username=post.author.username) }}">{{ post.author.username }}</a></li>
