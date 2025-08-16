@@ -163,12 +163,14 @@
       const url = document.getElementById('citation-url').value;
       document.getElementById('citation-text').value = url;
       document.getElementById('citation-part').value = '';
-      document.getElementById('citation-form').submit();
+      document.getElementById('citation-form').requestSubmit();
   });
   document.getElementById('citation-form').addEventListener('submit', function(e) {
       if (!confirm('{{ _('Are you sure?') }}')) {
           e.preventDefault();
+          return;
       }
+      showSpinner();
   });
   </script>
 </section>
