@@ -6,7 +6,8 @@
     {% for rev in revisions %}
       <li class="list-group-item">
         {{ rev.display_time }} -
-        <a href="{{ url_for('revision_diff', post_id=rev.post_id, rev_id=rev.id) }}">{{ rev.title }}</a>
+        <a href="{{ url_for('post_detail', post_id=rev.post_id) }}">{{ rev.title }}</a>
+        (<a href="{{ url_for('revision_diff', post_id=rev.post_id, rev_id=rev.id) }}">{{ _('diff') }}</a>)
         {{ _('by') }} <a href="{{ url_for('profile', username=rev.user.username) }}">{{ rev.user.username }}</a>
         {% if rev.comment %} — {{ rev.comment }}{% endif %}
         <span class="text-muted">({{ '+' if rev.byte_change >= 0 else ''}}{{ rev.byte_change }})</span>

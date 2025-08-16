@@ -102,6 +102,7 @@ def test_recent_page_links_to_diff_for_deleted_post(client):
     assert resp.status_code == 302
     resp = client.get('/recent')
     assert resp.status_code == 200
+    assert f'/post/{post_id}'.encode() in resp.data
     assert f'/post/{post_id}/diff/{rev_id}'.encode() in resp.data
     resp = client.get(f'/post/{post_id}/diff/{rev_id}')
     assert resp.status_code == 200
