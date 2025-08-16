@@ -101,10 +101,10 @@ formEl.addEventListener('keydown', function (e) {
 });
 
 let metaEditor;
+let initialMeta = {};
 try {
   const metaTextarea = document.getElementById('metadata');
   metaEditor = new JSONEditor(document.getElementById('metadata_editor'), {mode: 'code'});
-  let initialMeta = {};
   if (metaTextarea.value.trim()) {
     try { initialMeta = JSON.parse(metaTextarea.value); } catch (e) {}
   }
@@ -178,21 +178,53 @@ setTimeout(() => map.invalidateSize(), 0);
 
 const latField = document.getElementById('lat');
 const lonField = document.getElementById('lon');
+
+function updateLocations() {
+  const locs = [];
+  let first = null;
+  drawnItems.eachLayer(layer => {
+    const ll = layer.getLatLng();
+    locs.push({lat: ll.lat, lon: ll.lng});
+    if (!first) first = ll;
+  });
+  if (first) {
+    latField.value = first.lat;
+    lonField.value = first.lng;
+  } else {
+    latField.value = '';
+    lonField.value = '';
+  }
+  try {
+    const data = metaEditor.get();
+    data.locations = locs;
+    metaEditor.set(data);
+  } catch (e) {}
+}
+
 const initLat = parseFloat(latField.value);
 const initLon = parseFloat(lonField.value);
-if (!isNaN(initLat) && !isNaN(initLon)) {
+let initialLocations = Array.isArray(initialMeta.locations) ? initialMeta.locations : [];
+if (initialLocations.length) {
+  initialLocations.forEach(loc => {
+    if (loc.lat !== undefined && loc.lon !== undefined) {
+      L.marker([loc.lat, loc.lon]).addTo(drawnItems);
+    }
+  });
+  const first = initialLocations[0];
+  latField.value = first.lat;
+  lonField.value = first.lon;
+  map.setView([first.lat, first.lon], 13);
+} else if (!isNaN(initLat) && !isNaN(initLon)) {
   L.marker([initLat, initLon]).addTo(drawnItems);
   map.setView([initLat, initLon], 13);
 }
 
 map.on(L.Draw.Event.CREATED, function (e) {
-  drawnItems.clearLayers();
-  const layer = e.layer;
-  drawnItems.addLayer(layer);
-  const latlng = layer.getLatLng();
-  latField.value = latlng.lat;
-  lonField.value = latlng.lng;
+  drawnItems.addLayer(e.layer);
+  updateLocations();
 });
+map.on(L.Draw.Event.DELETED, updateLocations);
+map.on(L.Draw.Event.EDITED, updateLocations);
 
 document.getElementById('find-coordinates').addEventListener('click', function () {
   const addr = document.getElementById('address-input').value;
@@ -205,9 +237,9 @@ document.getElementById('find-coordinates').addEventListener('click', function (
         document.getElementById('geocode-error').textContent = '';
         latField.value = data.lat;
         lonField.value = data.lon;
-        drawnItems.clearLayers();
-        L.marker([data.lat, data.lon]).addTo(drawnItems);
+        drawnItems.addLayer(L.marker([data.lat, data.lon]));
         map.setView([data.lat, data.lon], 13);
+        updateLocations();
       }
     })
     .catch(() => {
