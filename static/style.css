@@ -107,6 +107,43 @@ textarea::placeholder,
 .toc-container .toc ul { list-style: none; padding-left: 0; }
 .toc-container .toc a { text-decoration: none; }
 
+.alert {
+  background-color: var(--nav-bg-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.modal-content {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.modal-header,
+.modal-footer {
+  border-color: var(--border-color);
+}
+
+pre {
+  background-color: var(--nav-bg-color);
+  color: var(--text-color);
+  padding: 10px;
+  overflow-x: auto;
+}
+
+.table {
+  --bs-table-bg: var(--background-color);
+  --bs-table-color: var(--text-color);
+  --bs-table-border-color: var(--border-color);
+  --bs-table-striped-bg: var(--toc-bg-color);
+  --bs-table-hover-bg: var(--toc-bg-color);
+}
+
+.error-message {
+  color: var(--text-color);
+  font-weight: bold;
+}
+
 #map {
   height: 400px;
   width: 100%;
