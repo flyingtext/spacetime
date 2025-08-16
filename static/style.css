@@ -89,6 +89,12 @@ nav a {
   color: var(--text-color);
 }
 
+.list-group-item {
+  background-color: var(--background-color) !important;
+  color: var(--text-color) !important;
+  border-color: var(--border-color) !important;
+}
+
 a {
   color: var(--link-color);
 }
