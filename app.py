@@ -1493,30 +1493,29 @@ def settings():
     home_page = get_setting('home_page_path', '')
     timezone_value = get_setting('timezone', 'UTC')
     if request.method == 'POST':
-        title = request.form.get('site_title', '').strip()
-        home_page = request.form.get('home_page_path', '').strip()
-        timezone_value = request.form.get('timezone', '').strip() or 'UTC'
+        if 'site_title' in request.form:
+            title = request.form.get('site_title', '').strip()
+            title_setting = Setting.query.filter_by(key='site_title').first()
+            if title_setting:
+                title_setting.value = title
+            else:
+                db.session.add(Setting(key='site_title', value=title))
 
-        title_setting = Setting.query.filter_by(key='site_title').first()
-        if title_setting:
-            title_setting.value = title
-        else:
-            title_setting = Setting(key='site_title', value=title)
-            db.session.add(title_setting)
+        if 'home_page_path' in request.form:
+            home_page = request.form.get('home_page_path', '').strip()
+            home_setting = Setting.query.filter_by(key='home_page_path').first()
+            if home_setting:
+                home_setting.value = home_page
+            else:
+                db.session.add(Setting(key='home_page_path', value=home_page))
 
-        home_setting = Setting.query.filter_by(key='home_page_path').first()
-        if home_setting:
-            home_setting.value = home_page
-        else:
-            home_setting = Setting(key='home_page_path', value=home_page)
-            db.session.add(home_setting)
-
-        tz_setting = Setting.query.filter_by(key='timezone').first()
-        if tz_setting:
-            tz_setting.value = timezone_value
-        else:
-            tz_setting = Setting(key='timezone', value=timezone_value)
-            db.session.add(tz_setting)
+        if 'timezone' in request.form:
+            timezone_value = request.form.get('timezone', '').strip() or 'UTC'
+            tz_setting = Setting.query.filter_by(key='timezone').first()
+            if tz_setting:
+                tz_setting.value = timezone_value
+            else:
+                db.session.add(Setting(key='timezone', value=timezone_value))
 
         db.session.commit()
         flash(_('Settings updated.'))
