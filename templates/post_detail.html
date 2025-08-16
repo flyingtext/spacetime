@@ -45,6 +45,9 @@
 {% if metadata or user_metadata %}
 <section>
   <h2>{{ _('Metadata') }}</h2>
+  {% if location_name %}
+  <p><strong>{{ _('Location') }}:</strong> {{ location_name }}</p>
+  {% endif %}
   {% if metadata %}
   <h3>{{ _('Common') }}</h3>
   <ul class="list-group">
@@ -74,6 +77,7 @@
   <ul class="list-group">
     {% for c in citations %}
       <li class="list-group-item text-break">
+        {% if c.context %}<strong>{{ c.context }}</strong> - {% endif %}
         {{ c.citation_part|mla_citation(c.doi) }}
         &mdash; <a href="{{ url_for('profile', username=c.user.username) }}">{{ c.user.username }}</a>,
         {{ c.created_at.strftime('%Y-%m-%d %H:%M') }}
@@ -92,6 +96,7 @@
   <ul class="list-group">
     {% for c in user_citations %}
       <li class="list-group-item text-break">
+        {% if c.context %}<strong>{{ c.context }}</strong> - {% endif %}
         {{ c.citation_part|mla_citation(c.doi) }}
         &mdash; <a href="{{ url_for('profile', username=c.user.username) }}">{{ c.user.username }}</a>,
         {{ c.created_at.strftime('%Y-%m-%d %H:%M') }}
@@ -118,6 +123,9 @@
     </div>
     <div class="mb-3">
       <textarea id="citation-text" name="citation_text" placeholder="{{ _('Citation text') }}" rows="4" cols="50" class="form-control"></textarea>
+    </div>
+    <div class="mb-3">
+      <input type="text" id="citation-context" name="citation_context" placeholder="{{ _('Citation context') }}" class="form-control" />
     </div>
     <div class="mb-3">
       <button type="submit" class="btn btn-primary">{{ _('Add Citation') }}</button>

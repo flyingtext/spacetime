@@ -246,6 +246,35 @@ def geocode_address(address: str) -> tuple[float, float] | None:
     return coords
 
 
+def reverse_geocode_coords(lat: float, lon: float) -> str | None:
+    """Return human-readable address for coordinates using Nominatim.
+
+    Results are cached in ``geocode_cache`` keyed by ``"rev:lat,lon"``. Cache
+    failures are ignored so the reverse geocoding still proceeds normally.
+    """
+    key = f"rev:{lat},{lon}"
+    if geocode_cache:
+        try:
+            cached = geocode_cache.get(key)
+            if cached:
+                return cached
+        except Exception:
+            pass
+    try:
+        location = geolocator.reverse((lat, lon))
+    except Exception:
+        return None
+    if not location:
+        return None
+    address = location.address
+    if geocode_cache:
+        try:
+            geocode_cache.setex(key, GEOCODE_CACHE_TTL, address)
+        except Exception:
+            pass
+    return address
+
+
 COORD_OUT_OF_RANGE_MSG = 'Coordinates out of range'
 
 
@@ -319,8 +348,12 @@ def format_metadata_value(value):
             except (TypeError, ValueError):
                 return Markup(escape(json.dumps(value)))
             if -90 <= lat_f <= 90 and -180 <= lon_f <= 180:
+                address = reverse_geocode_coords(lat_f, lon_f)
+                label = f"{lat_f}, {lon_f}"
+                if address:
+                    label += f" ({escape(address)})"
                 return Markup(
-                    f'<a href="{map_link(lat_f, lon_f)}">{lat_f}, {lon_f}</a>'
+                    f'<a href="{map_link(lat_f, lon_f)}">{label}</a>'
                 )
             return Markup(_(COORD_OUT_OF_RANGE_MSG))
         features = parse_geodata(value)
@@ -726,6 +759,7 @@ class PostCitation(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     citation_part = db.Column(db.JSON, nullable=False)
     citation_text = db.Column(db.Text, nullable=False)
+    context = db.Column(db.Text)
     doi = db.Column(db.String, nullable=True)
     bibtex_raw = db.Column(db.Text, nullable=False)
     bibtex_fields = db.Column(db.JSON, nullable=False)
@@ -743,6 +777,7 @@ class UserPostCitation(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     citation_part = db.Column(db.JSON, nullable=False)
     citation_text = db.Column(db.Text, nullable=False)
+    context = db.Column(db.Text)
     doi = db.Column(db.String, nullable=True)
     bibtex_raw = db.Column(db.Text, nullable=False)
     bibtex_fields = db.Column(db.JSON, nullable=False)
@@ -1113,6 +1148,9 @@ def post_detail(post_id: int):
     views = increment_view_count(post)
     post_meta = {m.key: m.value for m in post.metadata}
     location, warning = extract_location(post_meta)
+    location_name = None
+    if location:
+        location_name = reverse_geocode_coords(location['lat'], location['lon'])
     geodata = extract_geodata(post_meta)
     if warning:
         flash(_(warning))
@@ -1144,6 +1182,7 @@ def post_detail(post_id: int):
         toc=toc,
         metadata=post_meta,
         location=location,
+        location_name=location_name,
         geodata=geodata,
         user_metadata=user_meta,
         citations=citations,
@@ -1346,6 +1385,7 @@ def fetch_citation():
 def new_citation(post_id: int):
     post = Post.query.get_or_404(post_id)
     text = request.form.get('citation_text', '').strip()
+    context = request.form.get('citation_context', '').strip()
     if not text:
         flash(_('Citation text is required.'))
         return redirect(url_for('post_detail', post_id=post.id))
@@ -1381,6 +1421,7 @@ def new_citation(post_id: int):
             user=current_user,
             citation_part=entry,
             citation_text=text,
+            context=context,
             doi=doi,
             bibtex_raw=text,
             bibtex_fields=entry,
@@ -1391,6 +1432,7 @@ def new_citation(post_id: int):
             user=current_user,
             citation_part=entry,
             citation_text=text,
+            context=context,
             doi=doi,
             bibtex_raw=text,
             bibtex_fields=entry,
@@ -1412,6 +1454,7 @@ def edit_citation(post_id: int, cid: int):
         return redirect(url_for('post_detail', post_id=post.id))
     if request.method == 'POST':
         text = request.form.get('citation_text', '').strip()
+        context = request.form.get('citation_context', '').strip()
         if not text:
             flash(_('Citation text is required.'))
             return redirect(url_for('edit_citation', post_id=post.id, cid=cid))
@@ -1459,6 +1502,7 @@ def edit_citation(post_id: int, cid: int):
                 return redirect(url_for('edit_citation', post_id=post.id, cid=cid))
         citation.citation_part = entry
         citation.citation_text = text
+        citation.context = context
         citation.doi = doi
         citation.bibtex_raw = text
         citation.bibtex_fields = entry
@@ -1559,8 +1603,10 @@ def edit_post(post_id: int):
             post.latitude = None
             post.longitude = None
 
-        current_views = get_view_count(post)
-        PostMetadata.query.filter_by(post_id=post.id).delete(synchronize_session=False)
+        PostMetadata.query.filter(
+            PostMetadata.post_id == post.id,
+            PostMetadata.key != 'views',
+        ).delete(synchronize_session=False)
 
         for key, value in meta_dict.items():
             db.session.add(PostMetadata(post=post, key=key, value=value))
