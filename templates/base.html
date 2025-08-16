@@ -186,5 +186,28 @@
     localStorage.setItem('theme', theme);
   });
 </script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const heading = document.querySelector('h1');
+    if (!heading) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-sm btn-outline-secondary ms-2';
+    btn.innerHTML = '<i class="bi bi-link-45deg" aria-hidden="true"></i><span class="visually-hidden">{{ _("Copy permalink") }}</span>';
+    btn.setAttribute('aria-label', '{{ _("Copy permalink") }}');
+    btn.title = '{{ _("Copy permalink") }}';
+    btn.addEventListener('click', () => {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        btn.classList.remove('btn-outline-secondary');
+        btn.classList.add('btn-success');
+        setTimeout(() => {
+          btn.classList.remove('btn-success');
+          btn.classList.add('btn-outline-secondary');
+        }, 2000);
+      });
+    });
+    heading.appendChild(btn);
+  });
+</script>
 </body>
 </html>
