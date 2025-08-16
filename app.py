@@ -1028,21 +1028,43 @@ def tag_filter(name: str):
 def search():
     key = request.args.get('key', '').strip()
     value_raw = request.args.get('value', '').strip()
+
+    # Gather distinct metadata keys for the dropdown and include title/path
+    meta_keys = [k for (k,) in db.session.query(PostMetadata.key).distinct().all()]
+    meta_keys = ['title', 'path'] + sorted(meta_keys)
+
     posts = None
+    examples = None
     if key and value_raw:
         try:
             value = json.loads(value_raw)
         except ValueError:
             value = value_raw
-        posts = (
-            Post.query.join(PostMetadata)
-            .filter(
-                PostMetadata.key == key,
-                PostMetadata.value == value,
+        if key == 'title':
+            posts = Post.query.filter(Post.title.ilike(f'%{value}%')).all()
+        elif key == 'path':
+            posts = Post.query.filter(Post.path.ilike(f'%{value}%')).all()
+        else:
+            posts = (
+                Post.query.join(PostMetadata)
+                .filter(
+                    PostMetadata.key == key,
+                    PostMetadata.value == value,
+                )
+                .all()
             )
-            .all()
-        )
-    return render_template('search.html', posts=posts, key=key, value=value_raw)
+    else:
+        # Provide example posts to illustrate expected input format
+        examples = Post.query.limit(5).all()
+
+    return render_template(
+        'search.html',
+        posts=posts,
+        key=key,
+        value=value_raw,
+        keys=meta_keys,
+        examples=examples,
+    )
 
 
 @app.route('/citations/stats')
