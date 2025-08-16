@@ -26,6 +26,7 @@
     <div class="mb-3">
       <label for="head_tags" class="form-label">{{ _('Extra head tags') }}</label>
       <textarea id="head_tags" name="head_tags" class="form-control" rows="3">{{ head_tags }}</textarea>
+      <div class="form-text">{{ _('Enter one tag per line') }}</div>
       <label for="post_categories" class="form-label">{{ _('Category tags mapping (JSON)') }}</label>
       <textarea id="post_categories" name="post_categories" class="form-control" rows="3">{{ post_categories }}</textarea>
       <div class="form-text">{{ _('Example: {"news": {"en": "news", "es": "noticias"}}') }}</div>

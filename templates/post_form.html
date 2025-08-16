@@ -13,9 +13,15 @@
   </div>
   <div class="mb-3">
     <label for="body">{{ _('Body') }}</label>
-    <textarea name="body" id="body" class="form-control" rows="20" cols="50">{{ post.body if post else prefill_body or '' }}</textarea>
+    <div class="row">
+      <div class="col-md-6 mb-3 mb-md-0">
+        <textarea name="body" id="body" class="form-control" rows="20" cols="50">{{ post.body if post else prefill_body or '' }}</textarea>
+      </div>
+      <div class="col-md-6">
+        <div id="preview" class="border p-2"></div>
+      </div>
+    </div>
   </div>
-  <div id="preview"></div>
   {% if post %}
   <div class="mb-3">
     <button type="button" id="suggest-citations" class="btn btn-secondary">{{ _('Suggest Citation') }}</button>
@@ -30,7 +36,7 @@
   <div class="mb-3">
     <label>{{ _('Language code') }}</label>
     {% for lang in languages %}
-    <div class="form-check">
+    <div class="form-check form-check-inline">
       <input class="form-check-input" type="radio" name="language" id="language-{{ lang }}" value="{{ lang }}" {% if lang == selected_language %}checked{% endif %}>
       <label class="form-check-label" for="language-{{ lang }}">{{ lang }}</label>
     </div>
@@ -134,7 +140,8 @@ function updatePreview() {
     body: JSON.stringify({
       text: easyMDE.value(),
       language: document.querySelector('input[name="language"]:checked').value
-    })
+    }),
+    noSpinner: true
   }).then(r => r.json()).then(data => {
     previewEl.innerHTML = data.html || '';
   });

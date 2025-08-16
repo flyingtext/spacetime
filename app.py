@@ -1965,7 +1965,8 @@ def settings():
         timezone_value = request.form.get('timezone', timezone_value).strip() or 'UTC'
         rss_enabled_val = 'rss_enabled' in request.form
         rss_limit = request.form.get('rss_limit', rss_limit).strip() or '20'
-        head_tags = request.form.get('head_tags', head_tags).strip()
+        head_tags_input = request.form.get('head_tags', head_tags)
+        head_tags = "\n".join(line.strip() for line in head_tags_input.splitlines() if line.strip())
         category_tags = request.form.get('post_categories', category_tags).strip()
         # Validate category mapping JSON
         try:
