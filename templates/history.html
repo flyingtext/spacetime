@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}History - {{ post.title }}{% endblock %}
+{% block content %}
+<h1>History for {{ post.title }}</h1>
+<ul>
+  {% for rev in revisions %}
+    <li>{{ rev.created_at }} by {{ rev.user.username }} -
+      <a href="{{ url_for('revision_diff', post_id=post.id, rev_id=rev.id) }}">diff</a>
+    </li>
+  {% endfor %}
+</ul>
+{% endblock %}

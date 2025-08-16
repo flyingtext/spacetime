@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Diff - {{ post.title }}{% endblock %}
+{% block content %}
+<h1>Diff for {{ post.title }}</h1>
+<pre>{{ diff }}</pre>
+<p><a href="{{ url_for('history', post_id=post.id) }}">Back to history</a></p>
+{% endblock %}
