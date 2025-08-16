@@ -932,6 +932,27 @@ def rss_feed():
     return Response(xml, mimetype='application/rss+xml')
 
 
+@app.route('/sitemap.xml')
+def sitemap():
+    """Generate a basic XML sitemap of all posts."""
+    posts = Post.query.order_by(Post.id.desc()).all()
+    root = Element('urlset', xmlns='http://www.sitemaps.org/schemas/sitemap/0.9')
+    for post in posts:
+        url_el = SubElement(root, 'url')
+        SubElement(url_el, 'loc').text = url_for(
+            'document', language=post.language, doc_path=post.path, _external=True
+        )
+        rev = (
+            Revision.query.filter_by(post_id=post.id)
+            .order_by(Revision.created_at.desc())
+            .first()
+        )
+        if rev:
+            SubElement(url_el, 'lastmod').text = rev.created_at.date().isoformat()
+    xml = tostring(root, encoding='utf-8')
+    return Response(xml, mimetype='application/xml')
+
+
 @app.route('/recent')
 def recent_changes():
     revisions = (
