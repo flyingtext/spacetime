@@ -4,13 +4,27 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <h1>{{ _('Tags') }}</h1>
 <div id="tag-map" style="height:400px" class="mb-3"></div>
-<ul class="list-group">
-  {% for tag in tags %}
-    <li class="list-group-item"><a href="{{ url_for('tag_filter', name=tag.name) }}">{{ tag.name }}</a></li>
-  {% else %}
-    <li class="list-group-item">{{ _('No tags yet.') }}</li>
+{% if tag_info %}
+<div class="d-flex flex-wrap">
+  {% for item in tag_info %}
+    {% set tag = item.tag %}
+    <div class="tag-card">
+      <h5><a href="{{ url_for('tag_filter', name=tag.name) }}">{{ tag.name }}</a></h5>
+      {% if item.top_posts %}
+      <ul>
+        {% for post, views in item.top_posts %}
+          <li><a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.title }}</a> ({{ views }})</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="text-muted mb-0 small">{{ _('No posts yet.') }}</p>
+      {% endif %}
+    </div>
   {% endfor %}
-</ul>
+</div>
+{% else %}
+<p>{{ _('No tags yet.') }}</p>
+{% endif %}
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
 const tagLocations = {{ tag_locations_json|safe }};

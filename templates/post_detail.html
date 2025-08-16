@@ -3,6 +3,7 @@
 {% block content %}
 <h1>{{ post.title }} ({{ post.language }})</h1>
 <p><small>{{ post.path }}</small></p>
+<p><small>{{ _('Views') }}: {{ views }}</small></p>
 <div class="row">
   {% if toc %}
   <div class="col-md-3">

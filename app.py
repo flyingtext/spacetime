@@ -544,6 +544,24 @@ class UserPostMetadata(db.Model):
     user = db.relationship('User')
 
 
+def get_view_count(post: Post) -> int:
+    """Return total view count for a post."""
+    meta = next((m for m in post.metadata if m.key == 'views'), None)
+    return int(meta.value) if meta else 0
+
+
+def increment_view_count(post: Post) -> int:
+    """Increment and return the view count for a post."""
+    meta = PostMetadata.query.filter_by(post_id=post.id, key='views').first()
+    if meta:
+        meta.value = int(meta.value) + 1
+    else:
+        meta = PostMetadata(post=post, key='views', value=1)
+        db.session.add(meta)
+    db.session.commit()
+    return int(meta.value)
+
+
 class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -937,6 +955,7 @@ def create_post():
 @app.route('/post/<int:post_id>')
 def post_detail(post_id: int):
     post = Post.query.get_or_404(post_id)
+    views = increment_view_count(post)
     post_meta = {m.key: m.value for m in post.metadata}
     location, warning = extract_location(post_meta)
     geodata = extract_geodata(post_meta)
@@ -974,6 +993,7 @@ def post_detail(post_id: int):
         user_metadata=user_meta,
         citations=citations,
         user_citations=user_citations,
+        views=views,
     )
 
 
@@ -1048,6 +1068,7 @@ def document(language: str, doc_path: str):
                 url_for('document', language=language, doc_path=redirect_entry.new_path)
             )
         abort(404)
+    views = increment_view_count(post)
     post_meta = {m.key: m.value for m in post.metadata}
     user_meta = {}
     citations = (
@@ -1081,7 +1102,8 @@ def document(language: str, doc_path: str):
         metadata=post_meta,
         user_metadata=user_meta,
         citations=citations,
-    user_citations=user_citations,
+        user_citations=user_citations,
+        views=views,
     )
 
 
@@ -1506,6 +1528,7 @@ def settings():
 def tag_list():
     tags = Tag.query.order_by(Tag.name).all()
     tag_locations = []
+    tag_info = []
     for tag in tags:
         post = next(
             (p for p in tag.posts if p.latitude is not None and p.longitude is not None),
@@ -1520,9 +1543,15 @@ def tag_list():
                     'url': url_for('tag_filter', name=tag.name),
                 }
             )
+        top_posts = sorted(
+            [(p, get_view_count(p)) for p in tag.posts],
+            key=lambda x: x[1],
+            reverse=True,
+        )[:3]
+        tag_info.append({'tag': tag, 'top_posts': top_posts})
     tag_locations_json = json.dumps(tag_locations)
     return render_template(
-        'tag_list.html', tags=tags, tag_locations_json=tag_locations_json
+        'tag_list.html', tag_info=tag_info, tag_locations_json=tag_locations_json
     )
 
 
