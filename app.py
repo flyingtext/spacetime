@@ -1271,6 +1271,10 @@ def post_detail(post_id: int):
     if location:
         location_name = reverse_geocode_coords(location['lat'], location['lon'])
     geodata = extract_geodata(post_meta)
+    meta_no_coords = post_meta.copy()
+    if location:
+        for key in ('lat', 'lon', 'latitude', 'longitude', 'lng'):
+            meta_no_coords.pop(key, None)
     if warning:
         flash(_(warning))
     user_meta = {}
@@ -1299,7 +1303,7 @@ def post_detail(post_id: int):
         post=post,
         html_body=html_body,
         toc=toc,
-        metadata=post_meta,
+        metadata=meta_no_coords,
         location=location,
         location_name=location_name,
         geodata=geodata,
@@ -1397,6 +1401,10 @@ def document(language: str, doc_path: str):
     if location:
         location_name = reverse_geocode_coords(location['lat'], location['lon'])
     geodata = extract_geodata(post_meta)
+    meta_no_coords = post_meta.copy()
+    if location:
+        for key in ('lat', 'lon', 'latitude', 'longitude', 'lng'):
+            meta_no_coords.pop(key, None)
     if warning:
         flash(_(warning))
     user_meta = {}
@@ -1429,7 +1437,7 @@ def document(language: str, doc_path: str):
         html_body=html_body,
         toc=toc,
         translations=translations,
-        metadata=post_meta,
+        metadata=meta_no_coords,
         location=location,
         location_name=location_name,
         geodata=geodata,

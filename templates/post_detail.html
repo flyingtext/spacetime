@@ -42,11 +42,17 @@
     <a href="{{ url_for('tag_filter', name=tag.name) }}">{{ tag.name }}</a>
   {% endfor %}
 </p>
-{% if metadata or user_metadata %}
+{% if metadata or user_metadata or location or geodata %}
 <section>
   <h2>{{ _('Metadata') }}</h2>
-  {% if location_name %}
-  <p><strong>{{ _('Location') }}:</strong> {{ location_name }}</p>
+  {% if location %}
+  <p>
+    <strong>{{ _('Location') }}:</strong>
+    {% if location_name %}
+      {{ location_name }}
+    {% endif %}
+    <span class="text-muted">({{ location.lat }}, {{ location.lon }})</span>
+  </p>
   {% endif %}
   {% if metadata %}
   <h3>{{ _('Common') }}</h3>
@@ -55,9 +61,9 @@
       <li class="list-group-item"><strong>{{ key }}:</strong> {{ value|format_metadata }}</li>
     {% endfor %}
   </ul>
+  {% endif %}
   {% if geodata %}
   <div id="map"></div>
-  {% endif %}
   {% endif %}
   {% if user_metadata %}
   <h3>{{ _('Your Metadata') }}</h3>
