@@ -16,12 +16,12 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('tag_list') }}">{{ _('Tags') }}</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('recent_changes') }}">{{ _('Recent changes') }}</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('citation_stats') }}">{{ _('Citation Stats') }}</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('requested_posts') }}">{{ _('Requested Posts') }}</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('tag_list') }}" aria-label="{{ _('Tags') }}" title="{{ _('Tags') }}">🔖</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('recent_changes') }}" aria-label="{{ _('Recent changes') }}" title="{{ _('Recent changes') }}">🔄</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('citation_stats') }}" aria-label="{{ _('Citation Stats') }}" title="{{ _('Citation Stats') }}">📊</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('requested_posts') }}" aria-label="{{ _('Requested Posts') }}" title="{{ _('Requested Posts') }}">📬</a></li>
         {% if current_user.is_authenticated and current_user.is_admin() %}
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_posts') }}">{{ _('Manage Posts') }}</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_posts') }}" aria-label="{{ _('Manage Posts') }}" title="{{ _('Manage Posts') }}">🛠️</a></li>
         {% endif %}
       </ul>
       <form class="d-flex me-3" role="search" action="{{ url_for('search') }}" method="get">
@@ -45,8 +45,8 @@
             </ul>
           </li>
         {% else %}
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">{{ _('Login') }}</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('register') }}">{{ _('Register') }}</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}" aria-label="{{ _('Login') }}" title="{{ _('Login') }}">🔑</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('register') }}" aria-label="{{ _('Register') }}" title="{{ _('Register') }}">📝</a></li>
         {% endif %}
         <li class="nav-item"><button id="theme-toggle" class="btn btn-outline-secondary ms-2" type="button" aria-label="{{ _('Toggle theme') }}">🌓</button></li>
       </ul>
