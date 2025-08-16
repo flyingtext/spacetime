@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Citation Statistics{% endblock %}
+{% block content %}
+<h1>Citation Statistics</h1>
+<table>
+  <tr>
+    <th>DOI / Citation</th>
+    <th>Usage Count</th>
+    <th>Posts</th>
+  </tr>
+  {% for item in stats %}
+  <tr>
+    <td>{% if item.doi %}{{ item.doi }}{% else %}{{ item.citation_text }}{% endif %}</td>
+    <td>{{ item.count }}</td>
+    <td>
+      {% for post in item.posts %}
+        <a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.title }}</a>{% if not loop.last %}, {% endif %}
+      {% endfor %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

@@ -16,6 +16,7 @@ from markupsafe import Markup, escape
 import requests
 from habanero import Crossref
 import bibtexparser
+from sqlalchemy import func
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dev-secret'
@@ -695,6 +696,61 @@ def search():
             .all()
         )
     return render_template('search.html', posts=posts, key=key, value=value_raw)
+
+
+@app.route('/citations/stats')
+def citation_stats():
+    all_citations = (
+        db.session.query(
+            PostCitation.doi.label('doi'),
+            PostCitation.citation_text.label('citation_text'),
+            PostCitation.post_id.label('post_id'),
+        )
+        .union_all(
+            db.session.query(
+                UserPostCitation.doi.label('doi'),
+                UserPostCitation.citation_text.label('citation_text'),
+                UserPostCitation.post_id.label('post_id'),
+            )
+        )
+        .subquery()
+    )
+
+    rows = (
+        db.session.query(
+            all_citations.c.doi,
+            all_citations.c.citation_text,
+            func.count().label('count'),
+            func.group_concat(all_citations.c.post_id, ',').label('post_ids'),
+        )
+        .group_by(all_citations.c.doi, all_citations.c.citation_text)
+        .order_by(func.count().desc())
+        .all()
+    )
+
+    post_ids = set()
+    for row in rows:
+        if row.post_ids:
+            post_ids.update(row.post_ids.split(','))
+
+    posts_by_id = {
+        p.id: p for p in Post.query.filter(Post.id.in_(post_ids)).all()
+    }
+
+    stats = []
+    for row in rows:
+        ids = [int(pid) for pid in row.post_ids.split(',')] if row.post_ids else []
+        posts_list = [posts_by_id[i] for i in ids if i in posts_by_id]
+        stats.append(
+            {
+                'doi': row.doi,
+                'citation_text': row.citation_text,
+                'count': row.count,
+                'posts': posts_list,
+            }
+        )
+
+    return render_template('citation_stats.html', stats=stats)
 
 
 if __name__ == '__main__':
