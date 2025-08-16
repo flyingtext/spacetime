@@ -5,6 +5,7 @@ import re
 import markdown
 from datetime import datetime, timezone
 from xml.etree.ElementTree import Element
+from urllib.parse import quote
 
 from flask import (Flask, render_template, redirect, url_for, request, flash,
                    abort, jsonify)
@@ -500,7 +501,8 @@ class WikiLinkInlineProcessor(InlineProcessor):
             target, text = label.split('|', 1)
         else:
             target = text = label
-        el = Element('a', {'href': f'{self.base_url}{target}'})
+        target_url = f"{self.base_url}{quote(target, safe='/#')}"
+        el = Element('a', {'href': target_url})
         el.text = text
         return el, m.start(0), m.end(0)
 
@@ -1313,8 +1315,10 @@ def document(language: str, doc_path: str):
 def markdown_preview():
     data = request.get_json() or {}
     text = data.get('text', '')
+    language = data.get('language', 'en')
+    base = url_for('document', language=language, doc_path='')
     escaped = escape(text)
-    html, _ = render_markdown(str(escaped))
+    html, _ = render_markdown(str(escaped), base)
     return {'html': str(Markup(html))}
 
 
@@ -1603,6 +1607,9 @@ def edit_post(post_id: int):
             post.latitude = None
             post.longitude = None
 
+
+        current_views = PostMetadata.query.filter_by(post_id=post.id, key='views').first()
+
         PostMetadata.query.filter(
             PostMetadata.post_id == post.id,
             PostMetadata.key != 'views',
@@ -1611,7 +1618,8 @@ def edit_post(post_id: int):
         for key, value in meta_dict.items():
             db.session.add(PostMetadata(post=post, key=key, value=value))
         if current_views:
-            db.session.add(PostMetadata(post=post, key='views', value=current_views))
+            db.session.add(PostMetadata(post=post, key='views', value=current_views.value))
+
 
         if user_metadata_json:
             try:
