@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ _('Tags') }}{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <h1>{{ _('Tags') }}</h1>
+<div id="tag-map" style="height:400px" class="mb-3"></div>
 <ul class="list-group">
   {% for tag in tags %}
     <li class="list-group-item"><a href="{{ url_for('tag_filter', name=tag.name) }}">{{ tag.name }}</a></li>
@@ -9,4 +11,16 @@
     <li class="list-group-item">{{ _('No tags yet.') }}</li>
   {% endfor %}
 </ul>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+const tagLocations = {{ tag_locations_json|safe }};
+const map = L.map('tag-map').setView([0, 0], 2);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+tagLocations.forEach(t => {
+  const marker = L.marker([t.lat, t.lon]).addTo(map);
+  marker.bindPopup(`<a href="${t.url}">${t.name}</a>`);
+});
+</script>
 {% endblock %}
