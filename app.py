@@ -869,6 +869,12 @@ def load_user(user_id: str):
     return User.query.get(int(user_id))
 
 
+@app.route('/posts')
+def all_posts():
+    posts = Post.query.order_by(Post.id.desc()).all()
+    return render_template('index.html', posts=posts)
+
+
 @app.route('/')
 def index():
     home_path = get_setting('home_page_path', '').strip()
@@ -877,8 +883,7 @@ def index():
         post = Post.query.filter_by(language=language, path=home_path).first()
         if post:
             return redirect(url_for('document', language=language, doc_path=home_path))
-    posts = Post.query.order_by(Post.id.desc()).all()
-    return render_template('index.html', posts=posts)
+    return all_posts()
 
 
 @app.route('/recent')
