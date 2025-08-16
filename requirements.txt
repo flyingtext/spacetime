@@ -8,3 +8,4 @@ bibtexparser>=1.4.0
 
 flask-socketio>=5.3.6
 Flask-Babel>=3.1.0
+python-dotenv>=1.0.1

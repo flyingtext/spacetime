@@ -1,5 +1,6 @@
 import difflib
 import json
+import os
 import re
 import markdown
 from datetime import datetime
@@ -20,15 +21,24 @@ from habanero import Crossref
 import bibtexparser
 from sqlalchemy import func, event, or_
 from flask_babel import Babel, _
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'dev-secret'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///wiki.db'
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
+    'SQLALCHEMY_DATABASE_URI', 'sqlite:///wiki.db'
+)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['BABEL_DEFAULT_LOCALE'] = 'en'
-app.config['BABEL_DEFAULT_TIMEZONE'] = 'UTC'
-app.config['LANGUAGES'] = ['en', 'es']
-app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
+app.config['BABEL_DEFAULT_LOCALE'] = os.getenv('BABEL_DEFAULT_LOCALE', 'en')
+app.config['BABEL_DEFAULT_TIMEZONE'] = os.getenv('BABEL_DEFAULT_TIMEZONE', 'UTC')
+app.config['LANGUAGES'] = [
+    lang.strip() for lang in os.getenv('LANGUAGES', 'en,es').split(',')
+]
+app.config['BABEL_TRANSLATION_DIRECTORIES'] = os.getenv(
+    'BABEL_TRANSLATION_DIRECTORIES', 'translations'
+)
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)

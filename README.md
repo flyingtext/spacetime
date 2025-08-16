@@ -19,6 +19,26 @@ pip install -r requirements.txt
 The application uses the Crossref API through the `habanero` library, so network
 access is required when querying Crossref.
 
+## Configuration
+Create a `.env` file in the project root to configure runtime settings. The
+following variables are supported:
+
+- `SECRET_KEY` – Flask secret key used for session signing.
+- `SQLALCHEMY_DATABASE_URI` – database connection string.
+- `BABEL_DEFAULT_LOCALE` – default locale for translations.
+- `LANGUAGES` – comma-separated list of supported languages.
+- `BABEL_TRANSLATION_DIRECTORIES` – path to translation files.
+
+Example `.env`:
+
+```ini
+SECRET_KEY=dev-secret
+SQLALCHEMY_DATABASE_URI=sqlite:///wiki.db
+BABEL_DEFAULT_LOCALE=en
+LANGUAGES=en,es
+BABEL_TRANSLATION_DIRECTORIES=translations
+```
+
 ## Usage
 ```bash
 python app.py

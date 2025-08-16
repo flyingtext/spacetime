@@ -1,6 +1,8 @@
 __pycache__/
 *.pyc
 *.db
+*.mo
+
+# Instance and local configuration
 instance/
 .env
-*.mo
