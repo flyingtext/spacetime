@@ -685,14 +685,22 @@ def create_post():
         metadata_json = request.form.get('metadata', '').strip()
         user_metadata_json = request.form.get('user_metadata', '').strip()
 
+        meta_dict = {}
         if metadata_json:
             try:
                 meta_dict = json.loads(metadata_json)
             except ValueError:
                 flash(_('Invalid metadata JSON'))
                 return redirect(url_for('create_post'))
-            for key, value in meta_dict.items():
-                db.session.add(PostMetadata(post=post, key=key, value=value))
+
+        lat = request.form.get('lat')
+        lon = request.form.get('lon')
+        if lat and lon:
+            meta_dict['lat'] = lat
+            meta_dict['lon'] = lon
+
+        for key, value in meta_dict.items():
+            db.session.add(PostMetadata(post=post, key=key, value=value))
 
         if user_metadata_json:
             try:
@@ -726,7 +734,8 @@ def create_post():
         prefill_body = req.description
     return render_template('post_form.html', action=_('Create'), metadata='',
                            user_metadata='', prefill_title=prefill_title,
-                           prefill_body=prefill_body, request_id=req_id)
+                           prefill_body=prefill_body, request_id=req_id,
+                           lat=None, lon=None)
 
 
 @app.route('/post/<int:post_id>')
@@ -1070,17 +1079,23 @@ def edit_post(post_id: int):
         metadata_json = request.form.get('metadata', '').strip()
         user_metadata_json = request.form.get('user_metadata', '').strip()
 
+        meta_dict = {}
         if metadata_json:
             try:
                 meta_dict = json.loads(metadata_json)
             except ValueError:
                 flash(_('Invalid metadata JSON'))
                 return redirect(url_for('edit_post', post_id=post.id))
-            PostMetadata.query.filter_by(post_id=post.id).delete()
-            for key, value in meta_dict.items():
-                db.session.add(PostMetadata(post=post, key=key, value=value))
-        else:
-            PostMetadata.query.filter_by(post_id=post.id).delete()
+
+        lat = request.form.get('lat')
+        lon = request.form.get('lon')
+        if lat and lon:
+            meta_dict['lat'] = lat
+            meta_dict['lon'] = lon
+
+        PostMetadata.query.filter_by(post_id=post.id).delete()
+        for key, value in meta_dict.items():
+            db.session.add(PostMetadata(post=post, key=key, value=value))
 
         if user_metadata_json:
             try:
@@ -1105,11 +1120,13 @@ def edit_post(post_id: int):
     tags_str = ', '.join([t.name for t in post.tags])
     post_meta_dict = {m.key: m.value for m in post.metadata}
     post_meta = json.dumps(post_meta_dict) if post_meta_dict else ''
+    lat = post_meta_dict.get('lat')
+    lon = post_meta_dict.get('lon')
     user_entries = UserPostMetadata.query.filter_by(post_id=post.id, user_id=current_user.id).all()
     user_meta_dict = {m.key: m.value for m in user_entries}
     user_meta = json.dumps(user_meta_dict) if user_meta_dict else ''
     return render_template('post_form.html', action=_('Edit'), post=post, tags=tags_str,
-                           metadata=post_meta, user_metadata=user_meta)
+                           metadata=post_meta, user_metadata=user_meta, lat=lat, lon=lon)
 
 
 @app.route('/post/<int:post_id>/history')
