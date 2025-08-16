@@ -239,6 +239,8 @@ Response
 
 Suggest citations for multiple sentences of text. Only the most frequent
 keywords from each sentence are used when querying external services.
+Keyword extraction is language-aware and currently supports Korean, English,
+Japanese, French, German and Chinese.
 
 **Parameters**
 
