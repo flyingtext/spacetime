@@ -14,7 +14,7 @@
     <td>{{ item.count }}</td>
     <td>
       {% for post in item.posts %}
-        <a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.title }}</a>{% if not loop.last %}, {% endif %}
+        <a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.display_title }}</a>{% if not loop.last %}, {% endif %}
       {% endfor %}
     </td>
   </tr>
