@@ -149,6 +149,18 @@ pre {
   --bs-table-hover-bg: var(--toc-bg-color);
 }
 
+.dark-mode .table,
+.dark-mode .table th,
+.dark-mode .table td,
+.dark-mode .pagination .page-link {
+  color: var(--text-color) !important;
+}
+
+.dark-mode .pagination .page-link {
+  background-color: var(--background-color);
+  border-color: var(--border-color);
+}
+
 .error-message {
   color: var(--text-color);
   font-weight: bold;
