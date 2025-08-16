@@ -23,7 +23,11 @@ def client():
         )
         db.session.add_all([user, post])
         db.session.flush()
-        db.session.add(PostMetadata(post=post, key='k', value='v'))
+        db.session.add_all([
+            PostMetadata(post=post, key='k', value='v'),
+            PostMetadata(post=post, key='lat', value='10'),
+            PostMetadata(post=post, key='lon', value='20'),
+        ])
         db.session.commit()
     with app.test_client() as client:
         yield client
@@ -40,3 +44,14 @@ def test_metadata_table_under_toc(client):
     assert '<table' in nav_html
     assert 'k' in nav_html
     assert 'v' in nav_html
+
+
+def test_map_and_location_moved_under_toc(client):
+    resp = client.get('/docs/en/p')
+    html = resp.get_data(as_text=True)
+    start = html.find('<nav class="toc-container')
+    end = html.find('</nav>', start)
+    nav_html = html[start:end]
+    assert '<div id="map"' in nav_html
+    assert html.count('<div id="map"') == 1
+    assert '<h2>Location</h2>' not in html

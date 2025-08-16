@@ -18,7 +18,7 @@
       <nav class="toc-container sticky-top">
         <h2>{{ _('Contents') }}</h2>
         {{ toc|safe }}
-        {% if metadata or location %}
+        {% if metadata or location or geodata %}
         <h3>{{ _('Common') }}</h3>
         <table class="table table-sm">
           <tbody>
@@ -32,6 +32,12 @@
                 {% if location_name %}{{ location_name }} {% endif %}
                 <span class="text-muted">({{ location.lat }}, {{ location.lon }})</span>
               </td>
+            </tr>
+            {% endif %}
+            {% if geodata %}
+            <tr>
+              <th scope="row">{{ _('Map') }}</th>
+              <td><div id="map"></div></td>
             </tr>
             {% endif %}
           </tbody>
@@ -60,7 +66,7 @@
         </div>
         <div class="offcanvas-body">
           {{ toc|safe }}
-          {% if metadata or location %}
+          {% if metadata or location or geodata %}
           <h3>{{ _('Common') }}</h3>
           <table class="table table-sm">
             <tbody>
@@ -74,6 +80,12 @@
                   {% if location_name %}{{ location_name }} {% endif %}
                   <span class="text-muted">({{ location.lat }}, {{ location.lon }})</span>
                 </td>
+              </tr>
+              {% endif %}
+              {% if geodata %}
+              <tr>
+                <th scope="row">{{ _('Map') }}</th>
+                <td><div id="map-offcanvas"></div></td>
               </tr>
               {% endif %}
             </tbody>
@@ -107,10 +119,10 @@
     <a href="{{ url_for('tag_filter', name=tag.name) }}">{{ tag.name }}</a>
   {% endfor %}
 </p>
-{% if not toc and (metadata or user_metadata or location) %}
+{% if not toc and (metadata or user_metadata or location or geodata) %}
 <section>
   <h2>{{ _('Metadata') }}</h2>
-  {% if metadata or location %}
+  {% if metadata or location or geodata %}
   <h3>{{ _('Common') }}</h3>
   <table class="table table-sm">
     <tbody>
@@ -126,6 +138,12 @@
         </td>
       </tr>
       {% endif %}
+      {% if geodata %}
+      <tr>
+        <th scope="row">{{ _('Map') }}</th>
+        <td><div id="map"></div></td>
+      </tr>
+      {% endif %}
     </tbody>
   </table>
   {% endif %}
@@ -138,23 +156,6 @@
       {% endfor %}
     </tbody>
   </table>
-  {% endif %}
-</section>
-{% endif %}
-{% if location or geodata %}
-<section>
-  <h2>{{ _('Location') }}</h2>
-  {% if location %}
-  <p>
-    <strong>{{ _('Location') }}:</strong>
-    {% if location_name %}
-      {{ location_name }}
-    {% endif %}
-    <span class="text-muted">({{ location.lat }}, {{ location.lon }})</span>
-  </p>
-  {% endif %}
-  {% if geodata %}
-  <div id="map"></div>
   {% endif %}
 </section>
 {% endif %}
@@ -391,31 +392,33 @@ document.addEventListener('DOMContentLoaded', () => {
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
   const data = { type: 'FeatureCollection', features: {{ geodata|tojson }} };
-  const map = L.map('map').setView([0, 0], 2);
-  const darkUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-  const lightUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-  const isDark = () => document.body.classList.contains('dark-mode') || localStorage.getItem('theme') === 'dark';
-  const tiles = L.tileLayer(isDark() ? darkUrl : lightUrl, {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
-  const updateTiles = () => {
-      tiles.setUrl(isDark() ? darkUrl : lightUrl);
-  };
-  const themeToggle = document.getElementById('theme-toggle');
-  if (themeToggle) {
-      themeToggle.addEventListener('click', () => setTimeout(updateTiles, 0));
-  }
-  const layer = L.geoJSON(data).addTo(map);
-  try {
-    map.fitBounds(layer.getBounds());
-  } catch (e) {
-    // If only a single point, getBounds may return empty; fallback
-    if (data.features.length > 0) {
-      const c = data.features[0].geometry.coordinates;
-      map.setView([c[1], c[0]], 13);
+  document.querySelectorAll('#map, #map-offcanvas').forEach((el) => {
+    const map = L.map(el).setView([0, 0], 2);
+    const darkUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+    const lightUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    const isDark = () => document.body.classList.contains('dark-mode') || localStorage.getItem('theme') === 'dark';
+    const tiles = L.tileLayer(isDark() ? darkUrl : lightUrl, {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    const updateTiles = () => {
+        tiles.setUrl(isDark() ? darkUrl : lightUrl);
+    };
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => setTimeout(updateTiles, 0));
     }
-  }
+    const layer = L.geoJSON(data).addTo(map);
+    try {
+      map.fitBounds(layer.getBounds());
+    } catch (e) {
+      // If only a single point, getBounds may return empty; fallback
+      if (data.features.length > 0) {
+        const c = data.features[0].geometry.coordinates;
+        map.setView([c[1], c[0]], 13);
+      }
+    }
+  });
 </script>
 {% endif %}
 {% endblock %}

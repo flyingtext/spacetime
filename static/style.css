@@ -186,7 +186,7 @@ pre {
   font-weight: bold;
 }
 
-#map {
+#map, #map-offcanvas {
   height: 400px;
   width: 100%;
   max-width: 600px;
@@ -194,7 +194,7 @@ pre {
 }
 
 @media (max-width: 600px) {
-  #map {
+  #map, #map-offcanvas {
     height: 300px;
   }
 }
