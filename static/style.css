@@ -1,4 +1,23 @@
-body { font-family: Arial, sans-serif; margin: 20px; }
+body {
+  font-family: 'Playfair Display', serif;
+  margin: 0;
+  background: linear-gradient(120deg, #f6d365 0%, #fda085 100%);
+  min-height: 100vh;
+}
+
+.navbar {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+}
+
+.container {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-top: 2rem;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
 nav a { margin-right: 10px; }
 textarea { width: 100%; }
 
