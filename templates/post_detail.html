@@ -16,7 +16,10 @@
   {% endfor %}
 </p>
 {% endif %}
-{% if current_user.is_authenticated and (current_user.id == post.author_id or current_user.is_admin()) %}
-  <a href="{{ url_for('edit_post', post_id=post.id) }}">Edit</a>
-{% endif %}
+<p>
+  <a href="{{ url_for('history', post_id=post.id) }}">History</a>
+  {% if current_user.is_authenticated and (current_user.id == post.author_id or current_user.is_admin()) %}
+    | <a href="{{ url_for('edit_post', post_id=post.id) }}">Edit</a>
+  {% endif %}
+</p>
 {% endblock %}
