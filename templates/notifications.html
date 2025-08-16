@@ -2,10 +2,16 @@
 {% block title %}{{ _('Notifications') }}{% endblock %}
 {% block content %}
 <h1>{{ _('Notifications') }}</h1>
+<p class="text-muted">{{ _('Click a notification to view the related post.') }}</p>
 <ul class="list-group">
   {% for n in notifications %}
-    <li class="list-group-item{% if n.read_at is none %} fw-bold{% endif %}">
-      {{ n.message }} - {{ n.created_at.strftime('%Y-%m-%d %H:%M') }}
+    <li class="list-group-item d-flex justify-content-between align-items-center{% if n.read_at is none %} fw-bold{% endif %}">
+      {% if n.link %}
+        <a href="{{ n.link }}" class="text-decoration-none text-reset">{{ n.message }}</a>
+      {% else %}
+        {{ n.message }}
+      {% endif %}
+      <small class="text-muted">{{ n.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
     </li>
   {% else %}
     <li class="list-group-item">{{ _('No notifications.') }}</li>
