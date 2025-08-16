@@ -193,6 +193,8 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     role = db.Column(db.String(20), default='user')
+    avatar_url = db.Column(db.String(200))
+    bio = db.Column(db.Text)
 
     def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)
@@ -420,6 +422,37 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('index'))
+
+
+@app.route('/user/<username>', methods=['GET', 'POST'])
+def profile(username: str):
+    user = User.query.filter_by(username=username).first_or_404()
+    posts = (
+        Post.query.filter_by(author_id=user.id)
+        .order_by(Post.id.desc())
+        .limit(5)
+        .all()
+    )
+    post_count = Post.query.filter_by(author_id=user.id).count()
+    citation_count = (
+        PostCitation.query.filter_by(user_id=user.id).count()
+        + UserPostCitation.query.filter_by(user_id=user.id).count()
+    )
+    if request.method == 'POST':
+        if not current_user.is_authenticated or current_user.id != user.id:
+            abort(403)
+        user.avatar_url = request.form.get('avatar_url', '').strip() or None
+        user.bio = request.form.get('bio', '').strip() or None
+        db.session.commit()
+        flash(_('Profile updated'))
+        return redirect(url_for('profile', username=user.username))
+    return render_template(
+        'profile.html',
+        user=user,
+        posts=posts,
+        post_count=post_count,
+        citation_count=citation_count,
+    )
 
 
 @app.route('/notifications')

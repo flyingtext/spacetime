@@ -4,7 +4,7 @@
 <h1>{{ _('History for %(title)s', title=post.title) }}</h1>
 <ul>
   {% for rev in revisions %}
-    <li>{{ rev.created_at }} {{ _('by') }} {{ rev.user.username }} -
+      <li>{{ rev.created_at }} {{ _('by') }} <a href="{{ url_for('profile', username=rev.user.username) }}">{{ rev.user.username }}</a> -
       <a href="{{ url_for('revision_diff', post_id=post.id, rev_id=rev.id) }}">{{ _('diff') }}</a>
     </li>
   {% endfor %}
