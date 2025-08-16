@@ -769,7 +769,7 @@ class Redirect(db.Model):
 
 class Setting(db.Model):
     key = db.Column(db.String(50), primary_key=True)
-    value = db.Column(db.String(200), nullable=True)
+    value = db.Column(db.Text, nullable=True)
 
 def get_setting(key: str, default: str = '') -> str:
     try:
@@ -1942,6 +1942,7 @@ def settings():
     timezone_value = get_setting('timezone', 'UTC')
     rss_enabled_val = get_setting('rss_enabled', 'false')
     rss_limit = get_setting('rss_limit', '20')
+    head_tags = get_setting('head_tags', '')
     category_tags = get_setting('post_categories', '')
     if request.method == 'POST':
 
@@ -1950,6 +1951,7 @@ def settings():
         timezone_value = request.form.get('timezone', timezone_value).strip() or 'UTC'
         rss_enabled_val = 'rss_enabled' in request.form
         rss_limit = request.form.get('rss_limit', rss_limit).strip() or '20'
+        head_tags = request.form.get('head_tags', head_tags).strip()
         category_tags = request.form.get('post_categories', category_tags).strip()
         # Validate category mapping JSON
         try:
@@ -1994,7 +1996,11 @@ def settings():
             limit_setting.value = rss_limit
         else:
             db.session.add(Setting(key='rss_limit', value=rss_limit))
-
+        head_setting = Setting.query.filter_by(key='head_tags').first()
+        if head_setting:
+            head_setting.value = head_tags
+        else:
+            db.session.add(Setting(key='head_tags', value=head_tags))
         cat_setting = Setting.query.filter_by(key='post_categories').first()
         if cat_setting:
             cat_setting.value = category_tags
@@ -2011,7 +2017,8 @@ def settings():
         timezone=timezone_value,
         rss_enabled=rss_enabled_val.lower() in ['true', '1', 'yes', 'on'],
         rss_limit=rss_limit,
-        post_categories=category_tags,
+        head_tags=head_tags,
+        post_categories=category_tags
     )
 
 
