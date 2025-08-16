@@ -175,11 +175,7 @@
 {% if current_user.is_authenticated %}
 <section>
   <h2>{{ _('Suggest Citation') }}</h2>
-  <button type="button" id="suggest-citations" class="btn btn-secondary">{{ _('Suggest Citation') }}</button>
-  <div id="citation-progress" class="progress d-none mt-2">
-    <div id="citation-progress-bar" class="progress-bar" role="progressbar" style="width:0%"></div>
-  </div>
-  <div id="citation-results" class="mt-3"></div>
+  <p>{{ _('Use the buttons next to each paragraph to get suggestions.') }}</p>
 </section>
 <section>
   <h2>{{ _('Add Citation') }}</h2>
@@ -242,66 +238,55 @@
       }
       showSpinner();
   });
-  const suggestBtn = document.getElementById('suggest-citations');
-  if (suggestBtn) {
-      suggestBtn.addEventListener('click', async () => {
-          const lines = {{ post.body | tojson }}.split('\n').filter(l => l.trim());
-          const container = document.getElementById('citation-results');
-          container.innerHTML = '';
-          const progress = document.getElementById('citation-progress');
-          const progressBar = document.getElementById('citation-progress-bar');
-          progress.classList.remove('d-none');
-          progressBar.style.width = '0%';
-          const controller = new AbortController();
-          const { signal } = controller;
-          window.addEventListener('beforeunload', () => controller.abort(), { once: true });
-          for (let i = 0; i < lines.length; i++) {
-              if (signal.aborted) break;
-              const lineSection = document.createElement('div');
-              container.appendChild(lineSection);
-              try {
-                  const resp = await fetch('{{ url_for('citation_suggest_line') }}', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ line: lines[i] }),
-                      signal
+  document.querySelectorAll('.post-body p').forEach(p => {
+      const wrapper = document.createElement('div');
+      const btn = document.createElement('button');
+      btn.textContent = '{{ _('Suggest Citation') }}';
+      btn.className = 'btn btn-sm btn-secondary mt-2';
+      const result = document.createElement('div');
+      btn.addEventListener('click', async () => {
+          btn.disabled = true;
+          const resp = await fetch('{{ url_for('citation_suggest_line') }}', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ line: p.textContent })
+          });
+          const data = await resp.json();
+          result.innerHTML = '';
+          if (data.results) {
+              for (const [sentence, cands] of Object.entries(data.results)) {
+                  const section = document.createElement('div');
+                  const ps = document.createElement('p');
+                  ps.textContent = sentence;
+                  section.appendChild(ps);
+                  cands.forEach(c => {
+                      const pre = document.createElement('pre');
+                      pre.textContent = c.text;
+                      const saveBtn = document.createElement('button');
+                      saveBtn.textContent = '{{ _('Save') }}';
+                      saveBtn.className = 'btn btn-sm btn-secondary';
+                      saveBtn.addEventListener('click', () => {
+                          const fd = new FormData();
+                          fd.append('citation_text', c.text);
+                          fetch('{{ url_for('new_citation', post_id=post.id) }}', {
+                              method: 'POST',
+                              body: fd
+                          }).then(() => { saveBtn.disabled = true; });
+                      });
+                      const div = document.createElement('div');
+                      div.appendChild(pre);
+                      div.appendChild(saveBtn);
+                      section.appendChild(div);
                   });
-                  const data = await resp.json();
-                  if (data.results) {
-                      for (const [sentence, cands] of Object.entries(data.results)) {
-                          const section = document.createElement('div');
-                          const p = document.createElement('p');
-                          p.textContent = sentence;
-                          section.appendChild(p);
-                          cands.forEach(c => {
-                              const pre = document.createElement('pre');
-                              pre.textContent = c.text;
-                              const btn = document.createElement('button');
-                              btn.textContent = '{{ _('Save') }}';
-                              btn.addEventListener('click', () => {
-                                  const fd = new FormData();
-                                  fd.append('citation_text', c.text);
-                                  fetch('{{ url_for('new_citation', post_id=post.id) }}', {
-                                      method: 'POST',
-                                      body: fd
-                                  }).then(() => { btn.disabled = true; });
-                              });
-                              const div = document.createElement('div');
-                              div.appendChild(pre);
-                              div.appendChild(btn);
-                              section.appendChild(div);
-                          });
-                          lineSection.appendChild(section);
-                      }
-                  }
-              } catch (e) {
-                  if (signal.aborted) break;
+                  result.appendChild(section);
               }
-              progressBar.style.width = ((i + 1) / lines.length * 100) + '%';
           }
-          progress.classList.add('d-none');
+          btn.disabled = false;
       });
-  }
+      wrapper.appendChild(btn);
+      wrapper.appendChild(result);
+      p.insertAdjacentElement('afterend', wrapper);
+  });
   </script>
 </section>
 {% endif %}
