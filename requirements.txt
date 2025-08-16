@@ -5,3 +5,5 @@ markdown>=3.5.1
 requests>=2.31.0
 habanero>=1.2.2
 bibtexparser>=1.4.0
+
+flask-socketio>=5.3.6

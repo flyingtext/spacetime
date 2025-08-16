@@ -2,7 +2,7 @@
 {% block title %}Posts{% endblock %}
 {% block content %}
 <h1>{% if tag %}Posts tagged "{{ tag.name }}"{% else %}All Posts{% endif %}</h1>
-<ul>
+<ul id="post-list">
   {% for post in posts %}
     <li><a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.title }}</a> - {{ post.path }} ({{ post.language }}) by {{ post.author.username }}</li>
   {% else %}
