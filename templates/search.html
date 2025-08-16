@@ -13,7 +13,7 @@
   </div>
   <div class="mb-3">
     <label for="key">{{ _('Key') }}</label>
-    <select name="key" id="key">
+    <select name="key" id="key" class="form-select">
       <option value="">--</option>
       {% for k in keys %}
         <option value="{{ k }}" {% if k == key %}selected{% endif %}>{{ k }}</option>
@@ -44,11 +44,11 @@
 <p>{{ _('Available tags:') }} {{ all_tags|join(', ') }}</p>
 {% endif %}
 {% if posts is not none %}
-<ul>
+<ul class="list-group">
   {% for post in posts %}
-    <li><a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.title }}</a> - {{ post.path }} ({{ post.language }}){% if post.tags %} - {{ post.tags|map(attribute='name')|join(', ') }}{% endif %}</li>
+    <li class="list-group-item"><a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.title }}</a> - {{ post.path }} ({{ post.language }}){% if post.tags %} - {{ post.tags|map(attribute='name')|join(', ') }}{% endif %}</li>
   {% else %}
-    <li>{{ _('No posts found.') }}</li>
+    <li class="list-group-item">{{ _('No posts found.') }}</li>
   {% endfor %}
 </ul>
   <script>
@@ -58,9 +58,9 @@
   <p>{{ _('Select a key and enter a value. You can also choose "title" or "path" to search by post fields.') }}</p>
   {% if examples %}
   <p>{{ _('Example posts:') }}</p>
-  <ul>
+  <ul class="list-group">
     {% for post in examples %}
-      <li>{{ post.title }} - {{ post.path }} ({{ post.language }})</li>
+      <li class="list-group-item">{{ post.title }} - {{ post.path }} ({{ post.language }})</li>
     {% endfor %}
   </ul>
   {% endif %}
