@@ -413,7 +413,6 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     role = db.Column(db.String(20), default='user')
-    avatar_url = db.Column(db.String(200))
     bio = db.Column(db.Text)
 
     def set_password(self, password: str) -> None:
@@ -723,6 +722,18 @@ def profile(username: str):
         .limit(5)
         .all()
     )
+    edited_revisions = (
+        Revision.query.filter_by(user_id=user.id)
+        .order_by(Revision.created_at.desc())
+        .limit(5)
+        .all()
+    )
+    edited_posts = []
+    seen_post_ids = set()
+    for rev in edited_revisions:
+        if rev.post_id not in seen_post_ids:
+            edited_posts.append(rev.post)
+            seen_post_ids.add(rev.post_id)
     post_count = Post.query.filter_by(author_id=user.id).count()
     citation_count = (
         PostCitation.query.filter_by(user_id=user.id).count()
@@ -731,7 +742,6 @@ def profile(username: str):
     if request.method == 'POST':
         if not current_user.is_authenticated or current_user.id != user.id:
             abort(403)
-        user.avatar_url = request.form.get('avatar_url', '').strip() or None
         user.bio = request.form.get('bio', '').strip() or None
         db.session.commit()
         flash(_('Profile updated'))
@@ -740,6 +750,7 @@ def profile(username: str):
         'profile.html',
         user=user,
         posts=posts,
+        edited_posts=edited_posts,
         post_count=post_count,
         citation_count=citation_count,
     )
