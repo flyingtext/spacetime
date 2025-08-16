@@ -3,6 +3,7 @@
 {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsoneditor@9/dist/jsoneditor.min.css" />
 <h1>{{ _('%(action)s Post', action=action) }}</h1>
 <form method="post">
   <div class="mb-3">
@@ -45,11 +46,13 @@
   <p id="geocode-error" style="color:red"></p>
   <div class="mb-3">
     <label for="metadata">{{ _('Post metadata (JSON)') }}</label>
-    <textarea name="metadata" id="metadata" class="form-control" placeholder="{{ _('Post metadata (JSON)') }}" rows="5" cols="50">{{ metadata if metadata else '' }}</textarea>
+    <textarea name="metadata" id="metadata" class="form-control d-none" placeholder="{{ _('Post metadata (JSON)') }}" rows="5" cols="50">{{ metadata if metadata else '' }}</textarea>
+    <div id="metadata_editor" style="height: 200px;"></div>
   </div>
   <div class="mb-3">
     <label for="user_metadata">{{ _('Your metadata (JSON)') }}</label>
-    <textarea name="user_metadata" id="user_metadata" class="form-control" placeholder="{{ _('Your metadata (JSON)') }}" rows="5" cols="50">{{ user_metadata if user_metadata else '' }}</textarea>
+    <textarea name="user_metadata" id="user_metadata" class="form-control d-none" placeholder="{{ _('Your metadata (JSON)') }}" rows="5" cols="50">{{ user_metadata if user_metadata else '' }}</textarea>
+    <div id="user_metadata_editor" style="height: 200px;"></div>
   </div>
   {% if request_id %}<input type="hidden" name="request_id" value="{{ request_id }}">{% endif %}
   <div class="mb-3">
@@ -63,9 +66,43 @@
 {% endif %}
 <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsoneditor@9/dist/jsoneditor.min.js"></script>
 <script>
 const bodyInput = document.querySelector('textarea[name="body"]');
 const previewEl = document.getElementById('preview');
+const formEl = document.querySelector('form');
+formEl.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+    e.preventDefault();
+  }
+});
+
+const metaTextarea = document.getElementById('metadata');
+const metaEditor = new JSONEditor(document.getElementById('metadata_editor'), {mode: 'code'});
+try {
+  if (metaTextarea.value.trim()) {
+    metaEditor.set(JSON.parse(metaTextarea.value));
+  }
+} catch (e) {}
+metaEditor.on('change', () => {
+  try {
+    metaTextarea.value = JSON.stringify(metaEditor.get());
+  } catch (e) {}
+});
+
+const userMetaTextarea = document.getElementById('user_metadata');
+const userMetaEditor = new JSONEditor(document.getElementById('user_metadata_editor'), {mode: 'code'});
+try {
+  if (userMetaTextarea.value.trim()) {
+    userMetaEditor.set(JSON.parse(userMetaTextarea.value));
+  }
+} catch (e) {}
+userMetaEditor.on('change', () => {
+  try {
+    userMetaTextarea.value = JSON.stringify(userMetaEditor.get());
+  } catch (e) {}
+});
+
 function updatePreview() {
   fetch('{{ url_for('markdown_preview') }}', {
     method: 'POST',
