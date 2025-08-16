@@ -56,7 +56,7 @@
   <h3>{{ _('Global') }}</h3>
   <ul class="list-group">
     {% for c in citations %}
-      <li class="list-group-item">
+      <li class="list-group-item text-break">
         <strong>{{ c.citation_part|format_metadata }}:</strong>
         {{ c.citation_text }}
         &mdash; <a href="{{ url_for('profile', username=c.user.username) }}">{{ c.user.username }}</a>,
@@ -75,7 +75,7 @@
   <h3>{{ _('Your Citations') }}</h3>
   <ul class="list-group">
     {% for c in user_citations %}
-      <li class="list-group-item">
+      <li class="list-group-item text-break">
         <strong>{{ c.citation_part|format_metadata }}:</strong>
         {{ c.citation_text }}
         &mdash; <a href="{{ url_for('profile', username=c.user.username) }}">{{ c.user.username }}</a>,
