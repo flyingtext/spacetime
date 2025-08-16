@@ -61,3 +61,28 @@ def test_recent_changes_show_comment_and_delta(client):
     assert b'(+4)' in resp.data
     assert b'edit' in resp.data
     assert b'(+1)' in resp.data
+
+
+def test_recent_changes_links_to_post_and_diff(client):
+    resp = client.post(
+        '/post/new',
+        data={
+            'title': 'Title',
+            'body': 'Body',
+            'path': 'p',
+            'language': 'en',
+            'tags': '',
+            'metadata': '',
+            'user_metadata': '',
+        },
+    )
+    assert resp.status_code == 302
+    with app.app_context():
+        post = Post.query.first()
+        post_id = post.id
+        revision = post.revisions[0]
+        rev_id = revision.id
+    resp = client.get('/recent')
+    assert resp.status_code == 200
+    assert f'/post/{post_id}'.encode() in resp.data
+    assert f'/post/{post_id}/diff/{rev_id}'.encode() in resp.data
