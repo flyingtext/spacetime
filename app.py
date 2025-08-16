@@ -1312,6 +1312,12 @@ def create_post():
 def post_detail(post_id: int):
     post = Post.query.get_or_404(post_id)
     views = increment_view_count(post)
+    first_rev = (
+        Revision.query.filter_by(post_id=post.id)
+        .order_by(Revision.created_at.asc())
+        .first()
+    )
+    created_at = first_rev.created_at if first_rev else None
     post_meta = {m.key: m.value for m in post.metadata}
     location, warning = extract_location(post_meta)
     location_name = None
@@ -1358,6 +1364,7 @@ def post_detail(post_id: int):
         citations=citations,
         user_citations=user_citations,
         views=views,
+        created_at=created_at,
     )
 
 
@@ -1442,6 +1449,12 @@ def document(language: str, doc_path: str):
             )
         )
     views = increment_view_count(post)
+    first_rev = (
+        Revision.query.filter_by(post_id=post.id)
+        .order_by(Revision.created_at.asc())
+        .first()
+    )
+    created_at = first_rev.created_at if first_rev else None
     post_meta = {m.key: m.value for m in post.metadata}
     location, warning = extract_location(post_meta)
     location_name = None
@@ -1492,6 +1505,7 @@ def document(language: str, doc_path: str):
         citations=citations,
         user_citations=user_citations,
         views=views,
+        created_at=created_at,
     )
 
 
