@@ -3,6 +3,4 @@ __pycache__/
 *.db
 instance/
 .env
-
-# Ignore compiled translation catalogs
 *.mo
