@@ -45,6 +45,130 @@ This document lists the HTTP endpoints provided by the Spacetime application.
 | `/tags` | `GET` | List all tags |
 | `/user/<username>` | `GET, POST` | View or update a user profile |
 
+## Endpoint Details
+
+### `/posts` (`GET`)
+List all published posts. Optional query parameter `tag` filters by tag name.
+
+### `/` (`GET`)
+Home page listing posts or redirecting to the configured start page.
+
+### `/rss.xml` (`GET`)
+Return an RSS feed of recent posts.
+
+### `/sitemap.xml` (`GET`)
+Generate an XML sitemap of all posts.
+
+### `/recent` (`GET`)
+Display the twenty most recent revisions.
+
+### `/register` (`GET, POST`)
+Register a new user. The POST body must include `username` and `password` fields.
+
+### `/login` (`GET, POST`)
+Authenticate an existing user with `username` and `password` fields.
+
+### `/logout` (`GET`)
+Log out the current user.
+
+### `/user/<username>` (`GET, POST`)
+View a user profile or update your own bio via the `bio` form field.
+
+### `/notifications` (`GET`)
+List notifications for the authenticated user.
+
+### `/post/request` (`GET, POST`)
+Submit a request for a new post. Requires `title` and `description` fields on POST.
+
+### `/posts/requested` (`GET`)
+Show all user requested posts.
+
+### `/admin/requested` (`GET, POST`)
+Admins can view and comment on requested posts. POST accepts `request_id` and `comment`.
+
+### `/admin/posts` (`GET`)
+List all posts for administrative review.
+
+### `/post/new` (`GET, POST`)
+Create a new post. POST fields include `title`, `body`, `path`, `language`, `comment`,
+`tags` (comma-separated), optional `metadata` and `user_metadata` JSON strings, and
+optional `lat`/`lon` coordinates.
+
+### `/post/<int:post_id>` (`GET`)
+View an individual post by ID.
+
+### `/post/<int:post_id>/backlinks` (`GET`)
+Show posts that link to the specified post.
+
+### `/post/<int:post_id>/watch` (`POST`)
+Start watching a post for changes.
+
+### `/post/<int:post_id>/unwatch` (`POST`)
+Stop watching a post for changes.
+
+### `/post/<int:post_id>/delete` (`POST`)
+Remove the specified post.
+
+### `/post/<string:language>/<path:doc_path>` (`GET`)
+Retrieve a post by language and path. The `/docs/<language>/<path>` route is an alias.
+
+### `/post/<int:post_id>/edit` (`GET, POST`)
+Edit an existing post. Accepts the same fields as `/post/new` plus an optional `comment`.
+
+### `/post/<int:post_id>/history` (`GET`)
+Show revision history for a post.
+
+### `/post/<int:post_id>/diff/<int:rev_id>` (`GET`)
+Display differences between the current post and revision `rev_id`.
+
+### `/post/<int:post_id>/revert/<int:rev_id>` (`POST`)
+Revert a post to the specified revision.
+
+### `/post/<int:post_id>/citation/new` (`POST`)
+Add a citation to a post. Requires `citation_text` and optional `citation_context` fields.
+
+### `/post/<int:post_id>/citation/<int:cid>/edit` (`GET, POST`)
+Edit an existing citation. Accepts the same fields as the new citation endpoint.
+
+### `/post/<int:post_id>/citation/<int:cid>/delete` (`POST`)
+Remove a citation from a post.
+
+### `/tags` (`GET`)
+List all tags.
+
+### `/tag/<string:name>` (`GET`)
+Display posts associated with the given tag.
+
+### `/search` (`GET`)
+Search posts. Supports `q` for full-text queries, `tags` (comma-separated), metadata
+filters via `key` and `value`, and optional geospatial filtering with `lat`, `lon`,
+and `radius`.
+
+### `/settings` (`GET, POST`)
+View or update user settings. POST accepts various configuration fields such as
+`home_page_path` or `rss_enabled`.
+
+### `/geocode` (`GET`)
+Return coordinates for the provided `address` query parameter.
+
+### `/markdown/preview` (`POST`)
+Render Markdown to HTML. Parameters: `text` (required) and optional `language`.
+
+### `/og` (`GET`)
+Fetch Open Graph metadata for the `url` query parameter.
+
+### `/citation/suggest` (`POST`)
+Suggest citations for the provided `text`.
+
+### `/citation/suggest_line` (`POST`)
+Suggest citations for a single `line` of text.
+
+### `/citation/fetch` (`POST`)
+Fetch citation metadata for the provided `title`.
+
+### `/citations/stats` (`GET`)
+Return summary statistics for citations across posts.
+
 ## JSON API Examples
 
 The following endpoints return JSON responses and can be used programmatically.
