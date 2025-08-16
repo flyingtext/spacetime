@@ -2,9 +2,6 @@
 {% block title %}{{ user.username }}{% endblock %}
 {% block content %}
 <h1>{{ user.username }}</h1>
-{% if user.avatar_url %}
-  <img src="{{ user.avatar_url }}" alt="{{ user.username }} avatar" style="max-width:150px;">
-{% endif %}
 <p>{{ user.bio }}</p>
 <section>
   <h2>{{ _('Contribution Metrics') }}</h2>
@@ -23,13 +20,20 @@
   {% endfor %}
   </ul>
 </section>
+<section>
+  <h2>{{ _('Edited Posts') }}</h2>
+  <ul class="list-group">
+  {% for p in edited_posts %}
+    <li class="list-group-item"><a href="{{ url_for('document', language=p.language, doc_path=p.path) }}">{{ p.title }}</a></li>
+  {% else %}
+    <li class="list-group-item">{{ _('No edits yet.') }}</li>
+  {% endfor %}
+  </ul>
+</section>
 {% if current_user.is_authenticated and current_user.id == user.id %}
 <section>
   <h2>{{ _('Edit Profile') }}</h2>
   <form method="post">
-    <div class="mb-3">
-      <input type="text" name="avatar_url" placeholder="{{ _('Avatar URL') }}" value="{{ user.avatar_url or '' }}" class="form-control">
-    </div>
     <div class="mb-3">
       <textarea name="bio" placeholder="{{ _('Bio') }}" rows="4" cols="50" class="form-control">{{ user.bio or '' }}</textarea>
     </div>
