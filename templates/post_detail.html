@@ -7,10 +7,26 @@
 <div class="row">
   {% if toc %}
   <div class="col-md-3">
-    <nav class="toc-container">
-      <h2>{{ _('Contents') }}</h2>
-      {{ toc|safe }}
-    </nav>
+    <div class="d-none d-md-block">
+      <nav class="toc-container sticky-top">
+        <h2>{{ _('Contents') }}</h2>
+        {{ toc|safe }}
+      </nav>
+    </div>
+    <div class="d-md-none mb-3">
+      <button class="btn btn-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas">
+        {{ _('Contents') }}
+      </button>
+      <div class="offcanvas offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+        <div class="offcanvas-header">
+          <h5 class="offcanvas-title" id="tocOffcanvasLabel">{{ _('Contents') }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="{{ _('Close') }}"></button>
+        </div>
+        <div class="offcanvas-body">
+          {{ toc|safe }}
+        </div>
+      </div>
+    </div>
   </div>
   <div class="col-md-9">
     <div class="post-body">{{ html_body|safe }}</div>
@@ -29,6 +45,9 @@
 {% if metadata or user_metadata %}
 <section>
   <h2>{{ _('Metadata') }}</h2>
+  {% if location_name %}
+  <p><strong>{{ _('Location') }}:</strong> {{ location_name }}</p>
+  {% endif %}
   {% if metadata %}
   <h3>{{ _('Common') }}</h3>
   <ul class="list-group">
@@ -58,6 +77,7 @@
   <ul class="list-group">
     {% for c in citations %}
       <li class="list-group-item text-break">
+        {% if c.context %}<strong>{{ c.context }}</strong> - {% endif %}
         {{ c.citation_part|mla_citation(c.doi) }}
         &mdash; <a href="{{ url_for('profile', username=c.user.username) }}">{{ c.user.username }}</a>,
         {{ c.created_at.strftime('%Y-%m-%d %H:%M') }}
@@ -76,6 +96,7 @@
   <ul class="list-group">
     {% for c in user_citations %}
       <li class="list-group-item text-break">
+        {% if c.context %}<strong>{{ c.context }}</strong> - {% endif %}
         {{ c.citation_part|mla_citation(c.doi) }}
         &mdash; <a href="{{ url_for('profile', username=c.user.username) }}">{{ c.user.username }}</a>,
         {{ c.created_at.strftime('%Y-%m-%d %H:%M') }}
@@ -106,6 +127,9 @@
     <div class="mb-3 d-flex gap-2">
       <input type="url" id="citation-url" placeholder="{{ _('Citation URL') }}" class="form-control" />
       <button type="button" id="add-url-citation" class="btn btn-secondary">{{ _('Add URL Citation') }}</button>
+    </div>
+    <div class="mb-3">
+      <input type="text" id="citation-context" name="citation_context" placeholder="{{ _('Citation context') }}" class="form-control" />
     </div>
     <div class="mb-3">
       <button type="submit" class="btn btn-primary">{{ _('Add Citation') }}</button>
@@ -184,10 +208,20 @@
 <script>
   const data = { type: 'FeatureCollection', features: {{ geodata|tojson }} };
   const map = L.map('map').setView([0, 0], 2);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  const darkUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+  const lightUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const isDark = () => document.body.classList.contains('dark-mode') || localStorage.getItem('theme') === 'dark';
+  const tiles = L.tileLayer(isDark() ? darkUrl : lightUrl, {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
+  const updateTiles = () => {
+      tiles.setUrl(isDark() ? darkUrl : lightUrl);
+  };
+  const themeToggle = document.getElementById('theme-toggle');
+  if (themeToggle) {
+      themeToggle.addEventListener('click', () => setTimeout(updateTiles, 0));
+  }
   const layer = L.geoJSON(data).addTo(map);
   try {
     map.fitBounds(layer.getBounds());

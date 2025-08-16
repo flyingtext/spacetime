@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsoneditor@9/dist/jsoneditor.min.css" />
+<link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css" />
 <h1>{{ _('%(action)s Post', action=action) }}</h1>
 <form method="post" id="post-form">
   <div class="mb-3">
@@ -23,17 +24,18 @@
   {% endif %}
   <div class="mb-3">
     <label for="path">{{ _('Path (e.g., docs/start)') }}</label>
-    <input name="path" id="path" class="form-control" placeholder="{{ _('Path (e.g., docs/start)') }}" value="{{ post.path if post else '' }}">
+    <input name="path" id="path" class="form-control" placeholder="{{ _('Path (e.g., docs/start)') }}" value="{{ post.path if post else prefill_path or '' }}">
   </div>
   <div class="mb-3">
     <label for="language">{{ _('Language code') }}</label>
-    <input name="language" id="language" class="form-control" placeholder="{{ _('Language code') }}" value="{{ post.language if post else 'en' }}">
+    <input name="language" id="language" class="form-control" placeholder="{{ _('Language code') }}" value="{{ post.language if post else prefill_language or 'en' }}">
   </div>
   <div class="mb-3">
     <label for="tags">{{ _('Comma separated tags') }}</label>
     <input name="tags" id="tags" class="form-control" placeholder="{{ _('Comma separated tags') }}" value="{{ tags if tags else '' }}">
   </div>
-  <div class="mb-3">
+  <details id="location-section" class="mb-3">
+    <summary>{{ _('Location') }}</summary>
     <label for="address-input">{{ _('Address') }}</label>
     <div class="row g-2">
       <div class="col-md-6">
@@ -47,16 +49,17 @@
     <input type="hidden" name="lat" id="lat" value="{{ lat or '' }}">
     <input type="hidden" name="lon" id="lon" value="{{ lon or '' }}">
     <p id="geocode-error" class="error-message"></p>
-    <details class="mb-3">
-      <summary>{{ _('Post metadata (JSON)') }}</summary>
-      <textarea name="metadata" id="metadata" class="form-control d-none" placeholder="{{ _('Post metadata (JSON)') }}" rows="5" cols="50">{{ metadata if metadata else '' }}</textarea>
-      <div id="metadata_editor" style="height: 200px;"></div>
-    </details>
-    <details class="mb-3">
-      <summary>{{ _('Your metadata (JSON)') }}</summary>
-      <textarea name="user_metadata" id="user_metadata" class="form-control d-none" placeholder="{{ _('Your metadata (JSON)') }}" rows="5" cols="50">{{ user_metadata if user_metadata else '' }}</textarea>
-      <div id="user_metadata_editor" style="height: 200px;"></div>
-    </details>
+  </details>
+  <details class="mb-3">
+    <summary>{{ _('Post metadata (JSON)') }}</summary>
+    <textarea name="metadata" id="metadata" class="form-control d-none" placeholder="{{ _('Post metadata (JSON)') }}" rows="5" cols="50">{{ metadata if metadata else '' }}</textarea>
+    <div id="metadata_editor" style="height: 200px;"></div>
+  </details>
+  <details class="mb-3">
+    <summary>{{ _('Your metadata (JSON)') }}</summary>
+    <textarea name="user_metadata" id="user_metadata" class="form-control d-none" placeholder="{{ _('Your metadata (JSON)') }}" rows="5" cols="50">{{ user_metadata if user_metadata else '' }}</textarea>
+    <div id="user_metadata_editor" style="height: 200px;"></div>
+  </details>
   <div class="mb-3">
     <label for="comment">{{ _('Edit summary') }}</label>
     <input name="comment" id="comment" class="form-control" placeholder="{{ _('Edit summary') }}">
@@ -74,8 +77,9 @@
 <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsoneditor@9/dist/jsoneditor.min.js"></script>
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
 <script>
-const bodyInput = document.querySelector('textarea[name="body"]');
+const easyMDE = new EasyMDE({ element: document.getElementById('body') });
 const previewEl = document.getElementById('preview');
 const formEl = document.getElementById('post-form');
 formEl.addEventListener('keydown', function (e) {
@@ -121,18 +125,32 @@ function updatePreview() {
   fetch('{{ url_for('markdown_preview') }}', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({text: bodyInput.value})
+    body: JSON.stringify({
+      text: easyMDE.value(),
+      language: document.getElementById('language').value
+    })
   }).then(r => r.json()).then(data => {
     previewEl.innerHTML = data.html || '';
   });
 }
-bodyInput.addEventListener('input', updatePreview);
+easyMDE.codemirror.on('change', updatePreview);
+document.getElementById('language').addEventListener('input', updatePreview);
 updatePreview();
 
 const map = L.map('map').setView([0, 0], 2);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+const darkUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const lightUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const isDark = () => document.body.classList.contains('dark-mode') || localStorage.getItem('theme') === 'dark';
+const tiles = L.tileLayer(isDark() ? darkUrl : lightUrl, {
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
+const updateTiles = () => {
+  tiles.setUrl(isDark() ? darkUrl : lightUrl);
+};
+const themeToggle = document.getElementById('theme-toggle');
+if (themeToggle) {
+  themeToggle.addEventListener('click', () => setTimeout(updateTiles, 0));
+}
 const drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
 const drawControl = new L.Control.Draw({
@@ -140,6 +158,12 @@ const drawControl = new L.Control.Draw({
   draw: { polygon:false, polyline:false, rectangle:false, circle:false, circlemarker:false }
 });
 map.addControl(drawControl);
+const locationSection = document.getElementById('location-section');
+locationSection.addEventListener('toggle', () => {
+  if (locationSection.open) {
+    setTimeout(() => map.invalidateSize(), 0);
+  }
+});
 setTimeout(() => map.invalidateSize(), 0);
 
 const latField = document.getElementById('lat');
@@ -184,7 +208,7 @@ document.getElementById('find-coordinates').addEventListener('click', function (
 {% if post %}
 <script>
 document.getElementById('suggest-citations').addEventListener('click', function () {
-  const body = document.querySelector('textarea[name="body"]').value;
+  const body = easyMDE.value();
   const lines = body.split('\n').filter(l => l.trim());
   const container = document.getElementById('citation-results');
   container.innerHTML = '';

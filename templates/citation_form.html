@@ -10,6 +10,9 @@
     <textarea name="citation_text" placeholder="{{ _('Citation text') }}" rows="5" cols="50" class="form-control">{{ citation.citation_text if citation else '' }}</textarea>
   </div>
   <div class="mb-3">
+    <input type="text" name="citation_context" placeholder="{{ _('Citation context') }}" value="{{ citation.context if citation else '' }}" class="form-control" />
+  </div>
+  <div class="mb-3">
     <button type="submit" class="btn btn-primary">{{ action }}</button>
   </div>
 </form>

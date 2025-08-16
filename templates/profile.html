@@ -5,30 +5,58 @@
 <p>{{ user.bio }}</p>
 <section>
   <h2>{{ _('Contribution Metrics') }}</h2>
-  <ul class="list-group">
-    <li class="list-group-item">{{ _('Posts') }}: {{ post_count }}</li>
-    <li class="list-group-item">{{ _('Citations') }}: {{ citation_count }}</li>
-  </ul>
+  <div class="row row-cols-1 row-cols-sm-2 g-4">
+    <div class="col">
+      <div class="card text-center h-100">
+        <div class="card-body">
+          <h5 class="card-title">{{ _('Posts') }}</h5>
+          <p class="card-text">{{ post_count }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card text-center h-100">
+        <div class="card-body">
+          <h5 class="card-title">{{ _('Citations') }}</h5>
+          <p class="card-text">{{ citation_count }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 <section>
   <h2>{{ _('Recent Posts') }}</h2>
-  <ul class="list-group">
+  <div class="row row-cols-1 row-cols-md-2 g-4">
   {% for p in posts %}
-    <li class="list-group-item"><a href="{{ url_for('document', language=p.language, doc_path=p.path) }}">{{ p.title }}</a></li>
+    <div class="col">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title"><a href="{{ url_for('document', language=p.language, doc_path=p.path) }}">{{ p.title }}</a></h5>
+          <p class="card-text">{{ p.path }} ({{ p.language }})</p>
+        </div>
+      </div>
+    </div>
   {% else %}
-    <li class="list-group-item">{{ _('No posts yet.') }}</li>
+    <p>{{ _('No posts yet.') }}</p>
   {% endfor %}
-  </ul>
+  </div>
 </section>
 <section>
   <h2>{{ _('Edited Posts') }}</h2>
-  <ul class="list-group">
+  <div class="row row-cols-1 row-cols-md-2 g-4">
   {% for p in edited_posts %}
-    <li class="list-group-item"><a href="{{ url_for('document', language=p.language, doc_path=p.path) }}">{{ p.title }}</a></li>
+    <div class="col">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title"><a href="{{ url_for('document', language=p.language, doc_path=p.path) }}">{{ p.title }}</a></h5>
+          <p class="card-text">{{ p.path }} ({{ p.language }})</p>
+        </div>
+      </div>
+    </div>
   {% else %}
-    <li class="list-group-item">{{ _('No edits yet.') }}</li>
+    <p>{{ _('No edits yet.') }}</p>
   {% endfor %}
-  </ul>
+  </div>
 </section>
 {% if post_locations %}
 <section>

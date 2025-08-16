@@ -5,7 +5,7 @@ import re
 import markdown
 from datetime import datetime, timezone
 from xml.etree.ElementTree import Element
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
 
 from flask import (Flask, render_template, redirect, url_for, request, flash,
                    abort, jsonify)
@@ -247,6 +247,35 @@ def geocode_address(address: str) -> tuple[float, float] | None:
     return coords
 
 
+def reverse_geocode_coords(lat: float, lon: float) -> str | None:
+    """Return human-readable address for coordinates using Nominatim.
+
+    Results are cached in ``geocode_cache`` keyed by ``"rev:lat,lon"``. Cache
+    failures are ignored so the reverse geocoding still proceeds normally.
+    """
+    key = f"rev:{lat},{lon}"
+    if geocode_cache:
+        try:
+            cached = geocode_cache.get(key)
+            if cached:
+                return cached
+        except Exception:
+            pass
+    try:
+        location = geolocator.reverse((lat, lon))
+    except Exception:
+        return None
+    if not location:
+        return None
+    address = location.address
+    if geocode_cache:
+        try:
+            geocode_cache.setex(key, GEOCODE_CACHE_TTL, address)
+        except Exception:
+            pass
+    return address
+
+
 COORD_OUT_OF_RANGE_MSG = 'Coordinates out of range'
 
 
@@ -320,8 +349,12 @@ def format_metadata_value(value):
             except (TypeError, ValueError):
                 return Markup(escape(json.dumps(value)))
             if -90 <= lat_f <= 90 and -180 <= lon_f <= 180:
+                address = reverse_geocode_coords(lat_f, lon_f)
+                label = f"{lat_f}, {lon_f}"
+                if address:
+                    label += f" ({escape(address)})"
                 return Markup(
-                    f'<a href="{map_link(lat_f, lon_f)}">{lat_f}, {lon_f}</a>'
+                    f'<a href="{map_link(lat_f, lon_f)}">{label}</a>'
                 )
             return Markup(_(COORD_OUT_OF_RANGE_MSG))
         features = parse_geodata(value)
@@ -483,7 +516,8 @@ class WikiLinkInlineProcessor(InlineProcessor):
             target, text = label.split('|', 1)
         else:
             target = text = label
-        el = Element('a', {'href': f'{self.base_url}{target}'})
+        target_url = f"{self.base_url}{quote(target, safe='/#')}"
+        el = Element('a', {'href': target_url})
         el.text = text
         return el, m.start(0), m.end(0)
 
@@ -742,6 +776,7 @@ class PostCitation(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     citation_part = db.Column(db.JSON, nullable=False)
     citation_text = db.Column(db.Text, nullable=False)
+    context = db.Column(db.Text)
     doi = db.Column(db.String, nullable=True)
     bibtex_raw = db.Column(db.Text, nullable=False)
     bibtex_fields = db.Column(db.JSON, nullable=False)
@@ -759,6 +794,7 @@ class UserPostCitation(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     citation_part = db.Column(db.JSON, nullable=False)
     citation_text = db.Column(db.Text, nullable=False)
+    context = db.Column(db.Text)
     doi = db.Column(db.String, nullable=True)
     bibtex_raw = db.Column(db.Text, nullable=False)
     bibtex_fields = db.Column(db.JSON, nullable=False)
@@ -1100,15 +1136,27 @@ def create_post():
         return redirect(url_for('document', language=post.language, doc_path=post.path))
 
     req_id = request.args.get('request_id')
-    prefill_title = prefill_body = None
+    prefill_title = request.args.get('title')
+    prefill_body = None
+    prefill_path = request.args.get('path')
+    prefill_language = request.args.get('language')
     if req_id:
         req = RequestedPost.query.get_or_404(req_id)
         prefill_title = req.title
         prefill_body = req.description
-    return render_template('post_form.html', action=_('Create'), metadata='',
-                           user_metadata='', prefill_title=prefill_title,
-                           prefill_body=prefill_body, request_id=req_id,
-                           lat=None, lon=None)
+    return render_template(
+        'post_form.html',
+        action=_('Create'),
+        metadata='',
+        user_metadata='',
+        prefill_title=prefill_title,
+        prefill_body=prefill_body,
+        prefill_path=prefill_path,
+        prefill_language=prefill_language,
+        request_id=req_id,
+        lat=None,
+        lon=None,
+    )
 
 
 @app.route('/post/<int:post_id>')
@@ -1117,6 +1165,9 @@ def post_detail(post_id: int):
     views = increment_view_count(post)
     post_meta = {m.key: m.value for m in post.metadata}
     location, warning = extract_location(post_meta)
+    location_name = None
+    if location:
+        location_name = reverse_geocode_coords(location['lat'], location['lon'])
     geodata = extract_geodata(post_meta)
     if warning:
         flash(_(warning))
@@ -1148,6 +1199,7 @@ def post_detail(post_id: int):
         toc=toc,
         metadata=post_meta,
         location=location,
+        location_name=location_name,
         geodata=geodata,
         user_metadata=user_meta,
         citations=citations,
@@ -1226,7 +1278,15 @@ def document(language: str, doc_path: str):
             return redirect(
                 url_for('document', language=language, doc_path=redirect_entry.new_path)
             )
-        abort(404)
+        title = doc_path.rsplit('/', 1)[-1]
+        return redirect(
+            url_for(
+                'create_post',
+                title=title,
+                path=doc_path,
+                language=language,
+            )
+        )
     views = increment_view_count(post)
     post_meta = {m.key: m.value for m in post.metadata}
     user_meta = {}
@@ -1270,8 +1330,10 @@ def document(language: str, doc_path: str):
 def markdown_preview():
     data = request.get_json() or {}
     text = data.get('text', '')
+    language = data.get('language', 'en')
+    base = url_for('document', language=language, doc_path='')
     escaped = escape(text)
-    html, _ = render_markdown(str(escaped))
+    html, _ = render_markdown(str(escaped), base)
     return {'html': str(Markup(html))}
 
 
@@ -1342,6 +1404,7 @@ def fetch_citation():
 def new_citation(post_id: int):
     post = Post.query.get_or_404(post_id)
     text = request.form.get('citation_text', '').strip()
+    context = request.form.get('citation_context', '').strip()
     if not text:
         flash(_('Citation text is required.'))
         return redirect(url_for('post_detail', post_id=post.id))
@@ -1381,6 +1444,7 @@ def new_citation(post_id: int):
             user=current_user,
             citation_part=entry,
             citation_text=text,
+            context=context,
             doi=doi,
             bibtex_raw=text,
             bibtex_fields=entry,
@@ -1391,6 +1455,7 @@ def new_citation(post_id: int):
             user=current_user,
             citation_part=entry,
             citation_text=text,
+            context=context,
             doi=doi,
             bibtex_raw=text,
             bibtex_fields=entry,
@@ -1412,6 +1477,7 @@ def edit_citation(post_id: int, cid: int):
         return redirect(url_for('post_detail', post_id=post.id))
     if request.method == 'POST':
         text = request.form.get('citation_text', '').strip()
+        context = request.form.get('citation_context', '').strip()
         if not text:
             flash(_('Citation text is required.'))
             return redirect(url_for('edit_citation', post_id=post.id, cid=cid))
@@ -1463,6 +1529,7 @@ def edit_citation(post_id: int, cid: int):
                 return redirect(url_for('edit_citation', post_id=post.id, cid=cid))
         citation.citation_part = entry
         citation.citation_text = text
+        citation.context = context
         citation.doi = doi
         citation.bibtex_raw = text
         citation.bibtex_fields = entry
@@ -1563,13 +1630,18 @@ def edit_post(post_id: int):
             post.latitude = None
             post.longitude = None
 
+        current_views = PostMetadata.query.filter_by(post_id=post.id, key='views').first()
+
         PostMetadata.query.filter(
             PostMetadata.post_id == post.id,
-            PostMetadata.key != 'views'
+            PostMetadata.key != 'views',
         ).delete(synchronize_session=False)
 
         for key, value in meta_dict.items():
             db.session.add(PostMetadata(post=post, key=key, value=value))
+        if current_views:
+            db.session.add(PostMetadata(post=post, key='views', value=current_views.value))
+
 
         if user_metadata_json:
             try:
