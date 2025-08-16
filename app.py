@@ -158,6 +158,65 @@ def map_link(lat: float, lon: float) -> str:
 COORD_OUT_OF_RANGE_MSG = 'Coordinates out of range'
 
 
+def parse_geodata(value) -> list[dict]:
+    """Return a list of GeoJSON features extracted from ``value``.
+
+    ``value`` may be a dict with ``lat``/``lon`` keys, a GeoJSON object,
+    a list of such objects, or a JSON string representing any of these.
+    """
+
+    def _parse(v) -> list[dict]:
+        features: list[dict] = []
+        if isinstance(v, str):
+            try:
+                v = json.loads(v)
+            except Exception:
+                return []
+        if isinstance(v, dict):
+            lat = v.get('lat') or v.get('latitude')
+            lon = v.get('lon') or v.get('lng') or v.get('longitude')
+            if lat is not None and lon is not None:
+                try:
+                    lat_f = float(lat)
+                    lon_f = float(lon)
+                except (TypeError, ValueError):
+                    return []
+                if -90 <= lat_f <= 90 and -180 <= lon_f <= 180:
+                    features.append(
+                        {
+                            'type': 'Feature',
+                            'geometry': {
+                                'type': 'Point',
+                                'coordinates': [lon_f, lat_f],
+                            },
+                            'properties': {},
+                        }
+                    )
+                return features
+            gtype = v.get('type')
+            if gtype == 'Feature':
+                features.append(v)
+            elif gtype == 'FeatureCollection':
+                for feat in v.get('features', []):
+                    features.extend(_parse(feat))
+            elif gtype in {
+                'Point',
+                'LineString',
+                'Polygon',
+                'MultiPoint',
+                'MultiLineString',
+                'MultiPolygon',
+            }:
+                features.append({'type': 'Feature', 'geometry': v, 'properties': {}})
+            return features
+        if isinstance(v, list):
+            for item in v:
+                features.extend(_parse(item))
+        return features
+
+    return _parse(value)
+
+
 def format_metadata_value(value):
     if isinstance(value, dict):
         lat = value.get('lat') or value.get('latitude')
@@ -173,9 +232,26 @@ def format_metadata_value(value):
                     f'<a href="{map_link(lat_f, lon_f)}">{lat_f}, {lon_f}</a>'
                 )
             return Markup(_(COORD_OUT_OF_RANGE_MSG))
+        features = parse_geodata(value)
+        if features:
+            return Markup(
+                f'<a href="#map">{_("View on map")}</a>'
+            )
         return Markup(escape(json.dumps(value)))
     if isinstance(value, list):
+        features = parse_geodata(value)
+        if features:
+            return Markup(
+                f'<a href="#map">{_("View on map")}</a>'
+            )
         return Markup(escape(json.dumps(value)))
+    if isinstance(value, str):
+        features = parse_geodata(value)
+        if features:
+            return Markup(
+                f'<a href="#map">{_("View on map")}</a>'
+            )
+        return Markup(escape(value))
     return Markup(escape(str(value)))
 
 
@@ -215,6 +291,14 @@ def extract_location(meta: dict) -> tuple[dict | None, str | None]:
                 else:
                     warning = COORD_OUT_OF_RANGE_MSG
     return location, warning
+
+
+def extract_geodata(meta: dict) -> list[dict]:
+    """Collect GeoJSON features from all metadata values."""
+    geoms: list[dict] = []
+    for value in meta.values():
+        geoms.extend(parse_geodata(value))
+    return geoms
 
 
 class WikiLinkInlineProcessor(InlineProcessor):
@@ -631,6 +715,7 @@ def post_detail(post_id: int):
     post = Post.query.get_or_404(post_id)
     post_meta = {m.key: m.value for m in post.metadata}
     location, warning = extract_location(post_meta)
+    geodata = extract_geodata(post_meta)
     if warning:
         flash(_(warning))
     user_meta = {}
@@ -665,6 +750,7 @@ def post_detail(post_id: int):
         toc=toc,
         metadata=post_meta,
         location=location,
+        geodata=geodata,
         user_metadata=user_meta,
         citations=citations,
         user_citations=user_citations,
