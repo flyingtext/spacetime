@@ -76,8 +76,13 @@ const bodyInput = document.querySelector('textarea[name="body"]');
 const previewEl = document.getElementById('preview');
 const formEl = document.querySelector('form');
 formEl.addEventListener('keydown', function (e) {
-  if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
-    e.preventDefault();
+  if (e.key === 'Enter') {
+    if (e.target.id === 'address-input') {
+      e.preventDefault();
+      document.getElementById('find-coordinates').click();
+    } else if (e.target.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+    }
   }
 });
 
