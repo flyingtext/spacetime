@@ -17,6 +17,7 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('index') }}" aria-label="{{ _('All Posts') }}" title="{{ _('All Posts') }}"><i class="bi bi-card-list" aria-hidden="true"></i><span class="visually-hidden">{{ _('All Posts') }}</span></a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('tag_list') }}" aria-label="{{ _('Tags') }}" title="{{ _('Tags') }}"><i class="bi bi-tags" aria-hidden="true"></i><span class="visually-hidden">{{ _('Tags') }}</span></a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('recent_changes') }}" aria-label="{{ _('Recent changes') }}" title="{{ _('Recent changes') }}"><i class="bi bi-clock-history" aria-hidden="true"></i><span class="visually-hidden">{{ _('Recent changes') }}</span></a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('citation_stats') }}" aria-label="{{ _('Citation Stats') }}" title="{{ _('Citation Stats') }}"><i class="bi bi-bar-chart" aria-hidden="true"></i><span class="visually-hidden">{{ _('Citation Stats') }}</span></a></li>
