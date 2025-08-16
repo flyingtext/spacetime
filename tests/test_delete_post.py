@@ -107,3 +107,26 @@ def test_recent_page_links_to_diff_for_deleted_post(client):
     resp = client.get(f'/post/{post_id}/diff/{rev_id}')
     assert resp.status_code == 200
     assert b'-Body' in resp.data
+
+
+def test_deleted_post_shows_placeholder_title(client):
+    resp = client.post(
+        '/post/new',
+        data={
+            'title': 'Title',
+            'body': 'Body',
+            'path': 'p',
+            'language': 'en',
+            'tags': '',
+            'metadata': '',
+            'user_metadata': '',
+        },
+    )
+    assert resp.status_code == 302
+    with app.app_context():
+        post = Post.query.first()
+        post_id = post.id
+    resp = client.post(f'/post/{post_id}/delete')
+    assert resp.status_code == 302
+    resp = client.get(f'/post/{post_id}')
+    assert b'[deleted]' in resp.data

@@ -17,7 +17,7 @@
     <div class="col">
       <div class="card h-100">
         <div class="card-body">
-          <h5 class="card-title"><a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.title }}</a></h5>
+          <h5 class="card-title"><a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.display_title }}</a></h5>
           <p class="card-text">{{ post.path }} ({{ post.language }})</p>
           <p class="card-text"><small class="text-muted">{{ _('by') }} <a href="{{ url_for('profile', username=post.author.username) }}">{{ post.author.username }}</a></small></p>
         </div>

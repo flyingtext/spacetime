@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ _('%(action)s Citation', action=action) }}{% endblock %}
 {% block content %}
-<h1>{{ _('%(action)s Citation for %(title)s', action=action, title=post.title) }}</h1>
+<h1>{{ _('%(action)s Citation for %(title)s', action=action, title=post.display_title) }}</h1>
 <form method="post" onsubmit="return confirm('{{ _('Are you sure?') }}');">
   <div class="mb-3">
     <textarea name="citation_part" placeholder="{{ _('Citation part (JSON)') }}" rows="5" cols="50" class="form-control">{{ citation_part if citation_part else '' }}</textarea>

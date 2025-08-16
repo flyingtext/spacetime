@@ -618,6 +618,11 @@ class Post(db.Model):
     longitude = db.Column(db.Float)
     __table_args__ = (db.UniqueConstraint('path', 'language', name='uix_path_language'),)
 
+    @property
+    def display_title(self) -> str:
+        """Return title or a placeholder if the post was deleted."""
+        return self.title or _('[deleted]')
+
 
 @event.listens_for(Post.__table__, 'after_create')
 def create_post_fts(target, connection, **kw):
@@ -965,7 +970,7 @@ def rss_feed():
     SubElement(channel, 'description').text = f'RSS feed for {title}'
     for post in posts:
         item = SubElement(channel, 'item')
-        SubElement(item, 'title').text = post.title
+        SubElement(item, 'title').text = post.display_title
         SubElement(item, 'link').text = url_for(
             'document', language=post.language, doc_path=post.path, _external=True
         )
@@ -1101,7 +1106,7 @@ def profile(username: str):
         if p.latitude is not None and p.longitude is not None:
             post_locations.append(
                 {
-                    'title': p.title,
+                    'title': p.display_title,
                     'lat': p.latitude,
                     'lon': p.longitude,
                     'url': url_for('document', language=p.language, doc_path=p.path),
@@ -2114,7 +2119,7 @@ def tag_list():
             snippet = (p.body[:100] + '...') if len(p.body) > 100 else p.body
             posts_data.append(
                 {
-                    'title': p.title,
+                    'title': p.display_title,
                     'url': url_for('document', language=p.language, doc_path=p.path),
                     'snippet': snippet,
                     'views': get_view_count(p),
