@@ -1289,6 +1289,7 @@ def delete_post(post_id: int):
     return redirect(url_for('index'))
 
 
+@app.route('/post/<string:language>/<path:doc_path>')
 @app.route('/docs/<string:language>/<path:doc_path>')
 def document(language: str, doc_path: str):
     post = Post.query.filter_by(language=language, path=doc_path).first()
@@ -1311,6 +1312,13 @@ def document(language: str, doc_path: str):
         )
     views = increment_view_count(post)
     post_meta = {m.key: m.value for m in post.metadata}
+    location, warning = extract_location(post_meta)
+    location_name = None
+    if location:
+        location_name = reverse_geocode_coords(location['lat'], location['lon'])
+    geodata = extract_geodata(post_meta)
+    if warning:
+        flash(_(warning))
     user_meta = {}
     citations = (
         PostCitation.query.filter_by(post_id=post.id)
@@ -1331,7 +1339,7 @@ def document(language: str, doc_path: str):
             .all()
         )
     base = url_for('document', language=language, doc_path='')
-    html_body, _ = render_markdown(post.body, base)
+    html_body, toc = render_markdown(post.body, base, with_toc=True)
     translations = Post.query.filter(
         Post.path == doc_path, Post.language != language
     ).all()
@@ -1339,8 +1347,12 @@ def document(language: str, doc_path: str):
         'post_detail.html',
         post=post,
         html_body=html_body,
+        toc=toc,
         translations=translations,
         metadata=post_meta,
+        location=location,
+        location_name=location_name,
+        geodata=geodata,
         user_metadata=user_meta,
         citations=citations,
         user_citations=user_citations,

@@ -44,3 +44,22 @@ def test_post_shows_reverse_geocode(client, monkeypatch):
         post_id = post.id
     resp = client.get(f'/post/{post_id}')
     assert b'Test Place' in resp.data
+
+
+def test_doc_path_shows_reverse_geocode(client, monkeypatch):
+    monkeypatch.setattr(app_module, 'reverse_geocode_coords', lambda lat, lon: 'Test Place')
+    resp = client.post(
+        '/post/new',
+        data={
+            'title': 'Title',
+            'body': 'Body',
+            'path': 'p',
+            'language': 'en',
+            'tags': '',
+            'metadata': '{"loc":{"lat":1,"lon":2}}',
+            'user_metadata': '',
+        },
+    )
+    assert resp.status_code == 302
+    resp = client.get('/post/en/p')
+    assert b'Test Place' in resp.data
