@@ -37,4 +37,9 @@ def test_coordinates_not_list_items(client):
     data = resp.get_data(as_text=True)
     assert '<strong>lat:' not in data
     assert '<strong>lon:' not in data
-    assert '(10.0, 20.0)' in data
+    start = data.find('<h2>Metadata')
+    table_start = data.find('<table', start)
+    table_end = data.find('</table>', table_start)
+    table_html = data[table_start:table_end]
+    assert '<th scope="row">Location</th>' in table_html
+    assert '(10.0, 20.0)' in table_html
