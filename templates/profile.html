@@ -30,6 +30,33 @@
   {% endfor %}
   </ul>
 </section>
+{% if post_locations %}
+<section>
+  <h2>{{ _('Contribution Map') }}</h2>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <div id="profile-map" style="height: 400px;"></div>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const postLocations = {{ post_locations_json|safe }};
+    const map = L.map('profile-map').setView([0, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    const markers = [];
+    postLocations.forEach(p => {
+      const m = L.marker([p.lat, p.lon]).addTo(map);
+      m.bindPopup(`<a href="${p.url}">${p.title}</a>`);
+      markers.push(m);
+    });
+    if (markers.length === 1) {
+      map.setView(markers[0].getLatLng(), 8);
+    } else if (markers.length > 1) {
+      const group = L.featureGroup(markers);
+      map.fitBounds(group.getBounds().pad(0.2));
+    }
+  </script>
+</section>
+{% endif %}
 {% if current_user.is_authenticated and current_user.id == user.id %}
 <section>
   <h2>{{ _('Edit Profile') }}</h2>
