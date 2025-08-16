@@ -11,6 +11,7 @@
   <a href="{{ url_for('index') }}">{{ _('Home') }}</a> |
   <a href="{{ url_for('tag_list') }}">{{ _('Tags') }}</a> |
   <a href="{{ url_for('search') }}">{{ _('Search') }}</a> |
+  <a href="{{ url_for('recent_changes') }}">{{ _('Recent changes') }}</a> |
   <a href="{{ url_for('citation_stats') }}">{{ _('Citation Stats') }}</a> |
   <a href="{{ url_for('requested_posts') }}">{{ _('Requested Posts') }}</a> |
   {% if current_user.is_authenticated %}

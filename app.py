@@ -619,6 +619,14 @@ def index():
     return render_template('index.html', posts=posts)
 
 
+@app.route('/recent')
+def recent_changes():
+    revisions = (
+        Revision.query.order_by(Revision.created_at.desc()).limit(20).all()
+    )
+    return render_template('recent.html', revisions=revisions)
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
