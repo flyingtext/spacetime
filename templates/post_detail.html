@@ -266,10 +266,9 @@
       showSpinner();
   });
   document.querySelectorAll('.post-body p').forEach(p => {
-      const wrapper = document.createElement('div');
       const btn = document.createElement('button');
       btn.textContent = '{{ _('Suggest Citation') }}';
-      btn.className = 'btn btn-sm btn-secondary mt-2';
+      btn.className = 'btn btn-sm btn-secondary ms-2';
       const result = document.createElement('div');
       btn.addEventListener('click', async () => {
           btn.disabled = true;
@@ -287,8 +286,11 @@
                   ps.textContent = sentence;
                   section.appendChild(ps);
                   cands.forEach(c => {
+                      const container = document.createElement('div');
+                      container.className = 'd-flex align-items-start gap-2 mb-2';
                       const pre = document.createElement('pre');
                       pre.textContent = c.text;
+                      pre.className = 'mb-0';
                       const saveBtn = document.createElement('button');
                       saveBtn.textContent = '{{ _('Save') }}';
                       saveBtn.className = 'btn btn-sm btn-secondary';
@@ -300,19 +302,17 @@
                               body: fd
                           }).then(() => { saveBtn.disabled = true; });
                       });
-                      const div = document.createElement('div');
-                      div.appendChild(pre);
-                      div.appendChild(saveBtn);
-                      section.appendChild(div);
+                      container.appendChild(pre);
+                      container.appendChild(saveBtn);
+                      section.appendChild(container);
                   });
                   result.appendChild(section);
               }
           }
           btn.disabled = false;
       });
-      wrapper.appendChild(btn);
-      wrapper.appendChild(result);
-      p.insertAdjacentElement('afterend', wrapper);
+      p.appendChild(btn);
+      p.insertAdjacentElement('afterend', result);
   });
   </script>
 </section>
