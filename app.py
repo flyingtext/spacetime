@@ -891,6 +891,21 @@ def profile(username: str):
         db.session.commit()
         flash(_('Profile updated'))
         return redirect(url_for('profile', username=user.username))
+    post_locations: list[dict[str, float | str]] = []
+    seen_loc_ids: set[int] = set()
+    for p in posts + edited_posts:
+        if p.id in seen_loc_ids:
+            continue
+        seen_loc_ids.add(p.id)
+        if p.latitude is not None and p.longitude is not None:
+            post_locations.append(
+                {
+                    'title': p.title,
+                    'lat': p.latitude,
+                    'lon': p.longitude,
+                    'url': url_for('document', language=p.language, doc_path=p.path),
+                }
+            )
     return render_template(
         'profile.html',
         user=user,
@@ -898,6 +913,8 @@ def profile(username: str):
         edited_posts=edited_posts,
         post_count=post_count,
         citation_count=citation_count,
+        post_locations=post_locations,
+        post_locations_json=json.dumps(post_locations),
     )
 
 
