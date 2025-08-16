@@ -739,6 +739,7 @@ class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     message = db.Column(db.String(200), nullable=False)
+    link = db.Column(db.String(200), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     read_at = db.Column(db.DateTime, nullable=True)
 
@@ -1648,10 +1649,11 @@ def new_citation(post_id: int):
         w.user_id for w in PostWatch.query.filter_by(post_id=post.id).all()
     }
     watcher_ids.add(post.author_id)
+    link = url_for('post_detail', post_id=post.id)
     for uid in watcher_ids:
         if uid != current_user.id:
             msg = _('Citation added to "%(title)s".', title=post.title)
-            db.session.add(Notification(user_id=uid, message=msg))
+            db.session.add(Notification(user_id=uid, message=msg, link=link))
     db.session.commit()
     return redirect(url_for('post_detail', post_id=post.id))
 
@@ -1728,10 +1730,11 @@ def edit_citation(post_id: int, cid: int):
             w.user_id for w in PostWatch.query.filter_by(post_id=post.id).all()
         }
         watcher_ids.add(post.author_id)
+        link = url_for('post_detail', post_id=post.id)
         for uid in watcher_ids:
             if uid != current_user.id:
                 msg = _('Citation updated on "%(title)s".', title=post.title)
-                db.session.add(Notification(user_id=uid, message=msg))
+                db.session.add(Notification(user_id=uid, message=msg, link=link))
         db.session.commit()
         return redirect(url_for('post_detail', post_id=post.id))
     part_json = json.dumps(citation.citation_part)
@@ -1754,10 +1757,11 @@ def delete_citation(post_id: int, cid: int):
         w.user_id for w in PostWatch.query.filter_by(post_id=post.id).all()
     }
     watcher_ids.add(post.author_id)
+    link = url_for('post_detail', post_id=post.id)
     for uid in watcher_ids:
         if uid != current_user.id:
             msg = _('Citation deleted from "%(title)s".', title=post.title)
-            db.session.add(Notification(user_id=uid, message=msg))
+            db.session.add(Notification(user_id=uid, message=msg, link=link))
     db.session.commit()
     return redirect(url_for('post_detail', post_id=post.id))
 
@@ -1867,10 +1871,11 @@ def edit_post(post_id: int):
             w.user_id for w in PostWatch.query.filter_by(post_id=post.id).all()
         }
         watcher_ids.add(post.author_id)
+        link = url_for('post_detail', post_id=post.id)
         for uid in watcher_ids:
             if uid != current_user.id:
                 msg = _('Post "%(title)s" was updated.', title=post.title)
-                db.session.add(Notification(user_id=uid, message=msg))
+                db.session.add(Notification(user_id=uid, message=msg, link=link))
         rev.byte_change = len(post.body) - len(old_body)
         db.session.commit()
         return redirect(url_for('document', language=post.language, doc_path=post.path))
@@ -1951,10 +1956,11 @@ def revert_revision(post_id: int, rev_id: int):
         w.user_id for w in PostWatch.query.filter_by(post_id=post.id).all()
     }
     watcher_ids.add(post.author_id)
+    link = url_for('post_detail', post_id=post.id)
     for uid in watcher_ids:
         if uid != current_user.id:
             msg = _('Post "%(title)s" was updated.', title=post.title)
-            db.session.add(Notification(user_id=uid, message=msg))
+            db.session.add(Notification(user_id=uid, message=msg, link=link))
 
     db.session.commit()
     flash(_('Post reverted.'))

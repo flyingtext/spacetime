@@ -107,3 +107,22 @@ def test_metadata_update_notifies_author(client):
         assert Notification.query.filter_by(user_id=author.id).count() == 1
         assert Notification.query.filter_by(user_id=admin.id).count() == 0
 
+
+def test_notification_link_rendered(client):
+    post_id = create_post(client)
+    login(client, 'watcher1')
+    client.post(f'/post/{post_id}/watch', data={})
+    logout(client)
+
+    login(client, 'watcher2')
+    client.post(
+        f'/post/{post_id}/citation/new',
+        data={'citation_text': '@article{a,title={t}}'},
+    )
+    logout(client)
+
+    login(client, 'watcher1')
+    resp = client.get('/notifications')
+    assert f'href="/post/{post_id}"' in resp.text
+    logout(client)
+
