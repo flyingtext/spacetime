@@ -40,9 +40,11 @@ cr = Crossref()
 babel = Babel(app)
 
 
-@babel.localeselector
-def get_locale():
+def select_locale():
     return request.accept_languages.best_match(app.config['LANGUAGES'])
+
+
+babel.locale_selector_func = select_locale
 
 
 def fetch_bibtex_by_title(title: str) -> str | None:
