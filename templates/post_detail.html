@@ -7,10 +7,26 @@
 <div class="row">
   {% if toc %}
   <div class="col-md-3">
-    <nav class="toc-container">
-      <h2>{{ _('Contents') }}</h2>
-      {{ toc|safe }}
-    </nav>
+    <div class="d-none d-md-block">
+      <nav class="toc-container sticky-top">
+        <h2>{{ _('Contents') }}</h2>
+        {{ toc|safe }}
+      </nav>
+    </div>
+    <div class="d-md-none mb-3">
+      <button class="btn btn-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas">
+        {{ _('Contents') }}
+      </button>
+      <div class="offcanvas offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+        <div class="offcanvas-header">
+          <h5 class="offcanvas-title" id="tocOffcanvasLabel">{{ _('Contents') }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="{{ _('Close') }}"></button>
+        </div>
+        <div class="offcanvas-body">
+          {{ toc|safe }}
+        </div>
+      </div>
+    </div>
   </div>
   <div class="col-md-9">
     <div class="post-body">{{ html_body|safe }}</div>
@@ -174,10 +190,20 @@
 <script>
   const data = { type: 'FeatureCollection', features: {{ geodata|tojson }} };
   const map = L.map('map').setView([0, 0], 2);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  const darkUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+  const lightUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const isDark = () => document.body.classList.contains('dark-mode') || localStorage.getItem('theme') === 'dark';
+  const tiles = L.tileLayer(isDark() ? darkUrl : lightUrl, {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
+  const updateTiles = () => {
+      tiles.setUrl(isDark() ? darkUrl : lightUrl);
+  };
+  const themeToggle = document.getElementById('theme-toggle');
+  if (themeToggle) {
+      themeToggle.addEventListener('click', () => setTimeout(updateTiles, 0));
+  }
   const layer = L.geoJSON(data).addTo(map);
   try {
     map.fitBounds(layer.getBounds());

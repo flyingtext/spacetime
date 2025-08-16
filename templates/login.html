@@ -1,18 +1,22 @@
 {% extends "base.html" %}
 {% block title %}{{ _('Login') }}{% endblock %}
 {% block content %}
-<h1>{{ _('Login') }}</h1>
-<form method="post">
-  <div class="mb-3">
-    <label for="username">{{ _('Username') }}</label>
-    <input name="username" id="username" class="form-control" placeholder="{{ _('Username') }}">
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <h1>{{ _('Login') }}</h1>
+    <form method="post">
+      <div class="mb-3">
+        <label for="username">{{ _('Username') }}</label>
+        <input name="username" id="username" class="form-control" placeholder="{{ _('Username') }}">
+      </div>
+      <div class="mb-3">
+        <label for="password">{{ _('Password') }}</label>
+        <input type="password" name="password" id="password" class="form-control" placeholder="{{ _('Password') }}">
+      </div>
+      <div class="mb-3">
+        <button type="submit" class="btn btn-primary">{{ _('Login') }}</button>
+      </div>
+    </form>
   </div>
-  <div class="mb-3">
-    <label for="password">{{ _('Password') }}</label>
-    <input type="password" name="password" id="password" class="form-control" placeholder="{{ _('Password') }}">
-  </div>
-  <div class="mb-3">
-    <button type="submit" class="btn btn-primary">{{ _('Login') }}</button>
-  </div>
-</form>
+</div>
 {% endblock %}
