@@ -58,13 +58,13 @@
   </details>
   <details class="mb-3">
     <summary>{{ _('Post metadata (JSON)') }}</summary>
-    <textarea name="metadata" id="metadata" class="form-control d-none" placeholder="{{ _('Post metadata (JSON)') }}" rows="5" cols="50">{{ metadata if metadata else '' }}</textarea>
-    <div id="metadata_editor" style="height: 200px;"></div>
+    <textarea name="metadata" id="metadata" class="form-control form-control-sm d-none" placeholder="{{ _('Post metadata (JSON)') }}" rows="3" cols="40">{{ metadata if metadata else '' }}</textarea>
+    <div id="metadata_editor" style="height: 100px;"></div>
   </details>
   <details class="mb-3">
     <summary>{{ _('Your metadata (JSON)') }}</summary>
-    <textarea name="user_metadata" id="user_metadata" class="form-control d-none" placeholder="{{ _('Your metadata (JSON)') }}" rows="5" cols="50">{{ user_metadata if user_metadata else '' }}</textarea>
-    <div id="user_metadata_editor" style="height: 200px;"></div>
+    <textarea name="user_metadata" id="user_metadata" class="form-control form-control-sm d-none" placeholder="{{ _('Your metadata (JSON)') }}" rows="3" cols="40">{{ user_metadata if user_metadata else '' }}</textarea>
+    <div id="user_metadata_editor" style="height: 100px;"></div>
   </details>
   <div class="mb-3">
     <label for="comment">{{ _('Edit summary') }}</label>
