@@ -5,9 +5,14 @@
 <ul class="list-group">
   {% for req in requests %}
     <li class="list-group-item">
+      <div>
         <strong>{{ req.title }}</strong> - {{ req.description }} (<a href="{{ url_for('profile', username=req.requester.username) }}">{{ req.requester.username }}</a>)
-      {% if current_user.is_authenticated %}
-      <a href="{{ url_for('create_post', request_id=req.id) }}" class="btn btn-sm btn-secondary ms-2">{{ _('Convert to Post') }}</a>
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('create_post', request_id=req.id) }}" class="btn btn-sm btn-secondary ms-2">{{ _('Convert to Post') }}</a>
+        {% endif %}
+      </div>
+      {% if req.admin_comment %}
+      <div class="mt-1 text-muted small">{{ req.admin_comment }}</div>
       {% endif %}
     </li>
   {% else %}
