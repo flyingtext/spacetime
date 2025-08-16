@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Backlinks for {{ post.title }}{% endblock %}
+{% block content %}
+<h1>{{ _('Backlinks for "%(title)s"', title=post.title) }}</h1>
+<ul>
+  {% for p in backlinks %}
+    <li><a href="{{ url_for('post_detail', post_id=p.id) }}">{{ p.title }}</a></li>
+  {% else %}
+    <li>{{ _('No backlinks') }}</li>
+  {% endfor %}
+</ul>
+{% endblock %}

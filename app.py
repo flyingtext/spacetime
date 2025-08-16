@@ -348,6 +348,20 @@ def extract_geodata(meta: dict) -> list[dict]:
     return geoms
 
 
+LINK_RE = re.compile(r"\[\[([^\]|]+)(?:\|[^\]]*)?\]\]")
+
+
+def update_post_links(post: "Post") -> None:
+    """Update outgoing link records for ``post`` based on its body."""
+    PostLink.query.filter_by(source_id=post.id).delete()
+    targets = LINK_RE.findall(post.body or "")
+    for target in targets:
+        target = target.strip()
+        target_post = Post.query.filter_by(path=target, language=post.language).first()
+        if target_post and target_post.id != post.id:
+            db.session.add(PostLink(source_id=post.id, target_id=target_post.id))
+
+
 class WikiLinkInlineProcessor(InlineProcessor):
     def __init__(self, pattern, base_url):
         super().__init__(pattern)
@@ -459,6 +473,19 @@ class PostTag(db.Model):
     __tablename__ = 'post_tag'
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), primary_key=True)
     tag_id = db.Column(db.Integer, db.ForeignKey('tag.id'), primary_key=True)
+
+
+class PostLink(db.Model):
+    __tablename__ = 'post_link'
+    source_id = db.Column(db.Integer, db.ForeignKey('post.id'), primary_key=True)
+    target_id = db.Column(db.Integer, db.ForeignKey('post.id'), primary_key=True)
+
+    source = db.relationship(
+        'Post', foreign_keys=[source_id], backref='outgoing_links'
+    )
+    target = db.relationship(
+        'Post', foreign_keys=[target_id], backref='incoming_links'
+    )
 
 
 class PostWatch(db.Model):
@@ -795,6 +822,8 @@ def create_post():
                     UserPostMetadata(post=post, user=current_user, key=key, value=value)
                 )
 
+        update_post_links(post)
+
         rev = Revision(post=post, user=current_user, title=title, body=body,
                        path=path, language=language)
         db.session.add(rev)
@@ -865,6 +894,19 @@ def post_detail(post_id: int):
         citations=citations,
         user_citations=user_citations,
     )
+
+
+@app.route('/post/<int:post_id>/backlinks')
+def post_backlinks(post_id: int):
+    post = Post.query.get_or_404(post_id)
+    backlinks = (
+        PostLink.query.filter_by(target_id=post.id)
+        .join(Post, PostLink.source_id == Post.id)
+        .with_entities(Post)
+        .order_by(Post.title)
+        .all()
+    )
+    return render_template('backlinks.html', post=post, backlinks=backlinks)
 
 
 @app.route('/post/<int:post_id>/watch', methods=['POST'])
@@ -1207,6 +1249,7 @@ def edit_post(post_id: int):
                 )
         else:
             UserPostMetadata.query.filter_by(post_id=post.id, user_id=current_user.id).delete()
+        update_post_links(post)
         watchers = PostWatch.query.filter_by(post_id=post.id).all()
         for w in watchers:
             if w.user_id != current_user.id:
