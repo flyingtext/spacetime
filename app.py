@@ -1464,7 +1464,25 @@ def settings():
 @app.route('/tags')
 def tag_list():
     tags = Tag.query.order_by(Tag.name).all()
-    return render_template('tag_list.html', tags=tags)
+    tag_locations = []
+    for tag in tags:
+        post = next(
+            (p for p in tag.posts if p.latitude is not None and p.longitude is not None),
+            None,
+        )
+        if post is not None:
+            tag_locations.append(
+                {
+                    'name': tag.name,
+                    'lat': post.latitude,
+                    'lon': post.longitude,
+                    'url': url_for('tag_filter', name=tag.name),
+                }
+            )
+    tag_locations_json = json.dumps(tag_locations)
+    return render_template(
+        'tag_list.html', tags=tags, tag_locations_json=tag_locations_json
+    )
 
 
 @app.route('/tag/<string:name>')
