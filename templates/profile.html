@@ -8,18 +8,18 @@
 <p>{{ user.bio }}</p>
 <section>
   <h2>{{ _('Contribution Metrics') }}</h2>
-  <ul>
-    <li>{{ _('Posts') }}: {{ post_count }}</li>
-    <li>{{ _('Citations') }}: {{ citation_count }}</li>
+  <ul class="list-group">
+    <li class="list-group-item">{{ _('Posts') }}: {{ post_count }}</li>
+    <li class="list-group-item">{{ _('Citations') }}: {{ citation_count }}</li>
   </ul>
 </section>
 <section>
   <h2>{{ _('Recent Posts') }}</h2>
-  <ul>
+  <ul class="list-group">
   {% for p in posts %}
-    <li><a href="{{ url_for('document', language=p.language, doc_path=p.path) }}">{{ p.title }}</a></li>
+    <li class="list-group-item"><a href="{{ url_for('document', language=p.language, doc_path=p.path) }}">{{ p.title }}</a></li>
   {% else %}
-    <li>{{ _('No posts yet.') }}</li>
+    <li class="list-group-item">{{ _('No posts yet.') }}</li>
   {% endfor %}
   </ul>
 </section>
@@ -27,9 +27,15 @@
 <section>
   <h2>{{ _('Edit Profile') }}</h2>
   <form method="post">
-    <p><input type="text" name="avatar_url" placeholder="{{ _('Avatar URL') }}" value="{{ user.avatar_url or '' }}"></p>
-    <p><textarea name="bio" placeholder="{{ _('Bio') }}" rows="4" cols="50">{{ user.bio or '' }}</textarea></p>
-    <p><button type="submit">{{ _('Update') }}</button></p>
+    <div class="mb-3">
+      <input type="text" name="avatar_url" placeholder="{{ _('Avatar URL') }}" value="{{ user.avatar_url or '' }}" class="form-control">
+    </div>
+    <div class="mb-3">
+      <textarea name="bio" placeholder="{{ _('Bio') }}" rows="4" cols="50" class="form-control">{{ user.bio or '' }}</textarea>
+    </div>
+    <div class="mb-3">
+      <button type="submit" class="btn btn-primary">{{ _('Update') }}</button>
+    </div>
   </form>
 </section>
 {% endif %}

@@ -2,16 +2,18 @@
 {% block title %}{{ _('History') }} - {{ post.title }}{% endblock %}
 {% block content %}
 <h1>{{ _('History for %(title)s', title=post.title) }}</h1>
-<ul>
+<ul class="list-group">
   {% for rev in revisions %}
-      <li>{{ rev.created_at }} {{ _('by') }} <a href="{{ url_for('profile', username=rev.user.username) }}">{{ rev.user.username }}</a> -
+      <li class="list-group-item">{{ rev.created_at }} {{ _('by') }} <a href="{{ url_for('profile', username=rev.user.username) }}">{{ rev.user.username }}</a> -
       <a href="{{ url_for('revision_diff', post_id=post.id, rev_id=rev.id) }}">{{ _('diff') }}</a>
       {% if current_user.is_authenticated and current_user.can_edit_posts() %}
-        - <form action="{{ url_for('revert_revision', post_id=post.id, rev_id=rev.id) }}" method="post" style="display:inline">
-            <button type="submit">{{ _('Revert') }}</button>
+        <form action="{{ url_for('revert_revision', post_id=post.id, rev_id=rev.id) }}" method="post" class="d-inline">
+            <button type="submit" class="btn btn-sm btn-danger">{{ _('Revert') }}</button>
           </form>
       {% endif %}
     </li>
+  {% else %}
+    <li class="list-group-item">{{ _('No revisions yet.') }}</li>
   {% endfor %}
 </ul>
 {% endblock %}

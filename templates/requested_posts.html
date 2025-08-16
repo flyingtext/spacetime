@@ -2,16 +2,16 @@
 {% block title %}{{ _('Requested Posts') }}{% endblock %}
 {% block content %}
 <h1>{{ _('Requested Posts') }}</h1>
-<ul>
+<ul class="list-group">
   {% for req in requests %}
-    <li>
+    <li class="list-group-item">
         <strong>{{ req.title }}</strong> - {{ req.description }} (<a href="{{ url_for('profile', username=req.requester.username) }}">{{ req.requester.username }}</a>)
       {% if current_user.is_authenticated %}
-      <a href="{{ url_for('create_post', request_id=req.id) }}">{{ _('Convert to Post') }}</a>
+      <a href="{{ url_for('create_post', request_id=req.id) }}" class="btn btn-sm btn-secondary ms-2">{{ _('Convert to Post') }}</a>
       {% endif %}
     </li>
   {% else %}
-    <li>{{ _('No requests yet.') }}</li>
+    <li class="list-group-item">{{ _('No requests yet.') }}</li>
   {% endfor %}
 </ul>
 {% endblock %}

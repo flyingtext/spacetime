@@ -2,11 +2,11 @@
 {% block title %}{{ _('Tags') }}{% endblock %}
 {% block content %}
 <h1>{{ _('Tags') }}</h1>
-<ul>
+<ul class="list-group">
   {% for tag in tags %}
-    <li><a href="{{ url_for('tag_filter', name=tag.name) }}">{{ tag.name }}</a></li>
+    <li class="list-group-item"><a href="{{ url_for('tag_filter', name=tag.name) }}">{{ tag.name }}</a></li>
   {% else %}
-    <li>{{ _('No tags yet.') }}</li>
+    <li class="list-group-item">{{ _('No tags yet.') }}</li>
   {% endfor %}
 </ul>
 {% endblock %}

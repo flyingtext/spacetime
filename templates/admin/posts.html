@@ -2,8 +2,8 @@
 {% block title %}{{ _('Manage Posts') }}{% endblock %}
 {% block content %}
 <h1>{{ _('Manage Posts') }}</h1>
-<form method="get" class="mb-3">
-  <input type="text" name="q" value="{{ q }}" placeholder="{{ _('Search') }}">
+<form method="get" class="mb-3 d-flex gap-2">
+  <input type="text" name="q" value="{{ q }}" placeholder="{{ _('Search') }}" class="form-control w-auto">
   <button type="submit" class="btn btn-primary btn-sm">{{ _('Search') }}</button>
 </form>
 <table class="table table-striped">

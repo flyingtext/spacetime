@@ -3,8 +3,14 @@
 {% block content %}
 <h1>{{ _('%(action)s Citation for %(title)s', action=action, title=post.title) }}</h1>
 <form method="post">
-  <p><textarea name="citation_part" placeholder="{{ _('Citation part (JSON)') }}" rows="5" cols="50">{{ citation_part if citation_part else '' }}</textarea></p>
-  <p><textarea name="citation_text" placeholder="{{ _('Citation text') }}" rows="5" cols="50">{{ citation.citation_text if citation else '' }}</textarea></p>
-  <p><button type="submit">{{ action }}</button></p>
+  <div class="mb-3">
+    <textarea name="citation_part" placeholder="{{ _('Citation part (JSON)') }}" rows="5" cols="50" class="form-control">{{ citation_part if citation_part else '' }}</textarea>
+  </div>
+  <div class="mb-3">
+    <textarea name="citation_text" placeholder="{{ _('Citation text') }}" rows="5" cols="50" class="form-control">{{ citation.citation_text if citation else '' }}</textarea>
+  </div>
+  <div class="mb-3">
+    <button type="submit" class="btn btn-primary">{{ action }}</button>
+  </div>
 </form>
 {% endblock %}
