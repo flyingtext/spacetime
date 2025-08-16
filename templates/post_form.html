@@ -12,7 +12,7 @@
   </div>
   <div class="mb-3">
     <label for="body">{{ _('Body') }}</label>
-    <textarea name="body" id="body" class="form-control" rows="10" cols="50">{{ post.body if post else prefill_body or '' }}</textarea>
+    <textarea name="body" id="body" class="form-control" rows="20" cols="50">{{ post.body if post else prefill_body or '' }}</textarea>
   </div>
   <div id="preview"></div>
   {% if post %}
@@ -44,16 +44,16 @@
   <input type="hidden" name="lat" id="lat" value="{{ lat or '' }}">
   <input type="hidden" name="lon" id="lon" value="{{ lon or '' }}">
     <p id="geocode-error" class="error-message"></p>
-  <div class="mb-3">
-    <label for="metadata">{{ _('Post metadata (JSON)') }}</label>
-    <textarea name="metadata" id="metadata" class="form-control d-none" placeholder="{{ _('Post metadata (JSON)') }}" rows="5" cols="50">{{ metadata if metadata else '' }}</textarea>
-    <div id="metadata_editor" style="height: 200px;"></div>
-  </div>
-  <div class="mb-3">
-    <label for="user_metadata">{{ _('Your metadata (JSON)') }}</label>
-    <textarea name="user_metadata" id="user_metadata" class="form-control d-none" placeholder="{{ _('Your metadata (JSON)') }}" rows="5" cols="50">{{ user_metadata if user_metadata else '' }}</textarea>
-    <div id="user_metadata_editor" style="height: 200px;"></div>
-  </div>
+    <details class="mb-3">
+      <summary>{{ _('Post metadata (JSON)') }}</summary>
+      <textarea name="metadata" id="metadata" class="form-control d-none" placeholder="{{ _('Post metadata (JSON)') }}" rows="5" cols="50">{{ metadata if metadata else '' }}</textarea>
+      <div id="metadata_editor" style="height: 200px;"></div>
+    </details>
+    <details class="mb-3">
+      <summary>{{ _('Your metadata (JSON)') }}</summary>
+      <textarea name="user_metadata" id="user_metadata" class="form-control d-none" placeholder="{{ _('Your metadata (JSON)') }}" rows="5" cols="50">{{ user_metadata if user_metadata else '' }}</textarea>
+      <div id="user_metadata_editor" style="height: 200px;"></div>
+    </details>
   <div class="mb-3">
     <label for="comment">{{ _('Edit summary') }}</label>
     <input name="comment" id="comment" class="form-control" placeholder="{{ _('Edit summary') }}">
