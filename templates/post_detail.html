@@ -27,7 +27,7 @@
       <li><strong>{{ key }}:</strong> {{ value|format_metadata }}</li>
     {% endfor %}
   </ul>
-  {% if location %}
+  {% if geodata %}
   <div id="map"></div>
   {% endif %}
   {% endif %}
@@ -142,17 +142,26 @@
     {% endif %}
   {% endif %}
 </p>
-{% if location %}
+{% if geodata %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-  const loc = {{ location|tojson }};
-  const map = L.map('map').setView([loc.lat, loc.lon], 13);
+  const data = { type: 'FeatureCollection', features: {{ geodata|tojson }} };
+  const map = L.map('map').setView([0, 0], 2);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
-  L.marker([loc.lat, loc.lon]).addTo(map);
+  const layer = L.geoJSON(data).addTo(map);
+  try {
+    map.fitBounds(layer.getBounds());
+  } catch (e) {
+    // If only a single point, getBounds may return empty; fallback
+    if (data.features.length > 0) {
+      const c = data.features[0].geometry.coordinates;
+      map.setView([c[1], c[0]], 13);
+    }
+  }
 </script>
 {% endif %}
 {% endblock %}
