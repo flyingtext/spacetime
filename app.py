@@ -24,8 +24,10 @@ from flask_babel import Babel, _
 from dotenv import load_dotenv
 from geopy.geocoders import Nominatim
 from geopy.distance import distance as geopy_distance
+from langdetect import detect, DetectorFactory, LangDetectException
 
 load_dotenv()
+DetectorFactory.seed = 0
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret')
@@ -815,7 +817,14 @@ def create_post():
         title = request.form['title']
         body = request.form['body']
         path = request.form['path'].strip()
-        language = request.form['language']
+        language = request.form['language'].strip()
+        if language not in app.config['LANGUAGES']:
+            try:
+                language = detect(body)
+            except LangDetectException:
+                language = app.config['BABEL_DEFAULT_LOCALE']
+            if language not in app.config['LANGUAGES']:
+                language = app.config['BABEL_DEFAULT_LOCALE']
         if not path:
             path = generate_unique_path(title, language)
         elif Post.query.filter_by(path=path, language=language).first():

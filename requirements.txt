@@ -11,3 +11,4 @@ Flask-Babel>=3.1.0
 python-dotenv>=1.0.1
 geopy>=2.4.1
 redis>=5.0.0
+langdetect>=1.0.9
