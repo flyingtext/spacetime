@@ -503,13 +503,16 @@ def post_detail(post_id: int):
             .all()
         )
     base = url_for('document', language=post.language, doc_path='')
-    html_body = markdown.markdown(
-        post.body, extensions=[WikiLinkExtension(base_url=base)]
+    md = markdown.Markdown(
+        extensions=[WikiLinkExtension(base_url=base), 'toc']
     )
+    html_body = md.convert(post.body)
+    toc = md.toc
     return render_template(
         'post_detail.html',
         post=post,
         html_body=html_body,
+        toc=toc,
         metadata=post_meta,
         user_metadata=user_meta,
         citations=citations,
