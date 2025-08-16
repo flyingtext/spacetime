@@ -522,6 +522,17 @@ class RequestedPost(db.Model):
     requester = db.relationship('User', backref='requested_posts')
 
 
+class Redirect(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    old_path = db.Column(db.String(200), nullable=False)
+    new_path = db.Column(db.String(200), nullable=False)
+    language = db.Column(db.String(8), nullable=False)
+
+    __table_args__ = (
+        db.UniqueConstraint('old_path', 'language', name='uix_redirect_oldpath_language'),
+    )
+
+
 @event.listens_for(Post, 'after_insert')
 def emit_new_post(mapper, connection, target):
     socketio.emit(
@@ -885,7 +896,16 @@ def delete_post(post_id: int):
 
 @app.route('/docs/<string:language>/<path:doc_path>')
 def document(language: str, doc_path: str):
-    post = Post.query.filter_by(language=language, path=doc_path).first_or_404()
+    post = Post.query.filter_by(language=language, path=doc_path).first()
+    if not post:
+        redirect_entry = Redirect.query.filter_by(
+            language=language, old_path=doc_path
+        ).first()
+        if redirect_entry:
+            return redirect(
+                url_for('document', language=language, doc_path=redirect_entry.new_path)
+            )
+        abort(404)
     post_meta = {m.key: m.value for m in post.metadata}
     user_meta = {}
     citations = (
@@ -1124,6 +1144,8 @@ def edit_post(post_id: int):
     if not current_user.can_edit_posts():
         abort(403)
     if request.method == 'POST':
+        old_path = post.path
+        old_language = post.language
         rev = Revision(post=post, user=current_user, title=post.title,
                        body=post.body, path=post.path, language=post.language)
         db.session.add(rev)
@@ -1131,6 +1153,10 @@ def edit_post(post_id: int):
         post.body = request.form['body']
         post.path = request.form['path']
         post.language = request.form['language']
+        if post.path != old_path:
+            db.session.add(
+                Redirect(old_path=old_path, new_path=post.path, language=old_language)
+            )
         tag_names = [t.strip() for t in request.form['tags'].split(',') if t.strip()]
         post.tags = []
         for name in tag_names:
