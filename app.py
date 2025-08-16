@@ -19,7 +19,7 @@ from markupsafe import Markup, escape
 import requests
 from habanero import Crossref
 import bibtexparser
-from sqlalchemy import func, event, or_
+from sqlalchemy import func, event, or_, text
 from flask_babel import Babel, _
 from dotenv import load_dotenv
 from geopy.geocoders import Nominatim
@@ -415,6 +415,39 @@ class Post(db.Model):
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
     __table_args__ = (db.UniqueConstraint('path', 'language', name='uix_path_language'),)
+
+
+@event.listens_for(Post.__table__, 'after_create')
+def create_post_fts(target, connection, **kw):
+    """Create FTS5 table and triggers for Post.body."""
+    connection.execute(
+        text(
+            'CREATE VIRTUAL TABLE IF NOT EXISTS post_fts '
+            'USING fts5(body, content="post", content_rowid="id")'
+        )
+    )
+    connection.execute(
+        text(
+            'CREATE TRIGGER post_fts_ai AFTER INSERT ON post BEGIN '
+            'INSERT INTO post_fts(rowid, body) VALUES (new.id, new.body); '
+            'END;'
+        )
+    )
+    connection.execute(
+        text(
+            'CREATE TRIGGER post_fts_ad AFTER DELETE ON post BEGIN '
+            "INSERT INTO post_fts(post_fts, rowid, body) VALUES('delete', old.id, old.body); "
+            'END;'
+        )
+    )
+    connection.execute(
+        text(
+            'CREATE TRIGGER post_fts_au AFTER UPDATE ON post BEGIN '
+            "INSERT INTO post_fts(post_fts, rowid, body) VALUES('delete', old.id, old.body); "
+            'INSERT INTO post_fts(rowid, body) VALUES (new.id, new.body); '
+            'END;'
+        )
+    )
 
 
 class Tag(db.Model):
@@ -1211,6 +1244,9 @@ def tag_filter(name: str):
 
 @app.route('/search')
 def search():
+    q = request.args.get('q', '').strip()
+    tags_raw = request.args.get('tags', '').strip()
+    tag_names = [t for t in [s.strip() for s in tags_raw.split(',')] if t]
     key = request.args.get('key', '').strip()
     value_raw = request.args.get('value', '').strip()
     lat = request.args.get('lat', type=float)
@@ -1220,32 +1256,43 @@ def search():
     # Gather distinct metadata keys for the dropdown and include title/path
     meta_keys = [k for (k,) in db.session.query(PostMetadata.key).distinct().all()]
     meta_keys = ['title', 'path'] + sorted(meta_keys)
+    all_tags = [t.name for t in Tag.query.order_by(Tag.name).all()]
 
-    posts = None
+    posts_query = None
     examples = None
-    if key and value_raw:
+    if q:
+        ids = [
+            row[0]
+            for row in db.session.execute(
+                text('SELECT rowid FROM post_fts WHERE post_fts MATCH :q'),
+                {'q': q},
+            )
+        ]
+        posts_query = Post.query.filter(Post.id.in_(ids)) if ids else Post.query.filter(False)
+    elif key and value_raw:
         try:
             value = json.loads(value_raw)
         except ValueError:
             value = value_raw
         if key == 'title':
-            posts = Post.query.filter(Post.title.ilike(f'%{value}%')).all()
+            posts_query = Post.query.filter(Post.title.ilike(f'%{value}%'))
         elif key == 'path':
-            posts = Post.query.filter(Post.path.ilike(f'%{value}%')).all()
+            posts_query = Post.query.filter(Post.path.ilike(f'%{value}%'))
         else:
-            posts = (
-                Post.query.join(PostMetadata)
-                .filter(
-                    PostMetadata.key == key,
-                    PostMetadata.value == value,
-                )
-                .all()
+            posts_query = Post.query.join(PostMetadata).filter(
+                PostMetadata.key == key, PostMetadata.value == value
             )
     elif lat is not None and lon is not None and radius is not None:
-        posts = Post.query.all()
+        posts_query = Post.query
     else:
         # Provide example posts to illustrate expected input format
         examples = Post.query.limit(5).all()
+
+    posts = posts_query
+    if posts is not None:
+        for name in tag_names:
+            posts = posts.filter(Post.tags.any(Tag.name == name))
+        posts = posts.all()
 
     if posts is not None and lat is not None and lon is not None and radius is not None:
         posts = [
@@ -1265,6 +1312,9 @@ def search():
     return render_template(
         'search.html',
         posts=posts,
+        q=q,
+        tags=tags_raw,
+        all_tags=all_tags,
         key=key,
         value=value_raw,
         keys=meta_keys,
