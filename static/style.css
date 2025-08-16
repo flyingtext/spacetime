@@ -119,9 +119,22 @@ textarea::placeholder,
   background: var(--toc-bg-color);
   min-width: 200px;
 }
-.toc-container .toc { margin: 0; }
-.toc-container .toc ul { list-style: none; padding-left: 0; }
-.toc-container .toc a { text-decoration: none; }
+
+.toc-container.sticky-top {
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+
+.toc { margin: 0; }
+.toc ul { list-style: none; padding-left: 0; }
+.toc a { text-decoration: none; }
+
+@media (max-width: 767.98px) {
+  .toc-container {
+    display: none;
+  }
+}
 
 .alert {
   background-color: var(--nav-bg-color);

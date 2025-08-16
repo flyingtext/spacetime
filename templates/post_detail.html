@@ -7,10 +7,26 @@
 <div class="row">
   {% if toc %}
   <div class="col-md-3">
-    <nav class="toc-container">
-      <h2>{{ _('Contents') }}</h2>
-      {{ toc|safe }}
-    </nav>
+    <div class="d-none d-md-block">
+      <nav class="toc-container sticky-top">
+        <h2>{{ _('Contents') }}</h2>
+        {{ toc|safe }}
+      </nav>
+    </div>
+    <div class="d-md-none mb-3">
+      <button class="btn btn-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas">
+        {{ _('Contents') }}
+      </button>
+      <div class="offcanvas offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+        <div class="offcanvas-header">
+          <h5 class="offcanvas-title" id="tocOffcanvasLabel">{{ _('Contents') }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="{{ _('Close') }}"></button>
+        </div>
+        <div class="offcanvas-body">
+          {{ toc|safe }}
+        </div>
+      </div>
+    </div>
   </div>
   <div class="col-md-9">
     <div class="post-body">{{ html_body|safe }}</div>
