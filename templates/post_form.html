@@ -26,9 +26,15 @@
     <label for="path">{{ _('Path (e.g., docs/start)') }}</label>
     <input name="path" id="path" class="form-control" placeholder="{{ _('Path (e.g., docs/start)') }}" value="{{ post.path if post else prefill_path or '' }}">
   </div>
+  {% set selected_language = post.language if post else prefill_language or 'en' %}
   <div class="mb-3">
-    <label for="language">{{ _('Language code') }}</label>
-    <input name="language" id="language" class="form-control" placeholder="{{ _('Language code') }}" value="{{ post.language if post else prefill_language or 'en' }}">
+    <label>{{ _('Language code') }}</label>
+    {% for lang in languages %}
+    <div class="form-check">
+      <input class="form-check-input" type="radio" name="language" id="language-{{ lang }}" value="{{ lang }}" {% if lang == selected_language %}checked{% endif %}>
+      <label class="form-check-label" for="language-{{ lang }}">{{ lang }}</label>
+    </div>
+    {% endfor %}
   </div>
   <div class="mb-3">
     <label for="tags">{{ _('Comma separated tags') }}</label>
@@ -52,13 +58,13 @@
   </details>
   <details class="mb-3">
     <summary>{{ _('Post metadata (JSON)') }}</summary>
-    <textarea name="metadata" id="metadata" class="form-control d-none" placeholder="{{ _('Post metadata (JSON)') }}" rows="5" cols="50">{{ metadata if metadata else '' }}</textarea>
-    <div id="metadata_editor" style="height: 200px;"></div>
+    <textarea name="metadata" id="metadata" class="form-control form-control-sm d-none" placeholder="{{ _('Post metadata (JSON)') }}" rows="3" cols="40">{{ metadata if metadata else '' }}</textarea>
+    <div id="metadata_editor" style="height: 100px;"></div>
   </details>
   <details class="mb-3">
     <summary>{{ _('Your metadata (JSON)') }}</summary>
-    <textarea name="user_metadata" id="user_metadata" class="form-control d-none" placeholder="{{ _('Your metadata (JSON)') }}" rows="5" cols="50">{{ user_metadata if user_metadata else '' }}</textarea>
-    <div id="user_metadata_editor" style="height: 200px;"></div>
+    <textarea name="user_metadata" id="user_metadata" class="form-control form-control-sm d-none" placeholder="{{ _('Your metadata (JSON)') }}" rows="3" cols="40">{{ user_metadata if user_metadata else '' }}</textarea>
+    <div id="user_metadata_editor" style="height: 100px;"></div>
   </details>
   <div class="mb-3">
     <label for="comment">{{ _('Edit summary') }}</label>
@@ -127,14 +133,16 @@ function updatePreview() {
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({
       text: easyMDE.value(),
-      language: document.getElementById('language').value
+      language: document.querySelector('input[name="language"]:checked').value
     })
   }).then(r => r.json()).then(data => {
     previewEl.innerHTML = data.html || '';
   });
 }
 easyMDE.codemirror.on('change', updatePreview);
-document.getElementById('language').addEventListener('input', updatePreview);
+document.querySelectorAll('input[name="language"]').forEach(el => {
+  el.addEventListener('change', updatePreview);
+});
 updatePreview();
 
 const map = L.map('map').setView([0, 0], 2);

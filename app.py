@@ -779,6 +779,37 @@ def get_setting(key: str, default: str = '') -> str:
     return setting.value if setting else default
 
 
+def get_category_tags(language: str | None = None) -> list[tuple[str, str]]:
+    """Return list of category tag names and labels from settings.
+
+    The ``post_categories`` setting stores a JSON object mapping canonical tag
+    names to language-specific labels, e.g. ``{"news": {"en": "news", "es":
+    "noticias"}}``.  This helper returns a list of ``(slug, label)`` tuples for
+    the requested language. If no label exists for the language, the canonical
+    slug is used as the label. Older comma separated lists are also supported
+    and will return ``(tag, tag)`` tuples.
+    """
+
+    lang = language or str(get_locale())
+    raw = get_setting('post_categories', '')
+    if not raw:
+        return []
+    try:
+        mapping = json.loads(raw)
+    except json.JSONDecodeError:
+        return [(t.strip(), t.strip()) for t in raw.split(',') if t.strip()]
+
+    categories: list[tuple[str, str]] = []
+    if isinstance(mapping, dict):
+        for slug, translations in mapping.items():
+            if isinstance(translations, dict):
+                label = translations.get(lang) or slug
+            else:
+                label = slug
+            categories.append((slug, label))
+    return categories
+
+
 @app.context_processor
 def inject_settings():
     return {'get_setting': get_setting}
@@ -880,8 +911,24 @@ def load_user(user_id: str):
 
 @app.route('/posts')
 def all_posts():
-    posts = Post.query.order_by(Post.id.desc()).all()
-    return render_template('index.html', posts=posts)
+    tag_name = request.args.get('tag', '').strip()
+    tag = None
+    if tag_name:
+        tag = Tag.query.filter_by(name=tag_name).first_or_404()
+        posts = (
+            Post.query.join(Post.tags)
+            .filter(Tag.id == tag.id, Post.title != '', Post.body != '')
+            .order_by(Post.id.desc())
+            .all()
+        )
+    else:
+        posts = (
+            Post.query.filter(Post.title != '', Post.body != '')
+            .order_by(Post.id.desc())
+            .all()
+        )
+    categories = get_category_tags()
+    return render_template('index.html', posts=posts, tag=tag, categories=categories)
 
 
 @app.route('/')
@@ -1257,6 +1304,7 @@ def create_post():
         request_id=req_id,
         lat=None,
         lon=None,
+        languages=app.config['LANGUAGES'],
     )
 
 
@@ -1270,6 +1318,10 @@ def post_detail(post_id: int):
     if location:
         location_name = reverse_geocode_coords(location['lat'], location['lon'])
     geodata = extract_geodata(post_meta)
+    meta_no_coords = post_meta.copy()
+    if location:
+        for key in ('lat', 'lon', 'latitude', 'longitude', 'lng'):
+            meta_no_coords.pop(key, None)
     if warning:
         flash(_(warning))
     user_meta = {}
@@ -1298,7 +1350,7 @@ def post_detail(post_id: int):
         post=post,
         html_body=html_body,
         toc=toc,
-        metadata=post_meta,
+        metadata=meta_no_coords,
         location=location,
         location_name=location_name,
         geodata=geodata,
@@ -1396,6 +1448,10 @@ def document(language: str, doc_path: str):
     if location:
         location_name = reverse_geocode_coords(location['lat'], location['lon'])
     geodata = extract_geodata(post_meta)
+    meta_no_coords = post_meta.copy()
+    if location:
+        for key in ('lat', 'lon', 'latitude', 'longitude', 'lng'):
+            meta_no_coords.pop(key, None)
     if warning:
         flash(_(warning))
     user_meta = {}
@@ -1428,7 +1484,7 @@ def document(language: str, doc_path: str):
         html_body=html_body,
         toc=toc,
         translations=translations,
-        metadata=post_meta,
+        metadata=meta_no_coords,
         location=location,
         location_name=location_name,
         geodata=geodata,
@@ -1786,7 +1842,8 @@ def edit_post(post_id: int):
     user_meta_dict = {m.key: m.value for m in user_entries}
     user_meta = json.dumps(user_meta_dict) if user_meta_dict else ''
     return render_template('post_form.html', action=_('Edit'), post=post, tags=tags_str,
-                           metadata=post_meta, user_metadata=user_meta, lat=lat, lon=lon)
+                           metadata=post_meta, user_metadata=user_meta, lat=lat, lon=lon,
+                           languages=app.config['LANGUAGES'])
 
 
 @app.route('/post/<int:post_id>/history')
@@ -1886,6 +1943,7 @@ def settings():
     rss_enabled_val = get_setting('rss_enabled', 'false')
     rss_limit = get_setting('rss_limit', '20')
     head_tags = get_setting('head_tags', '')
+    category_tags = get_setting('post_categories', '')
     if request.method == 'POST':
 
         title = request.form.get('site_title', title).strip()
@@ -1894,6 +1952,14 @@ def settings():
         rss_enabled_val = 'rss_enabled' in request.form
         rss_limit = request.form.get('rss_limit', rss_limit).strip() or '20'
         head_tags = request.form.get('head_tags', head_tags).strip()
+        category_tags = request.form.get('post_categories', category_tags).strip()
+        # Validate category mapping JSON
+        try:
+            if category_tags:
+                json.loads(category_tags)
+        except json.JSONDecodeError:
+            flash(_('Invalid category JSON'))
+            return redirect(url_for('settings'))
 
         title_setting = Setting.query.filter_by(key='site_title').first()
         if title_setting:
@@ -1930,12 +1996,16 @@ def settings():
             limit_setting.value = rss_limit
         else:
             db.session.add(Setting(key='rss_limit', value=rss_limit))
-
         head_setting = Setting.query.filter_by(key='head_tags').first()
         if head_setting:
             head_setting.value = head_tags
         else:
             db.session.add(Setting(key='head_tags', value=head_tags))
+        cat_setting = Setting.query.filter_by(key='post_categories').first()
+        if cat_setting:
+            cat_setting.value = category_tags
+        else:
+            db.session.add(Setting(key='post_categories', value=category_tags))
 
         db.session.commit()
         flash(_('Settings updated.'))
@@ -1948,6 +2018,7 @@ def settings():
         rss_enabled=rss_enabled_val.lower() in ['true', '1', 'yes', 'on'],
         rss_limit=rss_limit,
         head_tags=head_tags,
+        post_categories=category_tags
     )
 
 
@@ -2013,7 +2084,8 @@ def tag_list():
 @app.route('/tag/<string:name>')
 def tag_filter(name: str):
     tag = Tag.query.filter_by(name=name).first_or_404()
-    return render_template('index.html', posts=tag.posts, tag=tag)
+    categories = get_category_tags()
+    return render_template('index.html', posts=tag.posts, tag=tag, categories=categories)
 
 
 @app.route('/search')
