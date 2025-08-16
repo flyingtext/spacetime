@@ -51,3 +51,29 @@ def test_delete_post_clears_content_and_preserves_revisions(client):
         revisions = Revision.query.filter_by(post_id=post_id).order_by(Revision.id).all()
         assert len(revisions) == 2
         assert revisions[-1].body == 'Body'
+
+
+def test_revision_diff_available_after_deletion(client):
+    resp = client.post(
+        '/post/new',
+        data={
+            'title': 'Title',
+            'body': 'Body',
+            'path': 'p',
+            'language': 'en',
+            'tags': '',
+            'metadata': '',
+            'user_metadata': '',
+        },
+    )
+    assert resp.status_code == 302
+    with app.app_context():
+        post = Post.query.first()
+        post_id = post.id
+        revision = Revision.query.filter_by(post_id=post_id).first()
+        rev_id = revision.id
+    resp = client.post(f'/post/{post_id}/delete')
+    assert resp.status_code == 302
+    resp = client.get(f'/post/{post_id}/diff/{rev_id}')
+    assert resp.status_code == 200
+    assert b'-Body' in resp.data
