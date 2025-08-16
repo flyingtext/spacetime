@@ -18,7 +18,7 @@ from markupsafe import Markup, escape
 import requests
 from habanero import Crossref
 import bibtexparser
-from sqlalchemy import func, event
+from sqlalchemy import func, event, or_
 from flask_babel import Babel, _
 
 app = Flask(__name__)
@@ -985,6 +985,21 @@ def revision_diff(post_id: int, rev_id: int):
         lineterm='',
     )
     return render_template('diff.html', post=post, revision=revision, diff='\n'.join(diff))
+
+
+@app.route('/admin/posts')
+@login_required
+def admin_posts():
+    if not current_user.is_admin():
+        abort(403)
+    page = request.args.get('page', 1, type=int)
+    q = request.args.get('q', '').strip()
+    query = Post.query
+    if q:
+        like = f"%{q}%"
+        query = query.filter(or_(Post.title.ilike(like), Post.path.ilike(like)))
+    pagination = query.order_by(Post.id.desc()).paginate(page=page, per_page=20, error_out=False)
+    return render_template('admin/posts.html', pagination=pagination, q=q)
 
 
 @app.route('/tags')
