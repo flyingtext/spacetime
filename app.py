@@ -476,39 +476,40 @@ def format_citation_mla(part: dict, doi: str | None = None) -> Markup:
 app.jinja_env.filters['mla_citation'] = format_citation_mla
 
 
-def extract_location(meta: dict) -> tuple[dict | None, str | None]:
-    """Extract location dict from metadata if within valid range."""
-    location = None
+def extract_locations(meta: dict) -> tuple[list[dict], str | None]:
+    """Extract all location dicts from metadata within valid range."""
+    locations: list[dict] = []
     warning = None
+
+    def add_location(lat, lon):
+        nonlocal warning
+        try:
+            lat_f = float(lat)
+            lon_f = float(lon)
+        except (TypeError, ValueError):
+            return
+        if -90 <= lat_f <= 90 and -180 <= lon_f <= 180:
+            locations.append({'lat': lat_f, 'lon': lon_f})
+        else:
+            warning = COORD_OUT_OF_RANGE_MSG
+
+    # Direct lat/lon fields
+    lat = meta.get('lat') or meta.get('latitude')
+    lon = meta.get('lon') or meta.get('lng') or meta.get('longitude')
+    if lat is not None and lon is not None:
+        add_location(lat, lon)
+
+    # Values that may contain coordinates or GeoJSON
     for value in meta.values():
-        if isinstance(value, dict):
-            lat = value.get('lat') or value.get('latitude')
-            lon = value.get('lon') or value.get('lng') or value.get('longitude')
-            if lat is not None and lon is not None:
-                try:
-                    lat_f = float(lat)
-                    lon_f = float(lon)
-                except (TypeError, ValueError):
-                    continue
-                if -90 <= lat_f <= 90 and -180 <= lon_f <= 180:
-                    location = {'lat': lat_f, 'lon': lon_f}
-                    break
-                warning = COORD_OUT_OF_RANGE_MSG
-    if location is None:
-        lat = meta.get('lat') or meta.get('latitude')
-        lon = meta.get('lon') or meta.get('lng') or meta.get('longitude')
-        if lat is not None and lon is not None:
-            try:
-                lat_f = float(lat)
-                lon_f = float(lon)
-            except (TypeError, ValueError):
-                pass
-            else:
-                if -90 <= lat_f <= 90 and -180 <= lon_f <= 180:
-                    location = {'lat': lat_f, 'lon': lon_f}
-                else:
-                    warning = COORD_OUT_OF_RANGE_MSG
-    return location, warning
+        for feat in parse_geodata(value):
+            geom = feat.get('geometry', {})
+            if geom.get('type') == 'Point':
+                coords = geom.get('coordinates', [])
+                if len(coords) == 2:
+                    lon_f, lat_f = coords
+                    locations.append({'lat': lat_f, 'lon': lon_f})
+
+    return locations, warning
 
 
 def extract_geodata(meta: dict) -> list[dict]:
@@ -1344,14 +1345,15 @@ def post_detail(post_id: int):
     )
     created_at = first_rev.created_at if first_rev else None
     post_meta = {m.key: m.value for m in post.metadata}
-    location, warning = extract_location(post_meta)
-    location_name = None
-    if location:
-        location_name = reverse_geocode_coords(location['lat'], location['lon'])
+    locations, warning = extract_locations(post_meta)
+    location_list = []
+    for loc in locations:
+        name = reverse_geocode_coords(loc['lat'], loc['lon'])
+        location_list.append({'lat': loc['lat'], 'lon': loc['lon'], 'name': name})
     geodata = extract_geodata(post_meta)
     meta_no_coords = post_meta.copy()
-    if location:
-        for key in ('lat', 'lon', 'latitude', 'longitude', 'lng'):
+    if locations:
+        for key in ('lat', 'lon', 'latitude', 'longitude', 'lng', 'locations'):
             meta_no_coords.pop(key, None)
     if warning:
         flash(_(warning))
@@ -1382,8 +1384,7 @@ def post_detail(post_id: int):
         html_body=html_body,
         toc=toc,
         metadata=meta_no_coords,
-        location=location,
-        location_name=location_name,
+        locations=location_list,
         geodata=geodata,
         user_metadata=user_meta,
         citations=citations,
@@ -1481,14 +1482,15 @@ def document(language: str, doc_path: str):
     )
     created_at = first_rev.created_at if first_rev else None
     post_meta = {m.key: m.value for m in post.metadata}
-    location, warning = extract_location(post_meta)
-    location_name = None
-    if location:
-        location_name = reverse_geocode_coords(location['lat'], location['lon'])
+    locations, warning = extract_locations(post_meta)
+    location_list = []
+    for loc in locations:
+        name = reverse_geocode_coords(loc['lat'], loc['lon'])
+        location_list.append({'lat': loc['lat'], 'lon': loc['lon'], 'name': name})
     geodata = extract_geodata(post_meta)
     meta_no_coords = post_meta.copy()
-    if location:
-        for key in ('lat', 'lon', 'latitude', 'longitude', 'lng'):
+    if locations:
+        for key in ('lat', 'lon', 'latitude', 'longitude', 'lng', 'locations'):
             meta_no_coords.pop(key, None)
     if warning:
         flash(_(warning))
@@ -1523,8 +1525,7 @@ def document(language: str, doc_path: str):
         toc=toc,
         translations=translations,
         metadata=meta_no_coords,
-        location=location,
-        location_name=location_name,
+        locations=location_list,
         geodata=geodata,
         user_metadata=user_meta,
         citations=citations,

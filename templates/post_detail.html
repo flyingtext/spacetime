@@ -18,21 +18,23 @@
       <nav class="toc-container sticky-top">
         <h2>{{ _('Contents') }}</h2>
         {{ toc|safe }}
-        {% if metadata or location or geodata %}
+        {% if metadata or locations or geodata %}
         <h3>{{ _('Common') }}</h3>
         <table class="table table-sm">
           <tbody>
             {% for key, value in metadata.items() %}
             <tr><th scope="row">{{ key }}</th><td>{{ value|format_metadata }}</td></tr>
             {% endfor %}
-            {% if location %}
-            <tr>
-              <th scope="row">{{ _('Location') }}</th>
-              <td>
-                {% if location_name %}{{ location_name }} {% endif %}
-                <span class="text-muted">({{ location.lat }}, {{ location.lon }})</span>
-              </td>
-            </tr>
+            {% if locations %}
+              {% for loc in locations %}
+              <tr>
+                <th scope="row">{{ _('Location') }}</th>
+                <td>
+                  {% if loc.name %}{{ loc.name }} {% endif %}
+                  <span class="text-muted">({{ loc.lat }}, {{ loc.lon }})</span>
+                </td>
+              </tr>
+              {% endfor %}
             {% endif %}
             {% if geodata %}
             <tr>
@@ -66,21 +68,23 @@
         </div>
         <div class="offcanvas-body">
           {{ toc|safe }}
-          {% if metadata or location or geodata %}
+          {% if metadata or locations or geodata %}
           <h3>{{ _('Common') }}</h3>
           <table class="table table-sm">
             <tbody>
               {% for key, value in metadata.items() %}
               <tr><th scope="row">{{ key }}</th><td>{{ value|format_metadata }}</td></tr>
               {% endfor %}
-              {% if location %}
-              <tr>
-                <th scope="row">{{ _('Location') }}</th>
-                <td>
-                  {% if location_name %}{{ location_name }} {% endif %}
-                  <span class="text-muted">({{ location.lat }}, {{ location.lon }})</span>
-                </td>
-              </tr>
+              {% if locations %}
+                {% for loc in locations %}
+                <tr>
+                  <th scope="row">{{ _('Location') }}</th>
+                  <td>
+                    {% if loc.name %}{{ loc.name }} {% endif %}
+                    <span class="text-muted">({{ loc.lat }}, {{ loc.lon }})</span>
+                  </td>
+                </tr>
+                {% endfor %}
               {% endif %}
               {% if geodata %}
               <tr>
@@ -119,24 +123,26 @@
     <a href="{{ url_for('tag_filter', name=tag.name) }}">{{ tag.name }}</a>
   {% endfor %}
 </p>
-{% if not toc and (metadata or user_metadata or location or geodata) %}
+{% if not toc and (metadata or user_metadata or locations or geodata) %}
 <section>
   <h2>{{ _('Metadata') }}</h2>
-  {% if metadata or location or geodata %}
+  {% if metadata or locations or geodata %}
   <h3>{{ _('Common') }}</h3>
   <table class="table table-sm">
     <tbody>
       {% for key, value in metadata.items() %}
       <tr><th scope="row">{{ key }}</th><td>{{ value|format_metadata }}</td></tr>
       {% endfor %}
-      {% if location %}
-      <tr>
-        <th scope="row">{{ _('Location') }}</th>
-        <td>
-          {% if location_name %}{{ location_name }} {% endif %}
-          <span class="text-muted">({{ location.lat }}, {{ location.lon }})</span>
-        </td>
-      </tr>
+      {% if locations %}
+        {% for loc in locations %}
+        <tr>
+          <th scope="row">{{ _('Location') }}</th>
+          <td>
+            {% if loc.name %}{{ loc.name }} {% endif %}
+            <span class="text-muted">({{ loc.lat }}, {{ loc.lon }})</span>
+          </td>
+        </tr>
+        {% endfor %}
       {% endif %}
       {% if geodata %}
       <tr>

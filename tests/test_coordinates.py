@@ -7,7 +7,7 @@ import pytest
 import app
 from app import (
     format_metadata_value,
-    extract_location,
+    extract_locations,
     extract_geodata,
     COORD_OUT_OF_RANGE_MSG,
 )
@@ -39,18 +39,25 @@ def test_format_metadata_value_list_points():
     assert '#map' in result
 
 
-def test_extract_location_valid():
+def test_extract_locations_valid():
     meta = {'location': {'lat': '45', 'lon': '-75'}}
-    loc, warning = extract_location(meta)
-    assert loc == {'lat': 45.0, 'lon': -75.0}
+    locs, warning = extract_locations(meta)
+    assert locs == [{'lat': 45.0, 'lon': -75.0}]
     assert warning is None
 
 
-def test_extract_location_invalid():
+def test_extract_locations_invalid():
     meta = {'lat': '100', 'lon': '50'}
-    loc, warning = extract_location(meta)
-    assert loc is None
+    locs, warning = extract_locations(meta)
+    assert locs == []
     assert warning == COORD_OUT_OF_RANGE_MSG
+
+
+def test_extract_locations_multiple():
+    meta = {'points': [{'lat': '10', 'lon': '20'}, {'lat': 30, 'lon': 40}]}
+    locs, warning = extract_locations(meta)
+    assert warning is None
+    assert locs == [{'lat': 10.0, 'lon': 20.0}, {'lat': 30.0, 'lon': 40.0}]
 
 
 def test_extract_geodata_from_list():
