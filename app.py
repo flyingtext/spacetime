@@ -399,6 +399,27 @@ def tag_filter(name: str):
     return render_template('index.html', posts=tag.posts, tag=tag)
 
 
+@app.route('/search')
+def search():
+    key = request.args.get('key', '').strip()
+    value_raw = request.args.get('value', '').strip()
+    posts = None
+    if key and value_raw:
+        try:
+            value = json.loads(value_raw)
+        except ValueError:
+            value = value_raw
+        posts = (
+            Post.query.join(PostMetadata)
+            .filter(
+                PostMetadata.key == key,
+                PostMetadata.value == value,
+            )
+            .all()
+        )
+    return render_template('search.html', posts=posts, key=key, value=value_raw)
+
+
 if __name__ == '__main__':
     with app.app_context():
         PostMetadata.__table__.create(bind=db.engine, checkfirst=True)

@@ -9,6 +9,7 @@
 <nav>
   <a href="{{ url_for('index') }}">Home</a> |
   <a href="{{ url_for('tag_list') }}">Tags</a> |
+  <a href="{{ url_for('search') }}">Search</a> |
   {% if current_user.is_authenticated %}
     <a href="{{ url_for('create_post') }}">New Post</a> |
     <span>{{ current_user.username }}</span> |
