@@ -5,28 +5,56 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
 <h1>{{ _('%(action)s Post', action=action) }}</h1>
 <form method="post">
-  <p><input name="title" placeholder="{{ _('Title') }}" value="{{ post.title if post else prefill_title or '' }}"></p>
-  <p><textarea name="body" rows="10" cols="50">{{ post.body if post else prefill_body or '' }}</textarea></p>
+  <div class="mb-3">
+    <label for="title">{{ _('Title') }}</label>
+    <input name="title" id="title" class="form-control" placeholder="{{ _('Title') }}" value="{{ post.title if post else prefill_title or '' }}">
+  </div>
+  <div class="mb-3">
+    <label for="body">{{ _('Body') }}</label>
+    <textarea name="body" id="body" class="form-control" rows="10" cols="50">{{ post.body if post else prefill_body or '' }}</textarea>
+  </div>
   <div id="preview"></div>
   {% if post %}
-  <p><button type="button" id="suggest-citations">{{ _('Suggest Citation') }}</button></p>
+  <div class="mb-3">
+    <button type="button" id="suggest-citations">{{ _('Suggest Citation') }}</button>
+  </div>
   <div id="citation-results"></div>
   {% endif %}
-  <p><input name="path" placeholder="{{ _('Path (e.g., docs/start)') }}" value="{{ post.path if post else '' }}"></p>
-  <p><input name="language" placeholder="{{ _('Language code') }}" value="{{ post.language if post else 'en' }}"></p>
-  <p><input name="tags" placeholder="{{ _('Comma separated tags') }}" value="{{ tags if tags else '' }}"></p>
-  <p>
-    <input id="address-input" placeholder="{{ _('Address') }}">
+  <div class="mb-3">
+    <label for="path">{{ _('Path (e.g., docs/start)') }}</label>
+    <input name="path" id="path" class="form-control" placeholder="{{ _('Path (e.g., docs/start)') }}" value="{{ post.path if post else '' }}">
+  </div>
+  <div class="mb-3">
+    <label for="language">{{ _('Language code') }}</label>
+    <input name="language" id="language" class="form-control" placeholder="{{ _('Language code') }}" value="{{ post.language if post else 'en' }}">
+  </div>
+  <div class="mb-3">
+    <label for="tags">{{ _('Comma separated tags') }}</label>
+    <input name="tags" id="tags" class="form-control" placeholder="{{ _('Comma separated tags') }}" value="{{ tags if tags else '' }}">
+  </div>
+  <div class="mb-3">
+    <label for="address-input">{{ _('Address') }}</label>
+    <input id="address-input" class="form-control" placeholder="{{ _('Address') }}">
+  </div>
+  <div class="mb-3">
     <button type="button" id="find-coordinates">{{ _('Find Coordinates') }}</button>
-  </p>
+  </div>
   <div id="map" style="height:300px"></div>
   <input type="hidden" name="lat" id="lat" value="{{ lat or '' }}">
   <input type="hidden" name="lon" id="lon" value="{{ lon or '' }}">
   <p id="geocode-error" style="color:red"></p>
-  <p><textarea name="metadata" placeholder="{{ _('Post metadata (JSON)') }}" rows="5" cols="50">{{ metadata if metadata else '' }}</textarea></p>
-  <p><textarea name="user_metadata" placeholder="{{ _('Your metadata (JSON)') }}" rows="5" cols="50">{{ user_metadata if user_metadata else '' }}</textarea></p>
+  <div class="mb-3">
+    <label for="metadata">{{ _('Post metadata (JSON)') }}</label>
+    <textarea name="metadata" id="metadata" class="form-control" placeholder="{{ _('Post metadata (JSON)') }}" rows="5" cols="50">{{ metadata if metadata else '' }}</textarea>
+  </div>
+  <div class="mb-3">
+    <label for="user_metadata">{{ _('Your metadata (JSON)') }}</label>
+    <textarea name="user_metadata" id="user_metadata" class="form-control" placeholder="{{ _('Your metadata (JSON)') }}" rows="5" cols="50">{{ user_metadata if user_metadata else '' }}</textarea>
+  </div>
   {% if request_id %}<input type="hidden" name="request_id" value="{{ request_id }}">{% endif %}
-  <p><button type="submit">{{ action }}</button></p>
+  <div class="mb-3">
+    <button type="submit" class="btn btn-primary">{{ action }}</button>
+  </div>
 </form>
 {% if post and current_user.is_authenticated and (current_user.id == post.author_id or current_user.is_admin()) %}
 <form action="{{ url_for('delete_post', post_id=post.id) }}" method="post" style="margin-top:1em">
