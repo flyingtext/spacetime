@@ -13,6 +13,13 @@
   <p><input name="path" placeholder="{{ _('Path (e.g., docs/start)') }}" value="{{ post.path if post else '' }}"></p>
   <p><input name="language" placeholder="{{ _('Language code') }}" value="{{ post.language if post else 'en' }}"></p>
   <p><input name="tags" placeholder="{{ _('Comma separated tags') }}" value="{{ tags if tags else '' }}"></p>
+  <p>
+    <input id="address-input" placeholder="{{ _('Address') }}">
+    <button type="button" id="find-coordinates">{{ _('Find Coordinates') }}</button>
+  </p>
+  <input type="hidden" name="lat" id="lat">
+  <input type="hidden" name="lon" id="lon">
+  <p id="geocode-error" style="color:red"></p>
   <p><textarea name="metadata" placeholder="{{ _('Post metadata (JSON)') }}" rows="5" cols="50">{{ metadata if metadata else '' }}</textarea></p>
   <p><textarea name="user_metadata" placeholder="{{ _('Your metadata (JSON)') }}" rows="5" cols="50">{{ user_metadata if user_metadata else '' }}</textarea></p>
   {% if request_id %}<input type="hidden" name="request_id" value="{{ request_id }}">{% endif %}
@@ -37,6 +44,24 @@ function updatePreview() {
 }
 bodyInput.addEventListener('input', updatePreview);
 updatePreview();
+
+document.getElementById('find-coordinates').addEventListener('click', function () {
+  const addr = document.getElementById('address-input').value;
+  fetch('{{ url_for('geocode') }}?address=' + encodeURIComponent(addr))
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) {
+        document.getElementById('geocode-error').textContent = data.error;
+      } else {
+        document.getElementById('geocode-error').textContent = '';
+        document.getElementById('lat').value = data.lat;
+        document.getElementById('lon').value = data.lon;
+      }
+    })
+    .catch(() => {
+      document.getElementById('geocode-error').textContent = '{{ _('Geocoding failed') }}';
+    });
+});
 </script>
 {% if post %}
 <script>
@@ -80,3 +105,4 @@ document.getElementById('suggest-citations').addEventListener('click', function 
 </script>
 {% endif %}
 {% endblock %}
+
