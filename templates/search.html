@@ -3,7 +3,14 @@
 {% block content %}
 <h1>{{ _('Search Posts') }}</h1>
 <form method="get">
-  <label>{{ _('Key') }}: <input type="text" name="key" value="{{ key }}"></label>
+  <label>{{ _('Key') }}:
+    <select name="key">
+      <option value="">--</option>
+      {% for k in keys %}
+        <option value="{{ k }}" {% if k == key %}selected{% endif %}>{{ k }}</option>
+      {% endfor %}
+    </select>
+  </label>
   <label>{{ _('Value') }}: <input type="text" name="value" value="{{ value }}"></label>
   <button type="submit">{{ _('Search') }}</button>
 </form>
@@ -15,5 +22,15 @@
     <li>{{ _('No posts found.') }}</li>
   {% endfor %}
 </ul>
+{% else %}
+  <p>{{ _('Select a key and enter a value. You can also choose "title" or "path" to search by post fields.') }}</p>
+  {% if examples %}
+  <p>{{ _('Example posts:') }}</p>
+  <ul>
+    {% for post in examples %}
+      <li>{{ post.title }} - {{ post.path }} ({{ post.language }})</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
 {% endif %}
 {% endblock %}
