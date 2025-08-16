@@ -4,11 +4,20 @@ import os
 import re
 import markdown
 from datetime import datetime, timezone
-from xml.etree.ElementTree import Element
+from xml.etree.ElementTree import Element, SubElement, tostring
 from urllib.parse import urlparse, quote
 
-from flask import (Flask, render_template, redirect, url_for, request, flash,
-                   abort, jsonify)
+from flask import (
+    Flask,
+    render_template,
+    redirect,
+    url_for,
+    request,
+    flash,
+    abort,
+    jsonify,
+    Response,
+)
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (LoginManager, login_user, login_required,
                          logout_user, current_user, UserMixin)
@@ -879,6 +888,48 @@ def index():
             return redirect(url_for('document', language=language, doc_path=home_path))
     posts = Post.query.order_by(Post.id.desc()).all()
     return render_template('index.html', posts=posts)
+
+
+@app.route('/rss.xml')
+def rss_feed():
+    if get_setting('rss_enabled', 'false').lower() not in (
+        'true',
+        '1',
+        'yes',
+        'on',
+    ):
+        abort(404)
+    try:
+        limit = int(get_setting('rss_limit', '20'))
+    except ValueError:
+        limit = 20
+    posts = Post.query.order_by(Post.id.desc()).limit(limit).all()
+    root = Element('rss', version='2.0')
+    channel = SubElement(root, 'channel')
+    title = get_setting('site_title', 'Spacetime')
+    SubElement(channel, 'title').text = title
+    SubElement(channel, 'link').text = request.url_root.rstrip('/')
+    SubElement(channel, 'description').text = f'RSS feed for {title}'
+    for post in posts:
+        item = SubElement(channel, 'item')
+        SubElement(item, 'title').text = post.title
+        SubElement(item, 'link').text = url_for(
+            'document', language=post.language, doc_path=post.path, _external=True
+        )
+        SubElement(item, 'guid').text = f"{post.language}:{post.path}"
+        rev = (
+            Revision.query.filter_by(post_id=post.id)
+            .order_by(Revision.created_at.desc())
+            .first()
+        )
+        if rev:
+            pub = rev.created_at.replace(tzinfo=timezone.utc).strftime(
+                '%a, %d %b %Y %H:%M:%S GMT'
+            )
+            SubElement(item, 'pubDate').text = pub
+        SubElement(item, 'description').text = post.body
+    xml = tostring(root, encoding='utf-8')
+    return Response(xml, mimetype='application/rss+xml')
 
 
 @app.route('/recent')
@@ -1806,11 +1857,15 @@ def settings():
     title = get_setting('site_title', '')
     home_page = get_setting('home_page_path', '')
     timezone_value = get_setting('timezone', 'UTC')
+    rss_enabled_val = get_setting('rss_enabled', 'false')
+    rss_limit = get_setting('rss_limit', '20')
     if request.method == 'POST':
 
         title = request.form.get('site_title', title).strip()
         home_page = request.form.get('home_page_path', home_page).strip()
         timezone_value = request.form.get('timezone', timezone_value).strip() or 'UTC'
+        rss_enabled_val = 'rss_enabled' in request.form
+        rss_limit = request.form.get('rss_limit', rss_limit).strip() or '20'
 
         title_setting = Setting.query.filter_by(key='site_title').first()
         if title_setting:
@@ -1835,10 +1890,30 @@ def settings():
             else:
                 db.session.add(Setting(key='timezone', value=timezone_value))
 
+        rss_setting = Setting.query.filter_by(key='rss_enabled').first()
+        rss_value = 'true' if rss_enabled_val else 'false'
+        if rss_setting:
+            rss_setting.value = rss_value
+        else:
+            db.session.add(Setting(key='rss_enabled', value=rss_value))
+
+        limit_setting = Setting.query.filter_by(key='rss_limit').first()
+        if limit_setting:
+            limit_setting.value = rss_limit
+        else:
+            db.session.add(Setting(key='rss_limit', value=rss_limit))
+
         db.session.commit()
         flash(_('Settings updated.'))
         return redirect(url_for('settings'))
-    return render_template('settings.html', site_title=title, home_page_path=home_page, timezone=timezone_value)
+    return render_template(
+        'settings.html',
+        site_title=title,
+        home_page_path=home_page,
+        timezone=timezone_value,
+        rss_enabled=rss_enabled_val.lower() in ['true', '1', 'yes', 'on'],
+        rss_limit=rss_limit,
+    )
 
 
 @app.route('/tags')
