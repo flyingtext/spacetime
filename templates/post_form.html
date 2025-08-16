@@ -81,31 +81,33 @@ formEl.addEventListener('keydown', function (e) {
   }
 });
 
-const metaTextarea = document.getElementById('metadata');
-const metaEditor = new JSONEditor(document.getElementById('metadata_editor'), {mode: 'code'});
+let metaEditor;
 try {
+  const metaTextarea = document.getElementById('metadata');
+  metaEditor = new JSONEditor(document.getElementById('metadata_editor'), {mode: 'code'});
+  let initialMeta = {};
   if (metaTextarea.value.trim()) {
-    metaEditor.set(JSON.parse(metaTextarea.value));
+    try { initialMeta = JSON.parse(metaTextarea.value); } catch (e) {}
   }
-} catch (e) {}
-metaEditor.on('change', () => {
-  try {
-    metaTextarea.value = JSON.stringify(metaEditor.get());
-  } catch (e) {}
-});
+  metaEditor.set(initialMeta);
+  metaEditor.on('change', () => {
+    try { metaTextarea.value = JSON.stringify(metaEditor.get()); } catch (e) {}
+  });
+} catch (e) { console.error(e); }
 
-const userMetaTextarea = document.getElementById('user_metadata');
-const userMetaEditor = new JSONEditor(document.getElementById('user_metadata_editor'), {mode: 'code'});
+let userMetaEditor;
 try {
+  const userMetaTextarea = document.getElementById('user_metadata');
+  userMetaEditor = new JSONEditor(document.getElementById('user_metadata_editor'), {mode: 'code'});
+  let initialUserMeta = {};
   if (userMetaTextarea.value.trim()) {
-    userMetaEditor.set(JSON.parse(userMetaTextarea.value));
+    try { initialUserMeta = JSON.parse(userMetaTextarea.value); } catch (e) {}
   }
-} catch (e) {}
-userMetaEditor.on('change', () => {
-  try {
-    userMetaTextarea.value = JSON.stringify(userMetaEditor.get());
-  } catch (e) {}
-});
+  userMetaEditor.set(initialUserMeta);
+  userMetaEditor.on('change', () => {
+    try { userMetaTextarea.value = JSON.stringify(userMetaEditor.get()); } catch (e) {}
+  });
+} catch (e) { console.error(e); }
 
 function updatePreview() {
   fetch('{{ url_for('markdown_preview') }}', {
@@ -130,6 +132,7 @@ const drawControl = new L.Control.Draw({
   draw: { polygon:false, polyline:false, rectangle:false, circle:false, circlemarker:false }
 });
 map.addControl(drawControl);
+setTimeout(() => map.invalidateSize(), 0);
 
 const latField = document.getElementById('lat');
 const lonField = document.getElementById('lon');
@@ -174,39 +177,44 @@ document.getElementById('find-coordinates').addEventListener('click', function (
 <script>
 document.getElementById('suggest-citations').addEventListener('click', function () {
   const body = document.querySelector('textarea[name="body"]').value;
-  fetch('{{ url_for('citation_suggest') }}', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({text: body})
-  }).then(r => r.json()).then(data => {
-    const container = document.getElementById('citation-results');
-    container.innerHTML = '';
-    if (!data.results) return;
-    for (const [sentence, cands] of Object.entries(data.results)) {
-      const section = document.createElement('div');
-      const p = document.createElement('p');
-      p.textContent = sentence;
-      section.appendChild(p);
-      cands.forEach(c => {
-        const pre = document.createElement('pre');
-        pre.textContent = c.text;
-        const btn = document.createElement('button');
-        btn.textContent = '{{ _('Save') }}';
-        btn.addEventListener('click', () => {
-          const fd = new FormData();
-          fd.append('citation_text', c.text);
-          fetch('{{ url_for('new_citation', post_id=post.id) }}', {
-            method: 'POST',
-            body: fd
-          }).then(() => { btn.disabled = true; });
+  const lines = body.split('\n').filter(l => l.trim());
+  const container = document.getElementById('citation-results');
+  container.innerHTML = '';
+  lines.forEach(line => {
+    const lineSection = document.createElement('div');
+    container.appendChild(lineSection);
+    fetch('{{ url_for('citation_suggest_line') }}', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({line})
+    }).then(r => r.json()).then(data => {
+      if (!data.results) return;
+      for (const [sentence, cands] of Object.entries(data.results)) {
+        const section = document.createElement('div');
+        const p = document.createElement('p');
+        p.textContent = sentence;
+        section.appendChild(p);
+        cands.forEach(c => {
+          const pre = document.createElement('pre');
+          pre.textContent = c.text;
+          const btn = document.createElement('button');
+          btn.textContent = '{{ _('Save') }}';
+          btn.addEventListener('click', () => {
+            const fd = new FormData();
+            fd.append('citation_text', c.text);
+            fetch('{{ url_for('new_citation', post_id=post.id) }}', {
+              method: 'POST',
+              body: fd
+            }).then(() => { btn.disabled = true; });
+          });
+          const div = document.createElement('div');
+          div.appendChild(pre);
+          div.appendChild(btn);
+          section.appendChild(div);
         });
-        const div = document.createElement('div');
-        div.appendChild(pre);
-        div.appendChild(btn);
-        section.appendChild(div);
-      });
-      container.appendChild(section);
-    }
+        lineSection.appendChild(section);
+      }
+    });
   });
 });
 </script>

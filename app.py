@@ -1164,6 +1164,21 @@ def citation_suggest():
     return {'results': suggest_citations(text)}
 
 
+@app.route('/citation/suggest_line', methods=['POST'])
+def citation_suggest_line():
+    """Return citation suggestions for a single line of text.
+
+    The client can call this endpoint repeatedly for each line so that
+    suggestions are displayed incrementally instead of waiting for the entire
+    body to be processed at once.
+    """
+    data = request.get_json() or {}
+    line = data.get('line', '').strip()
+    if not line:
+        return {'error': _('Text is required')}, 400
+    return {'results': suggest_citations(line)}
+
+
 @app.route('/citation/fetch', methods=['POST'])
 def fetch_citation():
     data = request.get_json() or {}
