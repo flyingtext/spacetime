@@ -33,5 +33,34 @@
   {% endif %}
 {% endwith %}
 {% block content %}{% endblock %}
+<script src="https://cdn.socket.io/4.7.4/socket.io.min.js" crossorigin="anonymous"></script>
+<script>
+  const socket = io();
+  const currentUserId = {{ current_user.id if current_user.is_authenticated else 'null' }};
+  const notifUrl = "{{ url_for('notifications') }}";
+
+  socket.on('new_post', data => {
+    const list = document.getElementById('post-list');
+    if (list) {
+      const item = document.createElement('li');
+      const link = document.createElement('a');
+      link.href = "/docs/" + data.language + "/" + data.path;
+      link.textContent = data.title;
+      item.appendChild(link);
+      list.prepend(item);
+    }
+  });
+
+  socket.on('new_notification', data => {
+    if (currentUserId && data.user_id === currentUserId) {
+      const link = document.querySelector('a[href="' + notifUrl + '"]');
+      if (link) {
+        const match = link.textContent.match(/\((\d+)\)/);
+        let count = match ? parseInt(match[1]) + 1 : 1;
+        link.textContent = `Notifications (${count})`;
+      }
+    }
+  });
+</script>
 </body>
 </html>

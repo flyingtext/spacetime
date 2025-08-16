@@ -10,6 +10,7 @@ from flask import (Flask, render_template, redirect, url_for, request, flash,
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (LoginManager, login_user, login_required,
                          logout_user, current_user, UserMixin)
+from flask_socketio import SocketIO
 from werkzeug.security import generate_password_hash, check_password_hash
 from markdown.extensions import Extension
 from markdown.inlinepatterns import InlineProcessor
@@ -17,7 +18,7 @@ from markupsafe import Markup, escape
 import requests
 from habanero import Crossref
 import bibtexparser
-from sqlalchemy import func
+from sqlalchemy import func, event
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dev-secret'
@@ -28,6 +29,7 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
+socketio = SocketIO(app)
 cr = Crossref()
 
 
@@ -235,6 +237,26 @@ class Notification(db.Model):
     read_at = db.Column(db.DateTime, nullable=True)
 
     user = db.relationship('User', backref='notifications')
+
+
+@event.listens_for(Post, 'after_insert')
+def emit_new_post(mapper, connection, target):
+    socketio.emit(
+        'new_post',
+        {
+            'id': target.id,
+            'title': target.title,
+            'language': target.language,
+            'path': target.path,
+        },
+    )
+
+
+@event.listens_for(Notification, 'after_insert')
+def emit_new_notification(mapper, connection, target):
+    socketio.emit(
+        'new_notification', {'user_id': target.user_id, 'message': target.message}
+    )
 
 
 class PostCitation(db.Model):
@@ -884,4 +906,4 @@ if __name__ == '__main__':
         PostCitation.__table__.create(bind=db.engine, checkfirst=True)
         UserPostCitation.__table__.create(bind=db.engine, checkfirst=True)
         db.create_all()
-    app.run(debug=True)
+    socketio.run(app, debug=True)
