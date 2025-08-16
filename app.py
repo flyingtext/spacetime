@@ -392,6 +392,18 @@ class WikiLinkExtension(Extension):
         )
 
 
+# Markup rendering helpers
+def render_markdown(text: str, base_url: str = '/docs/', with_toc: bool = False) -> tuple[str, str]:
+    """Return HTML and optional TOC from Markdown text with wiki links."""
+    extensions: list[Extension | str] = [WikiLinkExtension(base_url=base_url)]
+    if with_toc:
+        md = markdown.Markdown(extensions=extensions + ['toc'])
+        html = md.convert(text or '')
+        return html, md.toc
+    html = markdown.markdown(text or '', extensions=extensions)
+    return html, ''
+
+
 # Roles allowed to create or edit posts
 POST_EDITOR_ROLES = {'editor', 'admin'}
 
@@ -877,11 +889,7 @@ def post_detail(post_id: int):
             .all()
         )
     base = url_for('document', language=post.language, doc_path='')
-    md = markdown.Markdown(
-        extensions=[WikiLinkExtension(base_url=base), 'toc']
-    )
-    html_body = md.convert(post.body)
-    toc = md.toc
+    html_body, toc = render_markdown(post.body, base, with_toc=True)
     return render_template(
         'post_detail.html',
         post=post,
@@ -977,9 +985,7 @@ def document(language: str, doc_path: str):
             .all()
         )
     base = url_for('document', language=language, doc_path='')
-    html_body = markdown.markdown(
-        post.body, extensions=[WikiLinkExtension(base_url=base)]
-    )
+    html_body, _ = render_markdown(post.body, base)
     translations = Post.query.filter(
         Post.path == doc_path, Post.language != language
     ).all()
@@ -999,8 +1005,9 @@ def document(language: str, doc_path: str):
 def markdown_preview():
     data = request.get_json() or {}
     text = data.get('text', '')
-    html = Markup(markdown.markdown(escape(text)))
-    return {'html': str(html)}
+    escaped = escape(text)
+    html, _ = render_markdown(str(escaped))
+    return {'html': str(Markup(html))}
 
 
 @app.route('/og')
