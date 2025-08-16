@@ -299,16 +299,22 @@ def post_detail(post_id: int):
     post = Post.query.get_or_404(post_id)
     post_meta = {m.key: m.value for m in post.metadata}
     user_meta = {}
+    citations = post.citations
+    user_citations = []
     if current_user.is_authenticated:
         user_entries = UserPostMetadata.query.filter_by(
             post_id=post.id, user_id=current_user.id
         ).all()
         user_meta = {m.key: m.value for m in user_entries}
+        user_citations = UserPostCitation.query.filter_by(
+            post_id=post.id, user_id=current_user.id
+        ).all()
     base = url_for('document', language=post.language, doc_path='')
     html_body = markdown.markdown(post.body,
                                   extensions=[WikiLinkExtension(base_url=base)])
     return render_template('post_detail.html', post=post, html_body=html_body,
-                           metadata=post_meta, user_metadata=user_meta)
+                           metadata=post_meta, user_metadata=user_meta,
+                           citations=citations, user_citations=user_citations)
 
 
 @app.route('/docs/<string:language>/<path:doc_path>')
@@ -316,18 +322,94 @@ def document(language: str, doc_path: str):
     post = Post.query.filter_by(language=language, path=doc_path).first_or_404()
     post_meta = {m.key: m.value for m in post.metadata}
     user_meta = {}
+    citations = post.citations
+    user_citations = []
     if current_user.is_authenticated:
         user_entries = UserPostMetadata.query.filter_by(
             post_id=post.id, user_id=current_user.id
         ).all()
         user_meta = {m.key: m.value for m in user_entries}
+        user_citations = UserPostCitation.query.filter_by(
+            post_id=post.id, user_id=current_user.id
+        ).all()
     base = url_for('document', language=language, doc_path='')
     html_body = markdown.markdown(post.body,
                                   extensions=[WikiLinkExtension(base_url=base)])
     translations = Post.query.filter(Post.path == doc_path, Post.language != language).all()
     return render_template('post_detail.html', post=post, html_body=html_body,
                            translations=translations, metadata=post_meta,
-                           user_metadata=user_meta)
+                           user_metadata=user_meta, citations=citations,
+                           user_citations=user_citations)
+
+
+@app.route('/post/<int:post_id>/citation/new', methods=['POST'])
+@login_required
+def new_citation(post_id: int):
+    post = Post.query.get_or_404(post_id)
+    part_raw = request.form.get('citation_part', '').strip()
+    text = request.form.get('citation_text', '').strip()
+    if not part_raw or not text:
+        flash('All fields are required.')
+        return redirect(url_for('post_detail', post_id=post.id))
+    try:
+        part = json.loads(part_raw)
+    except ValueError:
+        flash('Invalid citation part JSON')
+        return redirect(url_for('post_detail', post_id=post.id))
+    if current_user.id == post.author_id or current_user.is_admin():
+        citation = PostCitation(post=post, user=current_user,
+                                citation_part=part, citation_text=text)
+    else:
+        citation = UserPostCitation(post=post, user=current_user,
+                                    citation_part=part, citation_text=text)
+    db.session.add(citation)
+    db.session.commit()
+    return redirect(url_for('post_detail', post_id=post.id))
+
+
+@app.route('/post/<int:post_id>/citation/<int:cid>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_citation(post_id: int, cid: int):
+    post = Post.query.get_or_404(post_id)
+    citation = PostCitation.query.filter_by(id=cid, post_id=post.id).first()
+    if citation is None:
+        citation = UserPostCitation.query.filter_by(id=cid, post_id=post.id).first_or_404()
+    if current_user.id != citation.user_id and not current_user.is_admin():
+        flash('Permission denied.')
+        return redirect(url_for('post_detail', post_id=post.id))
+    if request.method == 'POST':
+        part_raw = request.form.get('citation_part', '').strip()
+        text = request.form.get('citation_text', '').strip()
+        if not part_raw or not text:
+            flash('All fields are required.')
+            return redirect(url_for('edit_citation', post_id=post.id, cid=cid))
+        try:
+            part = json.loads(part_raw)
+        except ValueError:
+            flash('Invalid citation part JSON')
+            return redirect(url_for('edit_citation', post_id=post.id, cid=cid))
+        citation.citation_part = part
+        citation.citation_text = text
+        db.session.commit()
+        return redirect(url_for('post_detail', post_id=post.id))
+    part_json = json.dumps(citation.citation_part)
+    return render_template('citation_form.html', action='Edit', citation=citation,
+                           citation_part=part_json, post=post)
+
+
+@app.route('/post/<int:post_id>/citation/<int:cid>/delete', methods=['POST'])
+@login_required
+def delete_citation(post_id: int, cid: int):
+    post = Post.query.get_or_404(post_id)
+    citation = PostCitation.query.filter_by(id=cid, post_id=post.id).first()
+    if citation is None:
+        citation = UserPostCitation.query.filter_by(id=cid, post_id=post.id).first_or_404()
+    if current_user.id != citation.user_id and not current_user.is_admin():
+        flash('Permission denied.')
+        return redirect(url_for('post_detail', post_id=post.id))
+    db.session.delete(citation)
+    db.session.commit()
+    return redirect(url_for('post_detail', post_id=post.id))
 
 
 @app.route('/post/<int:post_id>/edit', methods=['GET', 'POST'])

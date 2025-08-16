@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ action }} Citation{% endblock %}
+{% block content %}
+<h1>{{ action }} Citation for {{ post.title }}</h1>
+<form method="post">
+  <p><textarea name="citation_part" placeholder="Citation part (JSON)" rows="5" cols="50">{{ citation_part if citation_part else '' }}</textarea></p>
+  <p><textarea name="citation_text" placeholder="Citation text" rows="5" cols="50">{{ citation.citation_text if citation else '' }}</textarea></p>
+  <p><button type="submit">{{ action }}</button></p>
+</form>
+{% endblock %}
