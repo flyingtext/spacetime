@@ -1,4 +1,4 @@
-# spacetime
+# Spacetime
 
 Simple wiki-style bulletin board built with Flask and SQLite. Supports user registration and login, Markdown posts, global tagging, hierarchical paths, and multilingual linking with per-user permissions.
 
