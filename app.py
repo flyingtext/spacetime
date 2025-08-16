@@ -573,6 +573,22 @@ class Redirect(db.Model):
     )
 
 
+class Setting(db.Model):
+    key = db.Column(db.String(50), primary_key=True)
+    value = db.Column(db.String(200), nullable=True)
+
+def get_setting(key: str, default: str = '') -> str:
+    try:
+        setting = Setting.query.filter_by(key=key).first()
+    except Exception:
+        return default
+    return setting.value if setting else default
+
+
+@app.context_processor
+def inject_settings():
+    return {'get_setting': get_setting}
+
 @event.listens_for(Post, 'after_insert')
 def emit_new_post(mapper, connection, target):
     socketio.emit(
@@ -1412,6 +1428,26 @@ def admin_posts():
         query = query.filter(or_(Post.title.ilike(like), Post.path.ilike(like)))
     pagination = query.order_by(Post.id.desc()).paginate(page=page, per_page=20, error_out=False)
     return render_template('admin/posts.html', pagination=pagination, q=q)
+
+
+@app.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings():
+    if not current_user.is_admin():
+        abort(403)
+    title = get_setting('site_title', '')
+    if request.method == 'POST':
+        title = request.form.get('site_title', '').strip()
+        setting = Setting.query.filter_by(key='site_title').first()
+        if setting:
+            setting.value = title
+        else:
+            setting = Setting(key='site_title', value=title)
+            db.session.add(setting)
+        db.session.commit()
+        flash(_('Settings updated.'))
+        return redirect(url_for('settings'))
+    return render_template('settings.html', site_title=title)
 
 
 @app.route('/tags')

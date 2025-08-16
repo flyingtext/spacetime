@@ -3,42 +3,53 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}{{ _('Wiki Board') }}{% endblock %}</title>
+  <title>{% block title %}{{ get_setting('site_title', _('Wiki Board')) }}{% endblock %}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 <nav class="navbar navbar-expand-lg">
   <div class="container-fluid">
-    <a class="navbar-brand" href="{{ url_for('index') }}">{{ _('Home') }}</a>
+    <a class="navbar-brand" href="{{ url_for('index') }}">{{ get_setting('site_title', _('Home')) }}</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
-      <div class="navbar-nav me-auto">
-        <a class="nav-link" href="{{ url_for('tag_list') }}">{{ _('Tags') }}</a>
-        <a class="nav-link" href="{{ url_for('search') }}">{{ _('Search') }}</a>
-        <a class="nav-link" href="{{ url_for('recent_changes') }}">{{ _('Recent changes') }}</a>
-        <a class="nav-link" href="{{ url_for('citation_stats') }}">{{ _('Citation Stats') }}</a>
-        <a class="nav-link" href="{{ url_for('requested_posts') }}">{{ _('Requested Posts') }}</a>
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('tag_list') }}">{{ _('Tags') }}</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('recent_changes') }}">{{ _('Recent changes') }}</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('citation_stats') }}">{{ _('Citation Stats') }}</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('requested_posts') }}">{{ _('Requested Posts') }}</a></li>
         {% if current_user.is_authenticated and current_user.is_admin() %}
-          <a class="nav-link" href="{{ url_for('admin_posts') }}">{{ _('Manage Posts') }}</a>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_posts') }}">{{ _('Manage Posts') }}</a></li>
         {% endif %}
-      </div>
-      <div class="navbar-nav">
+      </ul>
+      <form class="d-flex me-3" role="search" action="{{ url_for('search') }}" method="get">
+        <input class="form-control" type="search" placeholder="{{ _('Search') }}" aria-label="{{ _('Search') }}" name="q">
+      </form>
+      <ul class="navbar-nav mb-2 mb-lg-0">
         {% if current_user.is_authenticated %}
           {% set unread = current_user.notifications | selectattr('read_at', 'equalto', None) | list | length %}
-          <a class="nav-link" href="{{ url_for('notifications') }}">{{ _('Notifications') }}{% if unread %} ({{ unread }}){% endif %}</a>
-          <a class="nav-link" href="{{ url_for('create_post') }}">{{ _('New Post') }}</a>
-          <a class="nav-link" href="{{ url_for('request_post') }}">{{ _('Request Post') }}</a>
-          <a class="nav-link" href="{{ url_for('profile', username=current_user.username) }}">{{ current_user.username }}</a>
-          <a class="nav-link" href="{{ url_for('logout') }}">{{ _('Logout') }}</a>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">{{ current_user.username }}</a>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="{{ url_for('notifications') }}">{{ _('Notifications') }}{% if unread %} ({{ unread }}){% endif %}</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('create_post') }}">{{ _('New Post') }}</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('request_post') }}">{{ _('Request Post') }}</a></li>
+              {% if current_user.is_admin() %}
+              <li><a class="dropdown-item" href="{{ url_for('settings') }}">{{ _('Settings') }}</a></li>
+              {% endif %}
+              <li><a class="dropdown-item" href="{{ url_for('profile', username=current_user.username) }}">{{ _('Profile') }}</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{{ url_for('logout') }}">{{ _('Logout') }}</a></li>
+            </ul>
+          </li>
         {% else %}
-          <a class="nav-link" href="{{ url_for('login') }}">{{ _('Login') }}</a>
-          <a class="nav-link" href="{{ url_for('register') }}">{{ _('Register') }}</a>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">{{ _('Login') }}</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('register') }}">{{ _('Register') }}</a></li>
         {% endif %}
-        <button id="theme-toggle" class="btn btn-outline-secondary ms-2" type="button" aria-label="{{ _('Toggle theme') }}">🌓</button>
-      </div>
+        <li class="nav-item"><button id="theme-toggle" class="btn btn-outline-secondary ms-2" type="button" aria-label="{{ _('Toggle theme') }}">🌓</button></li>
+      </ul>
     </div>
   </div>
 </nav>

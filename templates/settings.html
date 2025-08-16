@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Settings') }}{% endblock %}
+{% block content %}
+<h2>{{ _('Global Settings') }}</h2>
+<form method="post">
+  <div class="mb-3">
+    <label for="site_title" class="form-label">{{ _('Site title') }}</label>
+    <input type="text" id="site_title" name="site_title" class="form-control" value="{{ site_title }}">
+  </div>
+  <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
+</form>
+{% endblock %}
