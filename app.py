@@ -660,6 +660,19 @@ def unwatch_post(post_id: int):
     return redirect(url_for('post_detail', post_id=post.id))
 
 
+@app.route('/post/<int:post_id>/delete', methods=['POST'])
+@login_required
+def delete_post(post_id: int):
+    post = Post.query.get_or_404(post_id)
+    if post.author_id != current_user.id and not current_user.is_admin():
+        flash(_('Permission denied.'))
+        return redirect(url_for('post_detail', post_id=post.id))
+    db.session.delete(post)
+    db.session.commit()
+    flash(_('Post deleted.'))
+    return redirect(url_for('index'))
+
+
 @app.route('/docs/<string:language>/<path:doc_path>')
 def document(language: str, doc_path: str):
     post = Post.query.filter_by(language=language, path=doc_path).first_or_404()
