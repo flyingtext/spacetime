@@ -3,14 +3,22 @@
 {% block content %}
 <h1>{{ post.title }} ({{ post.language }})</h1>
 <p><small>{{ post.path }}</small></p>
-<div class="post-layout">
+<div class="row">
   {% if toc %}
-  <nav class="toc-container">
-    <h2>{{ _('Contents') }}</h2>
-    {{ toc|safe }}
-  </nav>
+  <div class="col-md-3">
+    <nav class="toc-container">
+      <h2>{{ _('Contents') }}</h2>
+      {{ toc|safe }}
+    </nav>
+  </div>
+  <div class="col-md-9">
+    <div class="post-body">{{ html_body|safe }}</div>
+  </div>
+  {% else %}
+  <div class="col-md-12">
+    <div class="post-body">{{ html_body|safe }}</div>
+  </div>
   {% endif %}
-  <div class="post-body">{{ html_body|safe }}</div>
 </div>
 <p>{{ _('Tags') }}:
   {% for tag in post.tags %}

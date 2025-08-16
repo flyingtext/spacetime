@@ -62,7 +62,6 @@ textarea {
   border: 1px solid var(--border-color);
 }
 
-.post-layout { display: flex; }
 .toc-container {
   border: 1px solid var(--border-color);
   padding: 10px;
@@ -73,7 +72,6 @@ textarea {
 .toc-container .toc { margin: 0; }
 .toc-container .toc ul { list-style: none; padding-left: 0; }
 .toc-container .toc a { text-decoration: none; }
-.post-body { flex: 1; }
 
 #map {
   height: 400px;
