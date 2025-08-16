@@ -1031,6 +1031,8 @@ def create_post():
             except ValueError:
                 flash(_('Invalid metadata JSON'))
                 return redirect(url_for('create_post'))
+            # Prevent manual setting of view counts via metadata
+            meta_dict.pop('views', None)
 
         lat = request.form.get('lat')
         lon = request.form.get('lon')
@@ -1502,6 +1504,8 @@ def edit_post(post_id: int):
             except ValueError:
                 flash(_('Invalid metadata JSON'))
                 return redirect(url_for('edit_post', post_id=post.id))
+            # Prevent tampering with view counts through metadata
+            meta_dict.pop('views', None)
 
         lat = request.form.get('lat')
         lon = request.form.get('lon')
@@ -1509,7 +1513,10 @@ def edit_post(post_id: int):
             meta_dict['lat'] = lat
             meta_dict['lon'] = lon
 
-        PostMetadata.query.filter_by(post_id=post.id).delete()
+        PostMetadata.query.filter(
+            PostMetadata.post_id == post.id,
+            PostMetadata.key != 'views'
+        ).delete(synchronize_session=False)
         for key, value in meta_dict.items():
             db.session.add(PostMetadata(post=post, key=key, value=value))
 
