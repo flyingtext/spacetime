@@ -69,6 +69,14 @@
 {% endwith %}
 {% block content %}{% endblock %}
 </div>
+<footer class="footer mt-5 py-3">
+  <div class="container text-center">
+    <p class="mb-1">&copy; {{ get_setting('site_title', _('Wiki Board')) }}</p>
+    <a href="{{ url_for('index') }}">{{ _('Home') }}</a>
+    |
+    <a href="{{ url_for('tag_list') }}">{{ _('Tags') }}</a>
+  </div>
+</footer>
 <div class="modal fade" id="ogModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
