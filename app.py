@@ -779,9 +779,35 @@ def get_setting(key: str, default: str = '') -> str:
     return setting.value if setting else default
 
 
-def get_category_tags() -> list[str]:
-    """Return list of category tag names from settings."""
-    return [t.strip() for t in get_setting('post_categories', '').split(',') if t.strip()]
+def get_category_tags(language: str | None = None) -> list[tuple[str, str]]:
+    """Return list of category tag names and labels from settings.
+
+    The ``post_categories`` setting stores a JSON object mapping canonical tag
+    names to language-specific labels, e.g. ``{"news": {"en": "news", "es":
+    "noticias"}}``.  This helper returns a list of ``(slug, label)`` tuples for
+    the requested language. If no label exists for the language, the canonical
+    slug is used as the label. Older comma separated lists are also supported
+    and will return ``(tag, tag)`` tuples.
+    """
+
+    lang = language or str(get_locale())
+    raw = get_setting('post_categories', '')
+    if not raw:
+        return []
+    try:
+        mapping = json.loads(raw)
+    except json.JSONDecodeError:
+        return [(t.strip(), t.strip()) for t in raw.split(',') if t.strip()]
+
+    categories: list[tuple[str, str]] = []
+    if isinstance(mapping, dict):
+        for slug, translations in mapping.items():
+            if isinstance(translations, dict):
+                label = translations.get(lang) or slug
+            else:
+                label = slug
+            categories.append((slug, label))
+    return categories
 
 
 @app.context_processor
@@ -1916,6 +1942,13 @@ def settings():
         rss_enabled_val = 'rss_enabled' in request.form
         rss_limit = request.form.get('rss_limit', rss_limit).strip() or '20'
         category_tags = request.form.get('post_categories', category_tags).strip()
+        # Validate category mapping JSON
+        try:
+            if category_tags:
+                json.loads(category_tags)
+        except json.JSONDecodeError:
+            flash(_('Invalid category JSON'))
+            return redirect(url_for('settings'))
 
         title_setting = Setting.query.filter_by(key='site_title').first()
         if title_setting:
