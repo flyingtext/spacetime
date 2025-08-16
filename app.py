@@ -1663,10 +1663,9 @@ def edit_post(post_id: int):
 
         for key, value in meta_dict.items():
             db.session.add(PostMetadata(post=post, key=key, value=value))
-        if current_views:
-            db.session.add(current_views)
 
-
+        if not current_views:
+            db.session.add(PostMetadata(post=post, key='views', value='0'))
         if user_metadata_json:
             try:
                 user_meta_dict = json.loads(user_metadata_json)

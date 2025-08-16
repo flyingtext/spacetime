@@ -243,3 +243,12 @@ footer {
 footer a {
   margin: 0 0.5rem;
 }
+
+/* Ensure Leaflet map text remains readable in dark mode */
+.leaflet-container {
+  color: #000;
+}
+
+.leaflet-container a {
+  color: var(--link-color);
+}
