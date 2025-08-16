@@ -36,12 +36,13 @@ def client():
         db.drop_all()
 
 
-def test_tags_page_includes_locations(client):
+def test_tags_page_includes_locations_and_post_links(client):
     resp = client.get('/tags')
     data = resp.get_data(as_text=True)
     assert 'tagLocations' in data
     assert '"lat": 10.0' in data
     assert '/tag/t1' in data
+    assert '/docs/en/p1' in data
 
 
 def test_tags_page_uses_metadata_for_locations(client):

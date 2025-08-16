@@ -60,21 +60,25 @@ const markers = L.markerClusterGroup({
     opacity: 1
   }
 });
-tagLocations.forEach(t => {
-  const marker = L.marker([t.lat, t.lon], {icon: createIcon(t.name)});
-  marker.on('click', () => {
-    const info = tagPosts.find(tp => tp.tag === t.name);
-    if(info){
-      let html = `<h3>${t.name}</h3>`;
-      info.posts.forEach(p => {
-        html += `<div class="mb-2"><a href="${p.url}">${p.title}</a><div class="small text-muted">${p.author} · ${p.views} views</div><p class="small mb-0">${p.snippet}</p></div>`;
-      });
-      infoContent.innerHTML = html;
-      infoDiv.style.display = 'block';
-    }
+  tagLocations.forEach(t => {
+    const marker = L.marker([t.lat, t.lon], {icon: createIcon(t.name)});
+    marker.on('click', () => {
+      const info = tagPosts.find(tp => tp.tag === t.name);
+      if(info){
+        let html = `<h3><a href="${t.url}">${t.name}</a></h3>`;
+        info.posts.forEach(p => {
+          html += `<a href="${p.url}" class="d-block mb-2">`;
+          html += `<div>${p.title}</div>`;
+          html += `<div class="small text-muted">${p.author} · ${p.views} views</div>`;
+          html += `<p class="small mb-0">${p.snippet}</p>`;
+          html += `</a>`;
+        });
+        infoContent.innerHTML = html;
+        infoDiv.style.display = 'block';
+      }
+    });
+    markers.addLayer(marker);
   });
-  markers.addLayer(marker);
-});
 map.addLayer(markers);
 </script>
 {% endblock %}
