@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Recent changes') }}{% endblock %}
+{% block content %}
+<h1>{{ _('Recent changes') }}</h1>
+<ul>
+  {% for rev in revisions %}
+    <li>{{ rev.created_at }} - <a href="{{ url_for('document', language=rev.language, doc_path=rev.path) }}">{{ rev.title }}</a> {{ _('by') }} <a href="{{ url_for('profile', username=rev.user.username) }}">{{ rev.user.username }}</a></li>
+  {% else %}
+    <li>{{ _('No revisions yet.') }}</li>
+  {% endfor %}
+</ul>
+{% endblock %}
