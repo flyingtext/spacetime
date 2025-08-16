@@ -486,6 +486,28 @@ def extract_location(meta: dict) -> tuple[dict | None, str | None]:
 def extract_geodata(meta: dict) -> list[dict]:
     """Collect GeoJSON features from all metadata values."""
     geoms: list[dict] = []
+    # Handle direct lat/lon pairs in ``meta``
+    lat = meta.get('lat') or meta.get('latitude')
+    lon = meta.get('lon') or meta.get('lng') or meta.get('longitude')
+    if lat is not None and lon is not None:
+        try:
+            lat_f = float(lat)
+            lon_f = float(lon)
+        except (TypeError, ValueError):
+            pass
+        else:
+            if -90 <= lat_f <= 90 and -180 <= lon_f <= 180:
+                geoms.append(
+                    {
+                        'type': 'Feature',
+                        'geometry': {
+                            'type': 'Point',
+                            'coordinates': [lon_f, lat_f],
+                        },
+                        'properties': {},
+                    }
+                )
+
     for value in meta.values():
         geoms.extend(parse_geodata(value))
     return geoms
@@ -543,6 +565,8 @@ def render_markdown(text: str, base_url: str = '/docs/', with_toc: bool = False)
     if with_toc:
         md = markdown.Markdown(extensions=extensions + ['toc'])
         html = md.convert(text or '')
+        if not getattr(md, 'toc_tokens', None):
+            return html, ''
         return html, md.toc
     html = markdown.markdown(text or '', extensions=extensions)
     return html, ''
@@ -1639,10 +1663,9 @@ def edit_post(post_id: int):
 
         for key, value in meta_dict.items():
             db.session.add(PostMetadata(post=post, key=key, value=value))
+
         if not current_views:
             db.session.add(PostMetadata(post=post, key='views', value='0'))
-
-
         if user_metadata_json:
             try:
                 user_meta_dict = json.loads(user_metadata_json)

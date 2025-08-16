@@ -58,3 +58,11 @@ def test_extract_geodata_from_list():
     geoms = extract_geodata(meta)
     assert len(geoms) == 2
     assert all(g['geometry']['type'] == 'Point' for g in geoms)
+
+
+def test_extract_geodata_from_lat_lon_fields():
+    meta = {'lat': 10, 'lon': 20}
+    geoms = extract_geodata(meta)
+    assert len(geoms) == 1
+    assert geoms[0]['geometry']['type'] == 'Point'
+    assert geoms[0]['geometry']['coordinates'] == [20.0, 10.0]
