@@ -99,6 +99,10 @@
     <a href="{{ url_for('index') }}">{{ _('Home') }}</a>
     |
     <a href="{{ url_for('tag_list') }}">{{ _('Tags') }}</a>
+    {% if get_setting('rss_enabled', 'false').lower() in ['true', '1', 'yes', 'on'] %}
+    |
+    <a href="{{ url_for('rss_feed') }}">RSS</a>
+    {% endif %}
   </div>
 </footer>
 <div class="modal fade" id="ogModal" tabindex="-1" aria-hidden="true">
