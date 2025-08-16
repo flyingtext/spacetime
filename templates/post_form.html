@@ -22,12 +22,7 @@
       </div>
     </div>
   </div>
-  {% if post %}
-  <div class="mb-3">
-    <button type="button" id="suggest-citations" class="btn btn-secondary">{{ _('Suggest Citation') }}</button>
-  </div>
-  <div id="citation-results"></div>
-  {% endif %}
+  
   <div class="mb-3">
     <label for="path">{{ _('Path (e.g., docs/start)') }}</label>
     <input name="path" id="path" class="form-control" placeholder="{{ _('Path (e.g., docs/start)') }}" value="{{ post.path if post else prefill_path or '' }}">
@@ -220,51 +215,5 @@ document.getElementById('find-coordinates').addEventListener('click', function (
     });
 });
 </script>
-{% if post %}
-<script>
-document.getElementById('suggest-citations').addEventListener('click', function () {
-  const body = easyMDE.value();
-  const lines = body.split('\n').filter(l => l.trim());
-  const container = document.getElementById('citation-results');
-  container.innerHTML = '';
-  lines.forEach(line => {
-    const lineSection = document.createElement('div');
-    container.appendChild(lineSection);
-    fetch('{{ url_for('citation_suggest_line') }}', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({line})
-    }).then(r => r.json()).then(data => {
-      if (!data.results) return;
-      for (const [sentence, cands] of Object.entries(data.results)) {
-        const section = document.createElement('div');
-        const p = document.createElement('p');
-        p.textContent = sentence;
-        section.appendChild(p);
-        cands.forEach(c => {
-          const pre = document.createElement('pre');
-          pre.textContent = c.text;
-          const btn = document.createElement('button');
-          btn.textContent = '{{ _('Save') }}';
-          btn.addEventListener('click', () => {
-            const fd = new FormData();
-            fd.append('citation_text', c.text);
-            fetch('{{ url_for('new_citation', post_id=post.id) }}', {
-              method: 'POST',
-              body: fd
-            }).then(() => { btn.disabled = true; });
-          });
-          const div = document.createElement('div');
-          div.appendChild(pre);
-          div.appendChild(btn);
-          section.appendChild(div);
-        });
-        lineSection.appendChild(section);
-      }
-    });
-  });
-});
-</script>
-{% endif %}
 {% endblock %}
 
