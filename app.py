@@ -22,6 +22,7 @@ import bibtexparser
 from sqlalchemy import func, event, or_
 from flask_babel import Babel, _
 from dotenv import load_dotenv
+from geopy.geocoders import Nominatim
 
 load_dotenv()
 
@@ -48,6 +49,8 @@ socketio = SocketIO(app)
 cr = Crossref()
 
 babel = Babel(app)
+
+geolocator = Nominatim(user_agent="spacetime_app")
 
 
 def select_locale():
@@ -153,6 +156,19 @@ def fetch_open_graph(url: str) -> dict[str, str]:
 def map_link(lat: float, lon: float) -> str:
     """Return an OpenStreetMap link for given coordinates."""
     return f"https://www.openstreetmap.org/?mlat={lat}&mlon={lon}#map=12/{lat}/{lon}"
+
+
+def geocode_address(address: str) -> tuple[float, float] | None:
+    """Return ``(latitude, longitude)`` for ``address`` using Nominatim."""
+    if not address:
+        return None
+    try:
+        location = geolocator.geocode(address)
+    except Exception:
+        return None
+    if not location:
+        return None
+    return location.latitude, location.longitude
 
 
 COORD_OUT_OF_RANGE_MSG = 'Coordinates out of range'
@@ -846,6 +862,16 @@ def markdown_preview():
 def og_preview():
     url = request.args.get('url', '').strip()
     return jsonify(fetch_open_graph(url))
+
+
+@app.get('/geocode')
+def geocode():
+    address = request.args.get('address', '').strip()
+    coords = geocode_address(address)
+    if not coords:
+        return jsonify({'error': _('Geocoding failed')}), 400
+    lat, lon = coords
+    return jsonify({'lat': lat, 'lon': lon})
 
 
 @app.route('/citation/suggest', methods=['POST'])
