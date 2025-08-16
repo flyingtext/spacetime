@@ -27,7 +27,7 @@ from dotenv import load_dotenv
 from geopy.geocoders import Nominatim
 from geopy.distance import distance as geopy_distance
 from langdetect import detect, DetectorFactory, LangDetectException
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 load_dotenv()
 DetectorFactory.seed = 0
@@ -738,7 +738,10 @@ def recent_changes():
         Revision.query.order_by(Revision.created_at.desc()).limit(20).all()
     )
     tz_name = get_setting('timezone', 'UTC') or 'UTC'
-    tzinfo = ZoneInfo(tz_name)
+    try:
+        tzinfo = ZoneInfo(tz_name)
+    except ZoneInfoNotFoundError:
+        tzinfo = timezone.utc
     for rev in revisions:
         dt = rev.created_at.replace(tzinfo=timezone.utc).astimezone(tzinfo)
         rev.display_time = dt.strftime('%Y-%m-%d %H:%M %Z')
