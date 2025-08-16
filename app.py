@@ -1257,6 +1257,7 @@ def create_post():
         request_id=req_id,
         lat=None,
         lon=None,
+        languages=app.config['LANGUAGES'],
     )
 
 
@@ -1786,7 +1787,8 @@ def edit_post(post_id: int):
     user_meta_dict = {m.key: m.value for m in user_entries}
     user_meta = json.dumps(user_meta_dict) if user_meta_dict else ''
     return render_template('post_form.html', action=_('Edit'), post=post, tags=tags_str,
-                           metadata=post_meta, user_metadata=user_meta, lat=lat, lon=lon)
+                           metadata=post_meta, user_metadata=user_meta, lat=lat, lon=lon,
+                           languages=app.config['LANGUAGES'])
 
 
 @app.route('/post/<int:post_id>/history')
