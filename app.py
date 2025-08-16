@@ -190,6 +190,10 @@ class WikiLinkExtension(Extension):
         )
 
 
+# Roles allowed to create or edit posts
+POST_EDITOR_ROLES = {'editor', 'admin'}
+
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -206,6 +210,9 @@ class User(UserMixin, db.Model):
 
     def is_admin(self) -> bool:
         return self.role == 'admin'
+
+    def can_edit_posts(self) -> bool:
+        return self.role in POST_EDITOR_ROLES
 
 
 class Post(db.Model):
@@ -495,6 +502,8 @@ def requested_posts():
 @app.route('/post/new', methods=['GET', 'POST'])
 @login_required
 def create_post():
+    if not current_user.can_edit_posts():
+        abort(403)
     if request.method == 'POST':
         title = request.form['title']
         body = request.form['body']
@@ -879,9 +888,8 @@ def delete_citation(post_id: int, cid: int):
 @login_required
 def edit_post(post_id: int):
     post = Post.query.get_or_404(post_id)
-    if current_user.id != post.author_id and not current_user.is_admin():
-        flash(_('Permission denied.'))
-        return redirect(url_for('document', language=post.language, doc_path=post.path))
+    if not current_user.can_edit_posts():
+        abort(403)
     if request.method == 'POST':
         rev = Revision(post=post, user=current_user, title=post.title,
                        body=post.body, path=post.path, language=post.language)
