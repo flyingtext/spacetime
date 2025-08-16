@@ -65,3 +65,21 @@ def test_geocode_cache_failure(monkeypatch):
     result = app.geocode_address('another address')
     assert result == (5.0, 6.0)
     assert calls['count'] == 1
+
+
+def test_geocode_address_cache_bytes(monkeypatch):
+    cache = DummyCache()
+    cache.setex('byte addr', 60, b'3.0,4.0')
+    monkeypatch.setattr(app, 'geocode_cache', cache)
+
+    calls = {'count': 0}
+
+    def fake_geocode(_):
+        calls['count'] += 1
+        return None
+
+    monkeypatch.setattr(app.geolocator, 'geocode', fake_geocode)
+
+    result = app.geocode_address('byte addr')
+    assert result == (3.0, 4.0)
+    assert calls['count'] == 0

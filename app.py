@@ -203,6 +203,8 @@ def geocode_address(address: str) -> tuple[float, float] | None:
         try:
             cached = geocode_cache.get(address)
             if cached:
+                if isinstance(cached, bytes):
+                    cached = cached.decode()
                 lat_str, lon_str = cached.split(",")
                 return float(lat_str), float(lon_str)
         except Exception:
