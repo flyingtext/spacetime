@@ -198,6 +198,19 @@ pre {
   }
 }
 
+#spinner-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 2000;
+}
+
 .tag-card {
   border: 1px solid var(--border-color);
   background-color: var(--nav-bg-color);

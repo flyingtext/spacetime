@@ -486,6 +486,28 @@ def extract_location(meta: dict) -> tuple[dict | None, str | None]:
 def extract_geodata(meta: dict) -> list[dict]:
     """Collect GeoJSON features from all metadata values."""
     geoms: list[dict] = []
+    # Handle direct lat/lon pairs in ``meta``
+    lat = meta.get('lat') or meta.get('latitude')
+    lon = meta.get('lon') or meta.get('lng') or meta.get('longitude')
+    if lat is not None and lon is not None:
+        try:
+            lat_f = float(lat)
+            lon_f = float(lon)
+        except (TypeError, ValueError):
+            pass
+        else:
+            if -90 <= lat_f <= 90 and -180 <= lon_f <= 180:
+                geoms.append(
+                    {
+                        'type': 'Feature',
+                        'geometry': {
+                            'type': 'Point',
+                            'coordinates': [lon_f, lat_f],
+                        },
+                        'properties': {},
+                    }
+                )
+
     for value in meta.values():
         geoms.extend(parse_geodata(value))
     return geoms
@@ -1641,8 +1663,6 @@ def edit_post(post_id: int):
 
         for key, value in meta_dict.items():
             db.session.add(PostMetadata(post=post, key=key, value=value))
-
-        # Preserve existing view counts without creating duplicate metadata entries
         if current_views:
             db.session.add(current_views)
 

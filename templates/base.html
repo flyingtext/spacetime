@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}{{ get_setting('site_title', _('Wiki Board')) }}{% endblock %}</title>
+  <title>{% block title %}{{ get_setting('site_title', _('Spacetime')) }}{% endblock %}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -11,7 +11,7 @@
 <body>
 <nav class="navbar navbar-expand-lg">
   <div class="container-fluid">
-    <a class="navbar-brand" href="{{ url_for('index') }}">{{ get_setting('site_title', _('Home')) }}</a>
+    <a class="navbar-brand" href="{{ url_for('index') }}">{{ get_setting('site_title', _('Spacetime')) }}</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -59,6 +59,30 @@
     </div>
   </div>
 </nav>
+<div id="spinner-overlay">
+  <div class="spinner-border text-primary" role="status">
+    <span class="visually-hidden">{{ _('Loading...') }}</span>
+  </div>
+</div>
+<script>
+  (function () {
+    const spinnerOverlay = document.getElementById('spinner-overlay');
+    function showSpinner() { spinnerOverlay.style.display = 'flex'; }
+    function hideSpinner() { spinnerOverlay.style.display = 'none'; }
+    let spinnerCount = 0;
+    const originalFetch = window.fetch;
+    window.fetch = function (...args) {
+      spinnerCount++;
+      showSpinner();
+      return originalFetch(...args).finally(() => {
+        spinnerCount--;
+        if (spinnerCount === 0) hideSpinner();
+      });
+    };
+    window.showSpinner = showSpinner;
+    window.hideSpinner = hideSpinner;
+  })();
+</script>
 <div class="container mt-4">
 {% with messages = get_flashed_messages() %}
   {% if messages %}
@@ -71,7 +95,7 @@
 </div>
 <footer class="footer mt-5 py-3">
   <div class="container text-center">
-    <p class="mb-1">&copy; {{ get_setting('site_title', _('Wiki Board')) }}</p>
+    <p class="mb-1">&copy; {{ get_setting('site_title', _('Spacetime')) }}</p>
     <a href="{{ url_for('index') }}">{{ _('Home') }}</a>
     |
     <a href="{{ url_for('tag_list') }}">{{ _('Tags') }}</a>
