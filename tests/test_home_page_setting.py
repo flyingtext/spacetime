@@ -32,3 +32,22 @@ def test_home_page_redirect(client):
     resp = client.get('/')
     assert resp.status_code == 302
     assert resp.headers['Location'].endswith('/docs/en/home')
+
+
+def test_updating_home_page_path_preserves_site_title(client):
+    with app.app_context():
+        admin = User(username='admin', role='admin')
+        admin.set_password('pw')
+        db.session.add(admin)
+        db.session.add(Setting(key='site_title', value='Original Title'))
+        db.session.add(Setting(key='home_page_path', value='home'))
+        db.session.commit()
+
+    client.post('/login', data={'username': 'admin', 'password': 'pw'})
+
+    resp = client.post('/settings', data={'home_page_path': 'new-home'})
+    assert resp.status_code == 302
+
+    with app.app_context():
+        assert Setting.query.filter_by(key='site_title').first().value == 'Original Title'
+        assert Setting.query.filter_by(key='home_page_path').first().value == 'new-home'
