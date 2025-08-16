@@ -6,6 +6,7 @@
   --border-color: #cccccc;
   --toc-bg-color: #f9f9f9;
   --link-color: #0d6efd;
+  --visited-link-color: #551a8b;
   --bs-body-bg: var(--background-color);
   --bs-body-color: var(--text-color);
   --bs-border-color: var(--border-color);
@@ -39,6 +40,7 @@ html, body {
   --border-color: #444444;
   --toc-bg-color: #2c2c2c;
   --link-color: #66bfff;
+  --visited-link-color: #bb86fc;
   --navbar-toggler-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.55)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 
@@ -97,6 +99,19 @@ nav a {
 
 a {
   color: var(--link-color);
+  text-decoration-color: var(--link-color);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+a:visited {
+  color: var(--visited-link-color);
+  text-decoration-color: var(--visited-link-color);
+}
+
+a:hover,
+a:focus {
+  text-decoration-thickness: 3px;
 }
 
 textarea,
