@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsoneditor@9/dist/jsoneditor.min.css" />
 <h1>{{ _('%(action)s Post', action=action) }}</h1>
-<form method="post">
+<form method="post" id="post-form">
   <div class="mb-3">
     <label for="title">{{ _('Title') }}</label>
     <input name="title" id="title" class="form-control" placeholder="{{ _('Title') }}" value="{{ post.title if post else prefill_title or '' }}">
@@ -77,7 +77,7 @@
 <script>
 const bodyInput = document.querySelector('textarea[name="body"]');
 const previewEl = document.getElementById('preview');
-const formEl = document.querySelector('form');
+const formEl = document.getElementById('post-form');
 formEl.addEventListener('keydown', function (e) {
   if (e.key === 'Enter') {
     if (e.target.id === 'address-input') {
