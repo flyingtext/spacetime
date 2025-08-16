@@ -462,6 +462,14 @@ def document(language: str, doc_path: str):
     )
 
 
+@app.route('/markdown/preview', methods=['POST'])
+def markdown_preview():
+    data = request.get_json() or {}
+    text = data.get('text', '')
+    html = Markup(markdown.markdown(escape(text)))
+    return {'html': str(html)}
+
+
 @app.route('/citation/suggest', methods=['POST'])
 def citation_suggest():
     data = request.get_json() or {}

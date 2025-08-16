@@ -5,6 +5,7 @@
 <form method="post">
   <p><input name="title" placeholder="Title" value="{{ post.title if post else '' }}"></p>
   <p><textarea name="body" rows="10" cols="50">{{ post.body if post else '' }}</textarea></p>
+  <div id="preview"></div>
   {% if post %}
   <p><button type="button" id="suggest-citations">인용 추천</button></p>
   <div id="citation-results"></div>
@@ -16,6 +17,21 @@
   <p><textarea name="user_metadata" placeholder="Your metadata (JSON)" rows="5" cols="50">{{ user_metadata if user_metadata else '' }}</textarea></p>
   <p><button type="submit">{{ action }}</button></p>
 </form>
+<script>
+const bodyInput = document.querySelector('textarea[name="body"]');
+const previewEl = document.getElementById('preview');
+function updatePreview() {
+  fetch('{{ url_for('markdown_preview') }}', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({text: bodyInput.value})
+  }).then(r => r.json()).then(data => {
+    previewEl.innerHTML = data.html || '';
+  });
+}
+bodyInput.addEventListener('input', updatePreview);
+updatePreview();
+</script>
 {% if post %}
 <script>
 document.getElementById('suggest-citations').addEventListener('click', function () {
