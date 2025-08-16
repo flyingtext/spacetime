@@ -35,9 +35,12 @@ class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     body = db.Column(db.Text, nullable=False)
+    path = db.Column(db.String(200), nullable=False)
+    language = db.Column(db.String(8), nullable=False, default='en')
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     author = db.relationship('User', backref='posts')
     tags = db.relationship('Tag', secondary='post_tag', backref='posts')
+    __table_args__ = (db.UniqueConstraint('path', 'language', name='uix_path_language'),)
 
 
 class Tag(db.Model):
@@ -105,6 +108,8 @@ def create_post():
     if request.method == 'POST':
         title = request.form['title']
         body = request.form['body']
+        path = request.form['path']
+        language = request.form['language']
         tag_names = [t.strip() for t in request.form['tags'].split(',') if t.strip()]
         tags = []
         for name in tag_names:
@@ -113,10 +118,11 @@ def create_post():
                 tag = Tag(name=name)
                 db.session.add(tag)
             tags.append(tag)
-        post = Post(title=title, body=body, author=current_user, tags=tags)
+        post = Post(title=title, body=body, path=path, language=language,
+                    author=current_user, tags=tags)
         db.session.add(post)
         db.session.commit()
-        return redirect(url_for('post_detail', post_id=post.id))
+        return redirect(url_for('document', language=post.language, doc_path=post.path))
     return render_template('post_form.html', action='Create')
 
 
@@ -127,16 +133,27 @@ def post_detail(post_id: int):
     return render_template('post_detail.html', post=post, html_body=html_body)
 
 
+@app.route('/docs/<string:language>/<path:doc_path>')
+def document(language: str, doc_path: str):
+    post = Post.query.filter_by(language=language, path=doc_path).first_or_404()
+    html_body = markdown.markdown(post.body)
+    translations = Post.query.filter(Post.path == doc_path, Post.language != language).all()
+    return render_template('post_detail.html', post=post, html_body=html_body,
+                           translations=translations)
+
+
 @app.route('/post/<int:post_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_post(post_id: int):
     post = Post.query.get_or_404(post_id)
     if current_user.id != post.author_id and not current_user.is_admin():
         flash('Permission denied.')
-        return redirect(url_for('post_detail', post_id=post.id))
+        return redirect(url_for('document', language=post.language, doc_path=post.path))
     if request.method == 'POST':
         post.title = request.form['title']
         post.body = request.form['body']
+        post.path = request.form['path']
+        post.language = request.form['language']
         tag_names = [t.strip() for t in request.form['tags'].split(',') if t.strip()]
         post.tags = []
         for name in tag_names:
@@ -146,7 +163,7 @@ def edit_post(post_id: int):
                 db.session.add(tag)
             post.tags.append(tag)
         db.session.commit()
-        return redirect(url_for('post_detail', post_id=post.id))
+        return redirect(url_for('document', language=post.language, doc_path=post.path))
     tags_str = ', '.join([t.name for t in post.tags])
     return render_template('post_form.html', action='Edit', post=post, tags=tags_str)
 

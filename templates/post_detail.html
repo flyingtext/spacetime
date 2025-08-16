@@ -1,13 +1,21 @@
 {% extends "base.html" %}
 {% block title %}{{ post.title }}{% endblock %}
 {% block content %}
-<h1>{{ post.title }}</h1>
+<h1>{{ post.title }} ({{ post.language }})</h1>
+<p><small>{{ post.path }}</small></p>
 <div>{{ html_body|safe }}</div>
 <p>Tags:
   {% for tag in post.tags %}
     <a href="{{ url_for('tag_filter', name=tag.name) }}">{{ tag.name }}</a>
   {% endfor %}
 </p>
+{% if translations %}
+<p>Other languages:
+  {% for t in translations %}
+    <a href="{{ url_for('document', language=t.language, doc_path=t.path) }}">{{ t.language }}</a>
+  {% endfor %}
+</p>
+{% endif %}
 {% if current_user.is_authenticated and (current_user.id == post.author_id or current_user.is_admin()) %}
   <a href="{{ url_for('edit_post', post_id=post.id) }}">Edit</a>
 {% endif %}
