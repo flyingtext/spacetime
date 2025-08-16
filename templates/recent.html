@@ -3,10 +3,16 @@
 {% block content %}
 <h1>{{ _('Recent changes') }}</h1>
 <ul class="list-group">
-  {% for rev in revisions %}
-    <li class="list-group-item">{{ rev.created_at }} - <a href="{{ url_for('revision_diff', post_id=rev.post_id, rev_id=rev.id) }}">{{ rev.title }}</a> {{ _('by') }} <a href="{{ url_for('profile', username=rev.user.username) }}">{{ rev.user.username }}</a></li>
-  {% else %}
-    <li class="list-group-item">{{ _('No revisions yet.') }}</li>
-  {% endfor %}
+    {% for rev in revisions %}
+      <li class="list-group-item">
+        {{ rev.display_time }} -
+        <a href="{{ url_for('revision_diff', post_id=rev.post_id, rev_id=rev.id) }}">{{ rev.title }}</a>
+        {{ _('by') }} <a href="{{ url_for('profile', username=rev.user.username) }}">{{ rev.user.username }}</a>
+        {% if rev.comment %} — {{ rev.comment }}{% endif %}
+        <span class="text-muted">({{ '+' if rev.byte_change >= 0 else ''}}{{ rev.byte_change }})</span>
+      </li>
+    {% else %}
+      <li class="list-group-item">{{ _('No revisions yet.') }}</li>
+    {% endfor %}
 </ul>
 {% endblock %}

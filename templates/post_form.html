@@ -54,6 +54,10 @@
     <textarea name="user_metadata" id="user_metadata" class="form-control d-none" placeholder="{{ _('Your metadata (JSON)') }}" rows="5" cols="50">{{ user_metadata if user_metadata else '' }}</textarea>
     <div id="user_metadata_editor" style="height: 200px;"></div>
   </div>
+  <div class="mb-3">
+    <label for="comment">{{ _('Edit summary') }}</label>
+    <input name="comment" id="comment" class="form-control" placeholder="{{ _('Edit summary') }}">
+  </div>
   {% if request_id %}<input type="hidden" name="request_id" value="{{ request_id }}">{% endif %}
   <div class="mb-3">
     <button type="submit" class="btn btn-primary">{{ action }}</button>

@@ -3,7 +3,7 @@ import json
 import os
 import re
 import markdown
-from datetime import datetime
+from datetime import datetime, timezone
 from xml.etree.ElementTree import Element
 
 from flask import (Flask, render_template, redirect, url_for, request, flash,
@@ -26,6 +26,7 @@ from dotenv import load_dotenv
 from geopy.geocoders import Nominatim
 from geopy.distance import distance as geopy_distance
 from langdetect import detect, DetectorFactory, LangDetectException
+from zoneinfo import ZoneInfo
 
 load_dotenv()
 DetectorFactory.seed = 0
@@ -671,6 +672,8 @@ class Revision(db.Model):
     path = db.Column(db.String(200), nullable=False)
     language = db.Column(db.String(8), nullable=False, default='en')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    comment = db.Column(db.String(200), default='')
+    byte_change = db.Column(db.Integer, default=0)
 
     user = db.relationship('User')
     post = db.relationship('Post', backref='revisions')
@@ -698,6 +701,11 @@ def recent_changes():
     revisions = (
         Revision.query.order_by(Revision.created_at.desc()).limit(20).all()
     )
+    tz_name = get_setting('timezone', 'UTC') or 'UTC'
+    tzinfo = ZoneInfo(tz_name)
+    for rev in revisions:
+        dt = rev.created_at.replace(tzinfo=timezone.utc).astimezone(tzinfo)
+        rev.display_time = dt.strftime('%Y-%m-%d %H:%M %Z')
     return render_template('recent.html', revisions=revisions)
 
 
@@ -841,6 +849,7 @@ def create_post():
         body = request.form['body']
         path = request.form['path'].strip()
         language = request.form['language'].strip()
+        comment = request.form.get('comment', '').strip()
         if language not in app.config['LANGUAGES']:
             try:
                 language = detect(body)
@@ -900,7 +909,8 @@ def create_post():
         update_post_links(post)
 
         rev = Revision(post=post, user=current_user, title=title, body=body,
-                       path=path, language=language)
+                       path=path, language=language, comment=comment,
+                       byte_change=len(body))
         db.session.add(rev)
 
         req_id = request.form.get('request_id')
@@ -1016,6 +1026,7 @@ def delete_post(post_id: int):
         body=post.body,
         path=post.path,
         language=post.language,
+        byte_change=-len(post.body),
     )
     db.session.add(rev)
     post.title = ''
@@ -1276,8 +1287,11 @@ def edit_post(post_id: int):
     if request.method == 'POST':
         old_path = post.path
         old_language = post.language
+        old_body = post.body
+        comment = request.form.get('comment', '').strip()
         rev = Revision(post=post, user=current_user, title=post.title,
-                       body=post.body, path=post.path, language=post.language)
+                       body=old_body, path=post.path, language=post.language,
+                       comment=comment)
         db.session.add(rev)
         post.title = request.form['title']
         post.body = request.form['body']
@@ -1347,6 +1361,7 @@ def edit_post(post_id: int):
             if w.user_id != current_user.id:
                 msg = _('Post "%(title)s" was updated.', title=post.title)
                 db.session.add(Notification(user_id=w.user_id, message=msg))
+        rev.byte_change = len(post.body) - len(old_body)
         db.session.commit()
         return redirect(url_for('document', language=post.language, doc_path=post.path))
     tags_str = ', '.join([t.name for t in post.tags])
@@ -1454,9 +1469,11 @@ def settings():
         abort(403)
     title = get_setting('site_title', '')
     home_page = get_setting('home_page_path', '')
+    timezone_value = get_setting('timezone', 'UTC')
     if request.method == 'POST':
-        title = request.form.get('site_title', title).strip()
-        home_page = request.form.get('home_page_path', home_page).strip()
+        title = request.form.get('site_title', '').strip()
+        home_page = request.form.get('home_page_path', '').strip()
+        timezone_value = request.form.get('timezone', '').strip() or 'UTC'
 
         title_setting = Setting.query.filter_by(key='site_title').first()
         if title_setting:
@@ -1472,10 +1489,17 @@ def settings():
             home_setting = Setting(key='home_page_path', value=home_page)
             db.session.add(home_setting)
 
+        tz_setting = Setting.query.filter_by(key='timezone').first()
+        if tz_setting:
+            tz_setting.value = timezone_value
+        else:
+            tz_setting = Setting(key='timezone', value=timezone_value)
+            db.session.add(tz_setting)
+
         db.session.commit()
         flash(_('Settings updated.'))
         return redirect(url_for('settings'))
-    return render_template('settings.html', site_title=title, home_page_path=home_page)
+    return render_template('settings.html', site_title=title, home_page_path=home_page, timezone=timezone_value)
 
 
 @app.route('/tags')
