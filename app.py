@@ -1215,6 +1215,44 @@ def revision_diff(post_id: int, rev_id: int):
     return render_template('diff.html', post=post, revision=revision, diff='\n'.join(diff))
 
 
+@app.route('/post/<int:post_id>/revert/<int:rev_id>', methods=['POST'])
+@login_required
+def revert_revision(post_id: int, rev_id: int):
+    if not current_user.can_edit_posts():
+        abort(403)
+    post = Post.query.get_or_404(post_id)
+    revision = Revision.query.get_or_404(rev_id)
+    if revision.post_id != post.id:
+        abort(404)
+
+    # Save current state before reverting
+    rev = Revision(
+        post=post,
+        user=current_user,
+        title=post.title,
+        body=post.body,
+        path=post.path,
+        language=post.language,
+    )
+    db.session.add(rev)
+
+    # Overwrite post fields with the selected revision
+    post.title = revision.title
+    post.body = revision.body
+    post.path = revision.path
+    post.language = revision.language
+
+    watchers = PostWatch.query.filter_by(post_id=post.id).all()
+    for w in watchers:
+        if w.user_id != current_user.id:
+            msg = _('Post "%(title)s" was updated.', title=post.title)
+            db.session.add(Notification(user_id=w.user_id, message=msg))
+
+    db.session.commit()
+    flash(_('Post reverted.'))
+    return redirect(url_for('document', language=post.language, doc_path=post.path))
+
+
 @app.route('/admin/posts')
 @login_required
 def admin_posts():

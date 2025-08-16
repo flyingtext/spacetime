@@ -6,6 +6,11 @@
   {% for rev in revisions %}
       <li>{{ rev.created_at }} {{ _('by') }} <a href="{{ url_for('profile', username=rev.user.username) }}">{{ rev.user.username }}</a> -
       <a href="{{ url_for('revision_diff', post_id=post.id, rev_id=rev.id) }}">{{ _('diff') }}</a>
+      {% if current_user.is_authenticated and current_user.can_edit_posts() %}
+        - <form action="{{ url_for('revert_revision', post_id=post.id, rev_id=rev.id) }}" method="post" style="display:inline">
+            <button type="submit">{{ _('Revert') }}</button>
+          </form>
+      {% endif %}
     </li>
   {% endfor %}
 </ul>
