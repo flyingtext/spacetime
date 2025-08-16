@@ -204,14 +204,8 @@
     btn.setAttribute('aria-label', '{{ _("Copy permalink") }}');
     btn.title = '{{ _("Copy permalink") }}';
     btn.addEventListener('click', () => {
-      navigator.clipboard.writeText(window.location.href).then(() => {
-        btn.classList.remove('btn-outline-secondary');
-        btn.classList.add('btn-success');
-        setTimeout(() => {
-          btn.classList.remove('btn-success');
-          btn.classList.add('btn-outline-secondary');
-        }, 2000);
-      });
+      const url = window.location.href;
+      window.prompt('{{ _("Copy permalink") }}', url);
     });
     heading.appendChild(btn);
   });
