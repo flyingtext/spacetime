@@ -258,13 +258,19 @@
           for (let i = 0; i < lines.length; i++) {
               if (signal.aborted) break;
               const lineSection = document.createElement('div');
+              lineSection.classList.add('mb-3', 'border-top', 'pt-2');
+              const lineHeader = document.createElement('div');
+              lineHeader.classList.add('fw-bold');
+              lineHeader.textContent = `{{ _('Line') }} ${i + 1}: ${lines[i]}`;
+              lineSection.appendChild(lineHeader);
               container.appendChild(lineSection);
               try {
                   const resp = await fetch('{{ url_for('citation_suggest_line') }}', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ line: lines[i] }),
-                      signal
+                      signal,
+                      noSpinner: true
                   });
                   const data = await resp.json();
                   if (data.results) {
@@ -283,7 +289,8 @@
                                   fd.append('citation_text', c.text);
                                   fetch('{{ url_for('new_citation', post_id=post.id) }}', {
                                       method: 'POST',
-                                      body: fd
+                                      body: fd,
+                                      noSpinner: true
                                   }).then(() => { btn.disabled = true; });
                               });
                               const div = document.createElement('div');
