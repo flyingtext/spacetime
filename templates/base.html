@@ -12,10 +12,12 @@
   <a href="{{ url_for('tag_list') }}">{{ _('Tags') }}</a> |
   <a href="{{ url_for('search') }}">{{ _('Search') }}</a> |
   <a href="{{ url_for('citation_stats') }}">{{ _('Citation Stats') }}</a> |
+  <a href="{{ url_for('requested_posts') }}">{{ _('Requested Posts') }}</a> |
   {% if current_user.is_authenticated %}
     {% set unread = current_user.notifications | selectattr('read_at', 'equalto', None) | list | length %}
     <a href="{{ url_for('notifications') }}">{{ _('Notifications') }}{% if unread %} ({{ unread }}){% endif %}</a> |
     <a href="{{ url_for('create_post') }}">{{ _('New Post') }}</a> |
+    <a href="{{ url_for('request_post') }}">{{ _('Request Post') }}</a> |
     <span>{{ current_user.username }}</span> |
     <a href="{{ url_for('logout') }}">{{ _('Logout') }}</a>
   {% else %}

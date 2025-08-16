@@ -278,6 +278,16 @@ class Notification(db.Model):
     user = db.relationship('User', backref='notifications')
 
 
+class RequestedPost(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    requester_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    requester = db.relationship('User', backref='requested_posts')
+
+
 @event.listens_for(Post, 'after_insert')
 def emit_new_post(mapper, connection, target):
     socketio.emit(
@@ -427,6 +437,26 @@ def notifications():
     return render_template('notifications.html', notifications=notes)
 
 
+@app.route('/post/request', methods=['GET', 'POST'])
+@login_required
+def request_post():
+    if request.method == 'POST':
+        title = request.form['title']
+        description = request.form['description']
+        req = RequestedPost(title=title, description=description, requester=current_user)
+        db.session.add(req)
+        db.session.commit()
+        flash(_('Request submitted'))
+        return redirect(url_for('requested_posts'))
+    return render_template('request_form.html')
+
+
+@app.route('/posts/requested')
+def requested_posts():
+    reqs = RequestedPost.query.order_by(RequestedPost.created_at.desc()).all()
+    return render_template('requested_posts.html', requests=reqs)
+
+
 @app.route('/post/new', methods=['GET', 'POST'])
 @login_required
 def create_post():
@@ -474,9 +504,25 @@ def create_post():
         rev = Revision(post=post, user=current_user, title=title, body=body,
                        path=path, language=language)
         db.session.add(rev)
+
+        req_id = request.form.get('request_id')
+        if req_id:
+            req = RequestedPost.query.get(int(req_id))
+            if req:
+                db.session.delete(req)
+
         db.session.commit()
         return redirect(url_for('document', language=post.language, doc_path=post.path))
-    return render_template('post_form.html', action=_('Create'), metadata='', user_metadata='')
+
+    req_id = request.args.get('request_id')
+    prefill_title = prefill_body = None
+    if req_id:
+        req = RequestedPost.query.get_or_404(req_id)
+        prefill_title = req.title
+        prefill_body = req.description
+    return render_template('post_form.html', action=_('Create'), metadata='',
+                           user_metadata='', prefill_title=prefill_title,
+                           prefill_body=prefill_body, request_id=req_id)
 
 
 @app.route('/post/<int:post_id>')
@@ -953,5 +999,6 @@ if __name__ == '__main__':
         UserPostMetadata.__table__.create(bind=db.engine, checkfirst=True)
         PostCitation.__table__.create(bind=db.engine, checkfirst=True)
         UserPostCitation.__table__.create(bind=db.engine, checkfirst=True)
+        RequestedPost.__table__.create(bind=db.engine, checkfirst=True)
         db.create_all()
     socketio.run(app, debug=True)
