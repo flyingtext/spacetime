@@ -562,6 +562,33 @@ def create_post():
 def post_detail(post_id: int):
     post = Post.query.get_or_404(post_id)
     post_meta = {m.key: m.value for m in post.metadata}
+    location = None
+    for value in post_meta.values():
+        if isinstance(value, dict):
+            lat = value.get('lat') or value.get('latitude')
+            lon = value.get('lon') or value.get('lng') or value.get('longitude')
+            if lat is not None and lon is not None:
+                try:
+                    location = {'lat': float(lat), 'lon': float(lon)}
+                except (TypeError, ValueError):
+                    location = None
+                if location:
+                    break
+    if location is None:
+        lat = (
+            post_meta.get('lat')
+            or post_meta.get('latitude')
+        )
+        lon = (
+            post_meta.get('lon')
+            or post_meta.get('lng')
+            or post_meta.get('longitude')
+        )
+        if lat is not None and lon is not None:
+            try:
+                location = {'lat': float(lat), 'lon': float(lon)}
+            except (TypeError, ValueError):
+                location = None
     user_meta = {}
     citations = (
         PostCitation.query.filter_by(post_id=post.id)
@@ -593,6 +620,7 @@ def post_detail(post_id: int):
         html_body=html_body,
         toc=toc,
         metadata=post_meta,
+        location=location,
         user_metadata=user_meta,
         citations=citations,
         user_citations=user_citations,

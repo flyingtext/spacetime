@@ -27,6 +27,9 @@
       <li><strong>{{ key }}:</strong> {{ value|format_metadata }}</li>
     {% endfor %}
   </ul>
+  {% if location %}
+  <div id="map"></div>
+  {% endif %}
   {% endif %}
   {% if user_metadata %}
   <h3>{{ _('Your Metadata') }}</h3>
@@ -136,4 +139,17 @@
     {% endif %}
   {% endif %}
 </p>
+{% if location %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+  const loc = {{ location|tojson }};
+  const map = L.map('map').setView([loc.lat, loc.lon], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+  L.marker([loc.lat, loc.lon]).addTo(map);
+</script>
+{% endif %}
 {% endblock %}

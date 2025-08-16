@@ -14,3 +14,16 @@ textarea { width: 100%; }
 .toc-container .toc ul { list-style: none; padding-left: 0; }
 .toc-container .toc a { text-decoration: none; }
 .post-body { flex: 1; }
+
+#map {
+  height: 400px;
+  width: 100%;
+  max-width: 600px;
+  margin: 1em 0;
+}
+
+@media (max-width: 600px) {
+  #map {
+    height: 300px;
+  }
+}
