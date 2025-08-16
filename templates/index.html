@@ -5,6 +5,13 @@
 {% if current_user.is_authenticated %}
   <p><a href="{{ url_for('create_post') }}" class="btn btn-primary">{{ _('New Post') }}</a></p>
 {% endif %}
+{% if categories %}
+  <div class="mb-3">
+    {% for name in categories %}
+      <a class="btn btn-outline-secondary btn-sm{% if tag and tag.name == name %} active{% endif %}" href="{{ url_for('all_posts', tag=name) }}">{{ name }}</a>
+    {% endfor %}
+  </div>
+{% endif %}
 <div id="post-list" class="row row-cols-1 row-cols-md-2 g-4">
   {% for post in posts %}
     <div class="col">
