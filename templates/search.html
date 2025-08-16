@@ -3,21 +3,42 @@
 {% block content %}
 <h1>{{ _('Search Posts') }}</h1>
 <form method="get">
-  <label>{{ _('Query') }}: <input type="text" name="q" value="{{ q }}"></label>
-  <label>{{ _('Tags (comma separated)') }}: <input type="text" name="tags" value="{{ tags }}"></label>
-  <label>{{ _('Key') }}:
-    <select name="key">
+  <div class="mb-3">
+    <label for="q">{{ _('Query') }}</label>
+    <input type="text" name="q" id="q" value="{{ q }}" class="form-control">
+  </div>
+  <div class="mb-3">
+    <label for="tags">{{ _('Tags (comma separated)') }}</label>
+    <input type="text" name="tags" id="tags" value="{{ tags }}" class="form-control">
+  </div>
+  <div class="mb-3">
+    <label for="key">{{ _('Key') }}</label>
+    <select name="key" id="key">
       <option value="">--</option>
       {% for k in keys %}
         <option value="{{ k }}" {% if k == key %}selected{% endif %}>{{ k }}</option>
       {% endfor %}
     </select>
-  </label>
-  <label>{{ _('Value') }}: <input type="text" name="value" value="{{ value }}"></label>
-  <label>{{ _('Latitude') }}: <input type="text" name="lat" value="{{ lat if lat is not none else '' }}"></label>
-  <label>{{ _('Longitude') }}: <input type="text" name="lon" value="{{ lon if lon is not none else '' }}"></label>
-  <label>{{ _('Radius (km)') }}: <input type="text" name="radius" value="{{ radius if radius is not none else '' }}"></label>
-  <button type="submit">{{ _('Search') }}</button>
+  </div>
+  <div class="mb-3">
+    <label for="value">{{ _('Value') }}</label>
+    <input type="text" name="value" id="value" value="{{ value }}" class="form-control">
+  </div>
+  <div class="mb-3">
+    <label for="lat">{{ _('Latitude') }}</label>
+    <input type="text" name="lat" id="lat" value="{{ lat if lat is not none else '' }}" class="form-control">
+  </div>
+  <div class="mb-3">
+    <label for="lon">{{ _('Longitude') }}</label>
+    <input type="text" name="lon" id="lon" value="{{ lon if lon is not none else '' }}" class="form-control">
+  </div>
+  <div class="mb-3">
+    <label for="radius">{{ _('Radius (km)') }}</label>
+    <input type="text" name="radius" id="radius" value="{{ radius if radius is not none else '' }}" class="form-control">
+  </div>
+  <div class="mb-3">
+    <button type="submit" class="btn btn-primary">{{ _('Search') }}</button>
+  </div>
 </form>
 {% if all_tags %}
 <p>{{ _('Available tags:') }} {{ all_tags|join(', ') }}</p>
