@@ -3,6 +3,8 @@
 {% block content %}
 <h1>{{ _('Search Posts') }}</h1>
 <form method="get">
+  <label>{{ _('Query') }}: <input type="text" name="q" value="{{ q }}"></label>
+  <label>{{ _('Tags (comma separated)') }}: <input type="text" name="tags" value="{{ tags }}"></label>
   <label>{{ _('Key') }}:
     <select name="key">
       <option value="">--</option>
@@ -11,20 +13,23 @@
       {% endfor %}
     </select>
   </label>
-    <label>{{ _('Value') }}: <input type="text" name="value" value="{{ value }}"></label>
-    <label>{{ _('Latitude') }}: <input type="text" name="lat" value="{{ lat if lat is not none else '' }}"></label>
-    <label>{{ _('Longitude') }}: <input type="text" name="lon" value="{{ lon if lon is not none else '' }}"></label>
-    <label>{{ _('Radius (km)') }}: <input type="text" name="radius" value="{{ radius if radius is not none else '' }}"></label>
-    <button type="submit">{{ _('Search') }}</button>
+  <label>{{ _('Value') }}: <input type="text" name="value" value="{{ value }}"></label>
+  <label>{{ _('Latitude') }}: <input type="text" name="lat" value="{{ lat if lat is not none else '' }}"></label>
+  <label>{{ _('Longitude') }}: <input type="text" name="lon" value="{{ lon if lon is not none else '' }}"></label>
+  <label>{{ _('Radius (km)') }}: <input type="text" name="radius" value="{{ radius if radius is not none else '' }}"></label>
+  <button type="submit">{{ _('Search') }}</button>
 </form>
+{% if all_tags %}
+<p>{{ _('Available tags:') }} {{ all_tags|join(', ') }}</p>
+{% endif %}
 {% if posts is not none %}
 <ul>
   {% for post in posts %}
-    <li><a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.title }}</a> - {{ post.path }} ({{ post.language }})</li>
+    <li><a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.title }}</a> - {{ post.path }} ({{ post.language }}){% if post.tags %} - {{ post.tags|map(attribute='name')|join(', ') }}{% endif %}</li>
   {% else %}
     <li>{{ _('No posts found.') }}</li>
   {% endfor %}
-  </ul>
+</ul>
   <script>
     const postCoords = {{ coords_json|safe }};
   </script>
