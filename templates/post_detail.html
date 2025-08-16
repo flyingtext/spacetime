@@ -1,9 +1,13 @@
 {% extends "base.html" %}
 {% block title %}{{ post.title }}{% endblock %}
 {% block content %}
-<h1>{{ post.title }} ({{ post.language }})</h1>
+<div class="d-flex justify-content-between align-items-center">
+  <h1 class="mb-0">{{ post.title }} ({{ post.language }})</h1>
+  <div class="text-muted">
+    {% if created_at %}{{ created_at.strftime('%Y-%m-%d %H:%M') }} · {% endif %}{{ _('Views') }}: {{ views }}
+  </div>
+</div>
 <p><small>{{ post.path }}</small></p>
-<p><small>{{ _('Views') }}: {{ views }}</small></p>
 <div class="row">
   {% if toc %}
   <div class="col-md-3">
