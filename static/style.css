@@ -253,3 +253,9 @@ footer a {
 .leaflet-container a {
   color: var(--link-color);
 }
+
+#notif-count {
+  font-size: 0.6rem;
+  padding: 0.2em 0.35em;
+  line-height: 1;
+}
