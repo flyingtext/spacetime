@@ -1,3 +1,16 @@
 body { font-family: Arial, sans-serif; margin: 20px; }
 nav a { margin-right: 10px; }
 textarea { width: 100%; }
+
+.post-layout { display: flex; }
+.toc-container {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-right: 20px;
+  background: #f9f9f9;
+  min-width: 200px;
+}
+.toc-container .toc { margin: 0; }
+.toc-container .toc ul { list-style: none; padding-left: 0; }
+.toc-container .toc a { text-decoration: none; }
+.post-body { flex: 1; }

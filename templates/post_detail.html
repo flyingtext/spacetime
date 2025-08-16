@@ -3,7 +3,15 @@
 {% block content %}
 <h1>{{ post.title }} ({{ post.language }})</h1>
 <p><small>{{ post.path }}</small></p>
-<div>{{ html_body|safe }}</div>
+<div class="post-layout">
+  {% if toc %}
+  <nav class="toc-container">
+    <h2>{{ _('Contents') }}</h2>
+    {{ toc|safe }}
+  </nav>
+  {% endif %}
+  <div class="post-body">{{ html_body|safe }}</div>
+</div>
 <p>{{ _('Tags') }}:
   {% for tag in post.tags %}
     <a href="{{ url_for('tag_filter', name=tag.name) }}">{{ tag.name }}</a>
