@@ -73,10 +73,14 @@
     function hideSpinner() { spinnerOverlay.style.display = 'none'; }
     let spinnerCount = 0;
     const originalFetch = window.fetch;
-    window.fetch = function (...args) {
+    // Pass {noSpinner: true} in fetch options to skip the overlay
+    window.fetch = function (resource, config = {}) {
+      if (config && config.noSpinner) {
+        return originalFetch(resource, config);
+      }
       spinnerCount++;
       showSpinner();
-      return originalFetch(...args).finally(() => {
+      return originalFetch(resource, config).finally(() => {
         spinnerCount--;
         if (spinnerCount === 0) hideSpinner();
       });
