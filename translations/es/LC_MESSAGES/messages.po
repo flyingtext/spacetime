@@ -330,3 +330,11 @@ msgstr "No se encontraron publicaciones."
 msgid "No tags yet."
 msgstr "Aún no hay etiquetas."
 
+#: templates/settings.html:7
+msgid "Site title"
+msgstr "Título del sitio"
+
+#: templates/settings.html:11
+msgid "Home page path"
+msgstr "Ruta de la página principal"
+
