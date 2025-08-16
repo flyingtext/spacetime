@@ -3,5 +3,7 @@
 {% block content %}
 <h1>{{ _('Diff for %(title)s', title=post.title) }}</h1>
 <pre>{{ diff }}</pre>
+{% if post_exists %}
 <p><a href="{{ url_for('history', post_id=post.id) }}">{{ _('Back to history') }}</a></p>
+{% endif %}
 {% endblock %}
