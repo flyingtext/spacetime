@@ -1644,6 +1644,14 @@ def new_citation(post_id: int):
             bibtex_fields=entry,
         )
     db.session.add(citation)
+    watcher_ids = {
+        w.user_id for w in PostWatch.query.filter_by(post_id=post.id).all()
+    }
+    watcher_ids.add(post.author_id)
+    for uid in watcher_ids:
+        if uid != current_user.id:
+            msg = _('Citation added to "%(title)s".', title=post.title)
+            db.session.add(Notification(user_id=uid, message=msg))
     db.session.commit()
     return redirect(url_for('post_detail', post_id=post.id))
 
@@ -1716,6 +1724,14 @@ def edit_citation(post_id: int, cid: int):
         citation.doi = doi
         citation.bibtex_raw = text
         citation.bibtex_fields = entry
+        watcher_ids = {
+            w.user_id for w in PostWatch.query.filter_by(post_id=post.id).all()
+        }
+        watcher_ids.add(post.author_id)
+        for uid in watcher_ids:
+            if uid != current_user.id:
+                msg = _('Citation updated on "%(title)s".', title=post.title)
+                db.session.add(Notification(user_id=uid, message=msg))
         db.session.commit()
         return redirect(url_for('post_detail', post_id=post.id))
     part_json = json.dumps(citation.citation_part)
@@ -1734,6 +1750,14 @@ def delete_citation(post_id: int, cid: int):
         flash(_('Permission denied.'))
         return redirect(url_for('post_detail', post_id=post.id))
     db.session.delete(citation)
+    watcher_ids = {
+        w.user_id for w in PostWatch.query.filter_by(post_id=post.id).all()
+    }
+    watcher_ids.add(post.author_id)
+    for uid in watcher_ids:
+        if uid != current_user.id:
+            msg = _('Citation deleted from "%(title)s".', title=post.title)
+            db.session.add(Notification(user_id=uid, message=msg))
     db.session.commit()
     return redirect(url_for('post_detail', post_id=post.id))
 
@@ -1839,11 +1863,14 @@ def edit_post(post_id: int):
         else:
             UserPostMetadata.query.filter_by(post_id=post.id, user_id=current_user.id).delete()
         update_post_links(post)
-        watchers = PostWatch.query.filter_by(post_id=post.id).all()
-        for w in watchers:
-            if w.user_id != current_user.id:
+        watcher_ids = {
+            w.user_id for w in PostWatch.query.filter_by(post_id=post.id).all()
+        }
+        watcher_ids.add(post.author_id)
+        for uid in watcher_ids:
+            if uid != current_user.id:
                 msg = _('Post "%(title)s" was updated.', title=post.title)
-                db.session.add(Notification(user_id=w.user_id, message=msg))
+                db.session.add(Notification(user_id=uid, message=msg))
         rev.byte_change = len(post.body) - len(old_body)
         db.session.commit()
         return redirect(url_for('document', language=post.language, doc_path=post.path))
@@ -1920,11 +1947,14 @@ def revert_revision(post_id: int, rev_id: int):
     post.path = revision.path
     post.language = revision.language
 
-    watchers = PostWatch.query.filter_by(post_id=post.id).all()
-    for w in watchers:
-        if w.user_id != current_user.id:
+    watcher_ids = {
+        w.user_id for w in PostWatch.query.filter_by(post_id=post.id).all()
+    }
+    watcher_ids.add(post.author_id)
+    for uid in watcher_ids:
+        if uid != current_user.id:
             msg = _('Post "%(title)s" was updated.', title=post.title)
-            db.session.add(Notification(user_id=w.user_id, message=msg))
+            db.session.add(Notification(user_id=uid, message=msg))
 
     db.session.commit()
     flash(_('Post reverted.'))
