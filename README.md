@@ -10,11 +10,14 @@ Simple wiki-style bulletin board built with Flask and SQLite. Supports user regi
 - Link posts written in different languages that share the same path
 - Permissions: authors or admins can edit posts
 
-## Requirements
+## Installation
 Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
+
+The application uses the Crossref API through the `habanero` library, so network
+access is required when querying Crossref.
 
 ## Usage
 ```bash
