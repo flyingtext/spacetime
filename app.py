@@ -178,6 +178,9 @@ class PostCitation(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     citation_part = db.Column(db.JSON, nullable=False)
     citation_text = db.Column(db.Text, nullable=False)
+    doi = db.Column(db.String, nullable=True)
+    bibtex_raw = db.Column(db.Text, nullable=False)
+    bibtex_fields = db.Column(db.JSON, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     post = db.relationship(
@@ -192,6 +195,9 @@ class UserPostCitation(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     citation_part = db.Column(db.JSON, nullable=False)
     citation_text = db.Column(db.Text, nullable=False)
+    doi = db.Column(db.String, nullable=True)
+    bibtex_raw = db.Column(db.Text, nullable=False)
+    bibtex_fields = db.Column(db.JSON, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     post = db.relationship('Post', backref='user_citations')
@@ -207,6 +213,15 @@ db.Index('ix_post_citation_post_id', PostCitation.post_id)
 db.Index('ix_post_citation_user_id', PostCitation.user_id)
 db.Index('ix_user_post_citation_post_id', UserPostCitation.post_id)
 db.Index('ix_user_post_citation_user_id', UserPostCitation.user_id)
+db.Index('uq_post_citation_doi', PostCitation.post_id, PostCitation.doi,
+         unique=True, sqlite_where=db.text('doi IS NOT NULL'))
+db.Index('uq_post_citation_text', PostCitation.post_id, PostCitation.citation_text,
+         unique=True, sqlite_where=db.text('doi IS NULL'))
+db.Index('uq_user_post_citation_doi', UserPostCitation.post_id, UserPostCitation.doi,
+         unique=True, sqlite_where=db.text('doi IS NOT NULL'))
+db.Index('uq_user_post_citation_text', UserPostCitation.post_id,
+         UserPostCitation.citation_text,
+         unique=True, sqlite_where=db.text('doi IS NULL'))
 
 
 class Revision(db.Model):
@@ -426,22 +441,54 @@ def fetch_citation():
 @login_required
 def new_citation(post_id: int):
     post = Post.query.get_or_404(post_id)
-    part_raw = request.form.get('citation_part', '').strip()
     text = request.form.get('citation_text', '').strip()
-    if not part_raw or not text:
-        flash('All fields are required.')
+    if not text:
+        flash('Citation text is required.')
         return redirect(url_for('post_detail', post_id=post.id))
     try:
-        part = json.loads(part_raw)
-    except ValueError:
-        flash('Invalid citation part JSON')
+        bib_db = bibtexparser.loads(text)
+        entry = bib_db.entries[0] if bib_db.entries else {}
+    except Exception:
+        flash('Failed to parse BibTeX')
         return redirect(url_for('post_detail', post_id=post.id))
-    if current_user.id == post.author_id or current_user.is_admin():
-        citation = PostCitation(post=post, user=current_user,
-                                citation_part=part, citation_text=text)
+    entry.pop('ID', None)
+    entry.pop('ENTRYTYPE', None)
+    doi = entry.get('doi')
+    # Ensure uniqueness by DOI or citation text
+    if doi:
+        existing = PostCitation.query.filter_by(post_id=post.id, doi=doi).first()
+        if not existing:
+            existing = UserPostCitation.query.filter_by(post_id=post.id, doi=doi).first()
+        if existing:
+            flash('Citation with this DOI already exists.')
+            return redirect(url_for('post_detail', post_id=post.id))
     else:
-        citation = UserPostCitation(post=post, user=current_user,
-                                    citation_part=part, citation_text=text)
+        existing = PostCitation.query.filter_by(post_id=post.id, citation_text=text).first()
+        if not existing:
+            existing = UserPostCitation.query.filter_by(post_id=post.id, citation_text=text).first()
+        if existing:
+            flash('Citation with this text already exists.')
+            return redirect(url_for('post_detail', post_id=post.id))
+    if current_user.id == post.author_id or current_user.is_admin():
+        citation = PostCitation(
+            post=post,
+            user=current_user,
+            citation_part=entry,
+            citation_text=text,
+            doi=doi,
+            bibtex_raw=text,
+            bibtex_fields=entry,
+        )
+    else:
+        citation = UserPostCitation(
+            post=post,
+            user=current_user,
+            citation_part=entry,
+            citation_text=text,
+            doi=doi,
+            bibtex_raw=text,
+            bibtex_fields=entry,
+        )
     db.session.add(citation)
     db.session.commit()
     return redirect(url_for('post_detail', post_id=post.id))
@@ -458,18 +505,56 @@ def edit_citation(post_id: int, cid: int):
         flash('Permission denied.')
         return redirect(url_for('post_detail', post_id=post.id))
     if request.method == 'POST':
-        part_raw = request.form.get('citation_part', '').strip()
         text = request.form.get('citation_text', '').strip()
-        if not part_raw or not text:
-            flash('All fields are required.')
+        if not text:
+            flash('Citation text is required.')
             return redirect(url_for('edit_citation', post_id=post.id, cid=cid))
         try:
-            part = json.loads(part_raw)
-        except ValueError:
-            flash('Invalid citation part JSON')
+            bib_db = bibtexparser.loads(text)
+            entry = bib_db.entries[0] if bib_db.entries else {}
+        except Exception:
+            flash('Failed to parse BibTeX')
             return redirect(url_for('edit_citation', post_id=post.id, cid=cid))
-        citation.citation_part = part
+        entry.pop('ID', None)
+        entry.pop('ENTRYTYPE', None)
+        doi = entry.get('doi')
+        if doi:
+            existing = (
+                PostCitation.query.filter(
+                    PostCitation.post_id == post.id,
+                    PostCitation.doi == doi,
+                    PostCitation.id != citation.id,
+                ).first()
+                or UserPostCitation.query.filter(
+                    UserPostCitation.post_id == post.id,
+                    UserPostCitation.doi == doi,
+                    UserPostCitation.id != citation.id,
+                ).first()
+            )
+            if existing:
+                flash('Citation with this DOI already exists.')
+                return redirect(url_for('edit_citation', post_id=post.id, cid=cid))
+        else:
+            existing = (
+                PostCitation.query.filter(
+                    PostCitation.post_id == post.id,
+                    PostCitation.citation_text == text,
+                    PostCitation.id != citation.id,
+                ).first()
+                or UserPostCitation.query.filter(
+                    UserPostCitation.post_id == post.id,
+                    UserPostCitation.citation_text == text,
+                    UserPostCitation.id != citation.id,
+                ).first()
+            )
+            if existing:
+                flash('Citation with this text already exists.')
+                return redirect(url_for('edit_citation', post_id=post.id, cid=cid))
+        citation.citation_part = entry
         citation.citation_text = text
+        citation.doi = doi
+        citation.bibtex_raw = text
+        citation.bibtex_fields = entry
         db.session.commit()
         return redirect(url_for('post_detail', post_id=post.id))
     part_json = json.dumps(citation.citation_part)
