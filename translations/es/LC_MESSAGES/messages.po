@@ -154,6 +154,14 @@ msgstr "Parte de la cita (JSON)"
 msgid "Citation text"
 msgstr "Texto de la cita"
 
+#: templates/post_detail.html:107
+msgid "Citation URL"
+msgstr "URL de la cita"
+
+#: templates/post_detail.html:108
+msgid "Add URL Citation"
+msgstr "Agregar cita URL"
+
 #: templates/citation_stats.html:2 templates/citation_stats.html:4
 msgid "Citation Statistics"
 msgstr "Estadísticas de citas"
