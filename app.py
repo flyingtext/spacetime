@@ -21,7 +21,7 @@ from habanero import Crossref
 import bibtexparser
 from types import SimpleNamespace
 from sqlalchemy import func, event, or_, text
-from flask_babel import Babel, _
+from flask_babel import Babel, _, get_locale
 from dotenv import load_dotenv
 from geopy.geocoders import Nominatim
 from geopy.distance import distance as geopy_distance
@@ -683,6 +683,12 @@ def load_user(user_id: str):
 
 @app.route('/')
 def index():
+    home_path = get_setting('home_page_path', '').strip()
+    if home_path:
+        language = str(get_locale())
+        post = Post.query.filter_by(language=language, path=home_path).first()
+        if post:
+            return redirect(url_for('document', language=language, doc_path=home_path))
     posts = Post.query.order_by(Post.id.desc()).all()
     return render_template('index.html', posts=posts)
 
@@ -1447,18 +1453,29 @@ def settings():
     if not current_user.is_admin():
         abort(403)
     title = get_setting('site_title', '')
+    home_page = get_setting('home_page_path', '')
     if request.method == 'POST':
         title = request.form.get('site_title', '').strip()
-        setting = Setting.query.filter_by(key='site_title').first()
-        if setting:
-            setting.value = title
+        home_page = request.form.get('home_page_path', '').strip()
+
+        title_setting = Setting.query.filter_by(key='site_title').first()
+        if title_setting:
+            title_setting.value = title
         else:
-            setting = Setting(key='site_title', value=title)
-            db.session.add(setting)
+            title_setting = Setting(key='site_title', value=title)
+            db.session.add(title_setting)
+
+        home_setting = Setting.query.filter_by(key='home_page_path').first()
+        if home_setting:
+            home_setting.value = home_page
+        else:
+            home_setting = Setting(key='home_page_path', value=home_page)
+            db.session.add(home_setting)
+
         db.session.commit()
         flash(_('Settings updated.'))
         return redirect(url_for('settings'))
-    return render_template('settings.html', site_title=title)
+    return render_template('settings.html', site_title=title, home_page_path=home_page)
 
 
 @app.route('/tags')
