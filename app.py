@@ -19,6 +19,7 @@ from markupsafe import Markup, escape
 import requests
 from habanero import Crossref
 import bibtexparser
+from types import SimpleNamespace
 from sqlalchemy import func, event, or_, text
 from flask_babel import Babel, _
 from dotenv import load_dotenv
@@ -1363,18 +1364,28 @@ def history(post_id: int):
 
 @app.route('/post/<int:post_id>/diff/<int:rev_id>')
 def revision_diff(post_id: int, rev_id: int):
-    post = Post.query.get_or_404(post_id)
+    post = Post.query.get(post_id)
     revision = Revision.query.get_or_404(rev_id)
-    if revision.post_id != post.id:
+    if post and revision.post_id != post.id:
         abort(404)
+    current_body = post.body if post else ''
     diff = difflib.unified_diff(
         revision.body.splitlines(),
-        post.body.splitlines(),
+        current_body.splitlines(),
         fromfile=f'rev {revision.id}',
         tofile='current',
         lineterm='',
     )
-    return render_template('diff.html', post=post, revision=revision, diff='\n'.join(diff))
+    post_exists = post is not None
+    if not post_exists:
+        post = SimpleNamespace(id=post_id, title=revision.title)
+    return render_template(
+        'diff.html',
+        post=post,
+        revision=revision,
+        diff='\n'.join(diff),
+        post_exists=post_exists,
+    )
 
 
 @app.route('/post/<int:post_id>/revert/<int:rev_id>', methods=['POST'])
