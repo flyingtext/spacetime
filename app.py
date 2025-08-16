@@ -1038,6 +1038,19 @@ def create_post():
             meta_dict['lat'] = lat
             meta_dict['lon'] = lon
 
+        lat_val = meta_dict.get('lat')
+        lon_val = meta_dict.get('lon')
+        if lat_val and lon_val:
+            try:
+                post.latitude = float(lat_val)
+                post.longitude = float(lon_val)
+            except ValueError:
+                post.latitude = None
+                post.longitude = None
+        else:
+            post.latitude = None
+            post.longitude = None
+
         for key, value in meta_dict.items():
             db.session.add(PostMetadata(post=post, key=key, value=value))
 
@@ -1509,6 +1522,19 @@ def edit_post(post_id: int):
             meta_dict['lat'] = lat
             meta_dict['lon'] = lon
 
+        lat_val = meta_dict.get('lat')
+        lon_val = meta_dict.get('lon')
+        if lat_val and lon_val:
+            try:
+                post.latitude = float(lat_val)
+                post.longitude = float(lon_val)
+            except ValueError:
+                post.latitude = None
+                post.longitude = None
+        else:
+            post.latitude = None
+            post.longitude = None
+
         PostMetadata.query.filter_by(post_id=post.id).delete()
         for key, value in meta_dict.items():
             db.session.add(PostMetadata(post=post, key=key, value=value))
@@ -1683,16 +1709,26 @@ def tag_list():
     tag_info = []
     tag_posts_data = []
     for tag in tags:
-        post = next(
-            (p for p in tag.posts if p.latitude is not None and p.longitude is not None),
-            None,
-        )
-        if post is not None:
+        coords = None
+        for p in tag.posts:
+            if p.latitude is not None and p.longitude is not None:
+                coords = (p.latitude, p.longitude)
+                break
+            meta = {m.key: m.value for m in p.metadata}
+            lat = meta.get('lat') or meta.get('latitude')
+            lon = meta.get('lon') or meta.get('longitude')
+            if lat is not None and lon is not None:
+                try:
+                    coords = (float(lat), float(lon))
+                    break
+                except ValueError:
+                    continue
+        if coords is not None:
             tag_locations.append(
                 {
                     'name': tag.name,
-                    'lat': post.latitude,
-                    'lon': post.longitude,
+                    'lat': coords[0],
+                    'lon': coords[1],
                     'url': url_for('tag_filter', name=tag.name),
                 }
             )
