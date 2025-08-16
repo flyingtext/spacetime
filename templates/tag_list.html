@@ -26,6 +26,7 @@ infoDiv.style.zIndex = '1000';
 infoDiv.style.maxHeight = '30vh';
 infoDiv.style.overflowY = 'auto';
 infoDiv.style.display = 'none';
+infoDiv.style.color = '#000';
 const tagLocations = {{ tag_locations_json|safe }};
 const tagPosts = {{ tag_posts_json|safe }};
 const map = L.map('tag-map').setView([0,0],2);
