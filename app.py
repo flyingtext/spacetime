@@ -20,7 +20,8 @@ import requests
 from habanero import Crossref
 import bibtexparser
 from types import SimpleNamespace
-from sqlalchemy import func, event, or_, text
+from sqlalchemy import func, event, or_, text, inspect
+from sqlalchemy.exc import NoSuchTableError
 from flask_babel import Babel, _, get_locale
 from dotenv import load_dotenv
 from geopy.geocoders import Nominatim
@@ -73,6 +74,23 @@ def select_locale():
 
 
 babel.locale_selector_func = select_locale
+
+
+def ensure_revision_comment_column() -> None:
+    with app.app_context():
+        inspector = inspect(db.engine)
+        try:
+            cols = [c["name"] for c in inspector.get_columns("revision")]
+        except NoSuchTableError:
+            return
+        if "comment" not in cols:
+            with db.engine.begin() as conn:
+                conn.execute(
+                    text("ALTER TABLE revision ADD COLUMN comment VARCHAR(200) DEFAULT ''")
+                )
+
+
+ensure_revision_comment_column()
 
 
 def fetch_bibtex_by_title(title: str) -> str | None:
@@ -1493,30 +1511,29 @@ def settings():
     home_page = get_setting('home_page_path', '')
     timezone_value = get_setting('timezone', 'UTC')
     if request.method == 'POST':
-        title = request.form.get('site_title', '').strip()
-        home_page = request.form.get('home_page_path', '').strip()
-        timezone_value = request.form.get('timezone', '').strip() or 'UTC'
+        if 'site_title' in request.form:
+            title = request.form['site_title'].strip()
+            title_setting = Setting.query.filter_by(key='site_title').first()
+            if title_setting:
+                title_setting.value = title
+            else:
+                db.session.add(Setting(key='site_title', value=title))
 
-        title_setting = Setting.query.filter_by(key='site_title').first()
-        if title_setting:
-            title_setting.value = title
-        else:
-            title_setting = Setting(key='site_title', value=title)
-            db.session.add(title_setting)
+        if 'home_page_path' in request.form:
+            home_page = request.form['home_page_path'].strip()
+            home_setting = Setting.query.filter_by(key='home_page_path').first()
+            if home_setting:
+                home_setting.value = home_page
+            else:
+                db.session.add(Setting(key='home_page_path', value=home_page))
 
-        home_setting = Setting.query.filter_by(key='home_page_path').first()
-        if home_setting:
-            home_setting.value = home_page
-        else:
-            home_setting = Setting(key='home_page_path', value=home_page)
-            db.session.add(home_setting)
-
-        tz_setting = Setting.query.filter_by(key='timezone').first()
-        if tz_setting:
-            tz_setting.value = timezone_value
-        else:
-            tz_setting = Setting(key='timezone', value=timezone_value)
-            db.session.add(tz_setting)
+        if 'timezone' in request.form:
+            timezone_value = request.form.get('timezone', '').strip() or 'UTC'
+            tz_setting = Setting.query.filter_by(key='timezone').first()
+            if tz_setting:
+                tz_setting.value = timezone_value
+            else:
+                db.session.add(Setting(key='timezone', value=timezone_value))
 
         db.session.commit()
         flash(_('Settings updated.'))
