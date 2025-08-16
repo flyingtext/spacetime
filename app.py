@@ -1,6 +1,5 @@
 import difflib
 import markdown
-
 from flask import (Flask, render_template, redirect, url_for, request, flash,
                    abort)
 from flask_login import (LoginManager, login_user, login_required,
