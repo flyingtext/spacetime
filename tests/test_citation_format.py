@@ -21,3 +21,9 @@ def test_format_citation_mla_basic():
     assert 'Oxford University Press' in result_str
     assert '2018' in result_str
     assert 'https://doi.org/10.1093/oso/9780198789475.003.0007' in result_str
+
+
+def test_format_citation_mla_url_only():
+    part = {'url': 'https://example.com'}
+    result = format_citation_mla(part, None)
+    assert str(result) == '<a href="https://example.com">https://example.com</a>'

@@ -103,6 +103,10 @@
     <div class="mb-3">
       <textarea id="citation-text" name="citation_text" placeholder="{{ _('Citation text') }}" rows="4" cols="50" class="form-control"></textarea>
     </div>
+    <div class="mb-3 d-flex gap-2">
+      <input type="url" id="citation-url" placeholder="{{ _('Citation URL') }}" class="form-control" />
+      <button type="button" id="add-url-citation" class="btn btn-secondary">{{ _('Add URL Citation') }}</button>
+    </div>
     <div class="mb-3">
       <button type="submit" class="btn btn-primary">{{ _('Add Citation') }}</button>
     </div>
@@ -130,6 +134,12 @@
           document.getElementById('citation-part').value = JSON.stringify(data.part, null, 2);
           document.getElementById('citation-text').value = data.text;
       });
+  });
+  document.getElementById('add-url-citation').addEventListener('click', function() {
+      const url = document.getElementById('citation-url').value;
+      document.getElementById('citation-text').value = url;
+      document.getElementById('citation-part').value = '';
+      document.getElementById('citation-form').submit();
   });
   document.getElementById('citation-form').addEventListener('submit', function(e) {
       if (!confirm('{{ _('Are you sure?') }}')) {

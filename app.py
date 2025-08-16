@@ -5,6 +5,7 @@ import re
 import markdown
 from datetime import datetime, timezone
 from xml.etree.ElementTree import Element
+from urllib.parse import urlparse
 
 from flask import (Flask, render_template, redirect, url_for, request, flash,
                    abort, jsonify)
@@ -358,6 +359,15 @@ def normalize_doi(doi: str | None) -> str | None:
     return doi.lower()
 
 
+def is_url(text: str) -> bool:
+    """Return True if text looks like an HTTP(S) URL."""
+    try:
+        result = urlparse(text)
+        return result.scheme in ('http', 'https') and bool(result.netloc)
+    except Exception:
+        return False
+
+
 def format_citation_mla(part: dict, doi: str | None = None) -> Markup:
     """Format citation metadata in MLA style with DOI link."""
     doi = normalize_doi(doi or part.get('doi'))
@@ -390,9 +400,15 @@ def format_citation_mla(part: dict, doi: str | None = None) -> Markup:
         pieces.append(str(escape(str(year).rstrip('.'))))
     if pages:
         pieces.append(f"pp. {escape(str(pages).rstrip('.'))}")
+    if not pieces and part.get('url'):
+        url = escape(str(part['url']))
+        return Markup(f'<a href="{url}">{url}</a>')
     citation = '. '.join(pieces)
     if doi:
         citation += f". <a href=\"https://doi.org/{doi}\">https://doi.org/{doi}</a>"
+    elif part.get('url'):
+        url = escape(str(part['url']))
+        citation += f". <a href=\"{url}\">{url}</a>"
     return Markup(citation)
 
 
@@ -1329,17 +1345,21 @@ def new_citation(post_id: int):
     if not text:
         flash(_('Citation text is required.'))
         return redirect(url_for('post_detail', post_id=post.id))
-    try:
-        bib_db = bibtexparser.loads(text)
-        entry = bib_db.entries[0] if bib_db.entries else {}
-    except Exception:
-        flash(_('Failed to parse BibTeX'))
-        return redirect(url_for('post_detail', post_id=post.id))
-    entry.pop('ID', None)
-    entry.pop('ENTRYTYPE', None)
-    doi = normalize_doi(entry.get('doi'))
-    if doi:
-        entry['doi'] = doi
+    if is_url(text):
+        entry = {'url': text}
+        doi = None
+    else:
+        try:
+            bib_db = bibtexparser.loads(text)
+            entry = bib_db.entries[0] if bib_db.entries else {}
+        except Exception:
+            flash(_('Failed to parse BibTeX'))
+            return redirect(url_for('post_detail', post_id=post.id))
+        entry.pop('ID', None)
+        entry.pop('ENTRYTYPE', None)
+        doi = normalize_doi(entry.get('doi'))
+        if doi:
+            entry['doi'] = doi
     # Ensure uniqueness by DOI or citation text
     if doi:
         existing = PostCitation.query.filter_by(post_id=post.id, doi=doi).first()
@@ -1395,33 +1415,37 @@ def edit_citation(post_id: int, cid: int):
         if not text:
             flash(_('Citation text is required.'))
             return redirect(url_for('edit_citation', post_id=post.id, cid=cid))
-        try:
-            bib_db = bibtexparser.loads(text)
-            entry = bib_db.entries[0] if bib_db.entries else {}
-        except Exception:
-            flash(_('Failed to parse BibTeX'))
-            return redirect(url_for('edit_citation', post_id=post.id, cid=cid))
-        entry.pop('ID', None)
-        entry.pop('ENTRYTYPE', None)
-        doi = normalize_doi(entry.get('doi'))
-        if doi:
-            entry['doi'] = doi
-            existing = (
-                PostCitation.query.filter(
-                    PostCitation.post_id == post.id,
-                    PostCitation.doi == doi,
-                    PostCitation.id != citation.id,
-                ).first()
-                or UserPostCitation.query.filter(
-                    UserPostCitation.post_id == post.id,
-                    UserPostCitation.doi == doi,
-                    UserPostCitation.id != citation.id,
-                ).first()
-            )
-            if existing:
-                flash(_('Citation with this DOI already exists.'))
-                return redirect(url_for('edit_citation', post_id=post.id, cid=cid))
+        if is_url(text):
+            entry = {'url': text}
+            doi = None
         else:
+            try:
+                bib_db = bibtexparser.loads(text)
+                entry = bib_db.entries[0] if bib_db.entries else {}
+            except Exception:
+                flash(_('Failed to parse BibTeX'))
+                return redirect(url_for('edit_citation', post_id=post.id, cid=cid))
+            entry.pop('ID', None)
+            entry.pop('ENTRYTYPE', None)
+            doi = normalize_doi(entry.get('doi'))
+            if doi:
+                entry['doi'] = doi
+                existing = (
+                    PostCitation.query.filter(
+                        PostCitation.post_id == post.id,
+                        PostCitation.doi == doi,
+                        PostCitation.id != citation.id,
+                    ).first()
+                    or UserPostCitation.query.filter(
+                        UserPostCitation.post_id == post.id,
+                        UserPostCitation.doi == doi,
+                        UserPostCitation.id != citation.id,
+                    ).first()
+                )
+                if existing:
+                    flash(_('Citation with this DOI already exists.'))
+                    return redirect(url_for('edit_citation', post_id=post.id, cid=cid))
+        if doi is None:
             existing = (
                 PostCitation.query.filter(
                     PostCitation.post_id == post.id,
@@ -1539,7 +1563,10 @@ def edit_post(post_id: int):
             post.latitude = None
             post.longitude = None
 
-        PostMetadata.query.filter_by(post_id=post.id).delete(synchronize_session=False)
+        PostMetadata.query.filter(
+            PostMetadata.post_id == post.id,
+            PostMetadata.key != 'views'
+        ).delete(synchronize_session=False)
 
         for key, value in meta_dict.items():
             db.session.add(PostMetadata(post=post, key=key, value=value))
