@@ -84,9 +84,9 @@ msgstr "Editar"
 msgid "Post \"%(title)s\" was updated."
 msgstr "La publicación \"%(title)s\" fue actualizada."
 
-#: templates/base.html:5
-msgid "Wiki Board"
-msgstr "Tablón Wiki"
+#: templates/base.html:6
+msgid "Spacetime"
+msgstr "Spacetime"
 
 #: templates/base.html:11
 msgid "Home"
