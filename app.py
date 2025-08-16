@@ -23,6 +23,7 @@ from sqlalchemy import func, event, or_
 from flask_babel import Babel, _
 from dotenv import load_dotenv
 from geopy.geocoders import Nominatim
+from geopy.distance import distance as geopy_distance
 
 load_dotenv()
 
@@ -381,6 +382,8 @@ class Post(db.Model):
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     author = db.relationship('User', backref='posts')
     tags = db.relationship('Tag', secondary='post_tag', backref='posts')
+    latitude = db.Column(db.Float)
+    longitude = db.Column(db.Float)
     __table_args__ = (db.UniqueConstraint('path', 'language', name='uix_path_language'),)
 
 
@@ -1163,6 +1166,9 @@ def tag_filter(name: str):
 def search():
     key = request.args.get('key', '').strip()
     value_raw = request.args.get('value', '').strip()
+    lat = request.args.get('lat', type=float)
+    lon = request.args.get('lon', type=float)
+    radius = request.args.get('radius', type=float)
 
     # Gather distinct metadata keys for the dropdown and include title/path
     meta_keys = [k for (k,) in db.session.query(PostMetadata.key).distinct().all()]
@@ -1188,9 +1194,26 @@ def search():
                 )
                 .all()
             )
+    elif lat is not None and lon is not None and radius is not None:
+        posts = Post.query.all()
     else:
         # Provide example posts to illustrate expected input format
         examples = Post.query.limit(5).all()
+
+    if posts is not None and lat is not None and lon is not None and radius is not None:
+        posts = [
+            p
+            for p in posts
+            if p.latitude is not None
+            and p.longitude is not None
+            and geopy_distance((lat, lon), (p.latitude, p.longitude)).km <= radius
+        ]
+
+    coords_json = (
+        json.dumps([{'lat': p.latitude, 'lon': p.longitude} for p in posts])
+        if posts
+        else '[]'
+    )
 
     return render_template(
         'search.html',
@@ -1199,6 +1222,10 @@ def search():
         value=value_raw,
         keys=meta_keys,
         examples=examples,
+        lat=lat,
+        lon=lon,
+        radius=radius,
+        coords_json=coords_json,
     )
 
 
