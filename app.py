@@ -779,6 +779,11 @@ def get_setting(key: str, default: str = '') -> str:
     return setting.value if setting else default
 
 
+def get_category_tags() -> list[str]:
+    """Return list of category tag names from settings."""
+    return [t.strip() for t in get_setting('post_categories', '').split(',') if t.strip()]
+
+
 @app.context_processor
 def inject_settings():
     return {'get_setting': get_setting}
@@ -880,8 +885,15 @@ def load_user(user_id: str):
 
 @app.route('/posts')
 def all_posts():
-    posts = Post.query.order_by(Post.id.desc()).all()
-    return render_template('index.html', posts=posts)
+    tag_name = request.args.get('tag', '').strip()
+    tag = None
+    if tag_name:
+        tag = Tag.query.filter_by(name=tag_name).first_or_404()
+        posts = tag.posts
+    else:
+        posts = Post.query.order_by(Post.id.desc()).all()
+    categories = get_category_tags()
+    return render_template('index.html', posts=posts, tag=tag, categories=categories)
 
 
 @app.route('/')
@@ -1895,6 +1907,7 @@ def settings():
     timezone_value = get_setting('timezone', 'UTC')
     rss_enabled_val = get_setting('rss_enabled', 'false')
     rss_limit = get_setting('rss_limit', '20')
+    category_tags = get_setting('post_categories', '')
     if request.method == 'POST':
 
         title = request.form.get('site_title', title).strip()
@@ -1902,6 +1915,7 @@ def settings():
         timezone_value = request.form.get('timezone', timezone_value).strip() or 'UTC'
         rss_enabled_val = 'rss_enabled' in request.form
         rss_limit = request.form.get('rss_limit', rss_limit).strip() or '20'
+        category_tags = request.form.get('post_categories', category_tags).strip()
 
         title_setting = Setting.query.filter_by(key='site_title').first()
         if title_setting:
@@ -1939,6 +1953,12 @@ def settings():
         else:
             db.session.add(Setting(key='rss_limit', value=rss_limit))
 
+        cat_setting = Setting.query.filter_by(key='post_categories').first()
+        if cat_setting:
+            cat_setting.value = category_tags
+        else:
+            db.session.add(Setting(key='post_categories', value=category_tags))
+
         db.session.commit()
         flash(_('Settings updated.'))
         return redirect(url_for('settings'))
@@ -1949,6 +1969,7 @@ def settings():
         timezone=timezone_value,
         rss_enabled=rss_enabled_val.lower() in ['true', '1', 'yes', 'on'],
         rss_limit=rss_limit,
+        post_categories=category_tags,
     )
 
 
@@ -2014,7 +2035,8 @@ def tag_list():
 @app.route('/tag/<string:name>')
 def tag_filter(name: str):
     tag = Tag.query.filter_by(name=name).first_or_404()
-    return render_template('index.html', posts=tag.posts, tag=tag)
+    categories = get_category_tags()
+    return render_template('index.html', posts=tag.posts, tag=tag, categories=categories)
 
 
 @app.route('/search')
