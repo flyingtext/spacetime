@@ -186,6 +186,17 @@ class PostTag(db.Model):
     tag_id = db.Column(db.Integer, db.ForeignKey('tag.id'), primary_key=True)
 
 
+class PostWatch(db.Model):
+    __tablename__ = 'post_watch'
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
+
+    post = db.relationship(
+        'Post', backref=db.backref('watchers', cascade='all, delete-orphan')
+    )
+    user = db.relationship('User', backref='watched_posts')
+
+
 class PostMetadata(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
@@ -214,6 +225,16 @@ class UserPostMetadata(db.Model):
 
     post = db.relationship('Post', backref='user_metadata')
     user = db.relationship('User')
+
+
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    message = db.Column(db.String(200), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    read_at = db.Column(db.DateTime, nullable=True)
+
+    user = db.relationship('User', backref='notifications')
 
 
 class PostCitation(db.Model):
@@ -330,6 +351,21 @@ def logout():
     return redirect(url_for('index'))
 
 
+@app.route('/notifications')
+@login_required
+def notifications():
+    notes = (
+        Notification.query.filter_by(user_id=current_user.id)
+        .order_by(Notification.created_at.desc())
+        .all()
+    )
+    for n in notes:
+        if n.read_at is None:
+            n.read_at = datetime.utcnow()
+    db.session.commit()
+    return render_template('notifications.html', notifications=notes)
+
+
 @app.route('/post/new', methods=['GET', 'POST'])
 @login_required
 def create_post():
@@ -418,6 +454,28 @@ def post_detail(post_id: int):
         citations=citations,
         user_citations=user_citations,
     )
+
+
+@app.route('/post/<int:post_id>/watch', methods=['POST'])
+@login_required
+def watch_post(post_id: int):
+    post = Post.query.get_or_404(post_id)
+    existing = PostWatch.query.filter_by(post_id=post.id, user_id=current_user.id).first()
+    if not existing:
+        db.session.add(PostWatch(post_id=post.id, user_id=current_user.id))
+        db.session.commit()
+    return redirect(url_for('post_detail', post_id=post.id))
+
+
+@app.route('/post/<int:post_id>/unwatch', methods=['POST'])
+@login_required
+def unwatch_post(post_id: int):
+    post = Post.query.get_or_404(post_id)
+    watch = PostWatch.query.filter_by(post_id=post.id, user_id=current_user.id).first()
+    if watch:
+        db.session.delete(watch)
+        db.session.commit()
+    return redirect(url_for('post_detail', post_id=post.id))
 
 
 @app.route('/docs/<string:language>/<path:doc_path>')
@@ -689,7 +747,11 @@ def edit_post(post_id: int):
                 )
         else:
             UserPostMetadata.query.filter_by(post_id=post.id, user_id=current_user.id).delete()
-
+        watchers = PostWatch.query.filter_by(post_id=post.id).all()
+        for w in watchers:
+            if w.user_id != current_user.id:
+                msg = f'Post "{post.title}" was updated.'
+                db.session.add(Notification(user_id=w.user_id, message=msg))
         db.session.commit()
         return redirect(url_for('document', language=post.language, doc_path=post.path))
     tags_str = ', '.join([t.name for t in post.tags])
@@ -815,6 +877,8 @@ def citation_stats():
 
 if __name__ == '__main__':
     with app.app_context():
+        PostWatch.__table__.create(bind=db.engine, checkfirst=True)
+        Notification.__table__.create(bind=db.engine, checkfirst=True)
         PostMetadata.__table__.create(bind=db.engine, checkfirst=True)
         UserPostMetadata.__table__.create(bind=db.engine, checkfirst=True)
         PostCitation.__table__.create(bind=db.engine, checkfirst=True)
