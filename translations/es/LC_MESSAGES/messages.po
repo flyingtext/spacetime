@@ -1,0 +1,332 @@
+# Spanish translations for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-08-16 10:34+0000\n"
+"PO-Revision-Date: 2025-08-16 10:34+0000\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: es\n"
+"Language-Team: es <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: app.py:384
+msgid "Username already exists"
+msgstr "El nombre de usuario ya existe"
+
+#: app.py:390
+msgid "Registration successful. Please log in."
+msgstr "Registro exitoso. Por favor inicia sesión."
+
+#: app.py:404
+msgid "Invalid credentials"
+msgstr "Credenciales inválidas"
+
+#: app.py:458 app.py:796
+msgid "Invalid metadata JSON"
+msgstr "JSON de metadatos inválido"
+
+#: app.py:467 app.py:808
+msgid "Invalid user metadata JSON"
+msgstr "JSON de metadatos de usuario inválido"
+
+#: app.py:479
+msgid "Create"
+msgstr "Crear"
+
+#: app.py:603
+msgid "Text is required"
+msgstr "Se requiere texto"
+
+#: app.py:612
+msgid "Title is required"
+msgstr "Se requiere título"
+
+#: app.py:615
+msgid "Citation not found"
+msgstr "Cita no encontrada"
+
+#: app.py:620 app.py:638 app.py:702
+msgid "Failed to parse BibTeX"
+msgstr "Error al analizar BibTeX"
+
+#: app.py:632 app.py:696
+msgid "Citation text is required."
+msgstr "Se requiere texto de cita."
+
+#: app.py:649 app.py:721
+msgid "Citation with this DOI already exists."
+msgstr "Ya existe una cita con este DOI."
+
+#: app.py:656 app.py:737
+msgid "Citation with this text already exists."
+msgstr "Ya existe una cita con este texto."
+
+#: app.py:691 app.py:759 app.py:771
+msgid "Permission denied."
+msgstr "Permiso denegado."
+
+#: app.py:747 app.py:830 templates/post_detail.html:46
+#: templates/post_detail.html:64 templates/post_detail.html:116
+msgid "Edit"
+msgstr "Editar"
+
+#: app.py:820
+#, python-format
+msgid "Post \"%(title)s\" was updated."
+msgstr "La publicación \"%(title)s\" fue actualizada."
+
+#: templates/base.html:5
+msgid "Wiki Board"
+msgstr "Tablón Wiki"
+
+#: templates/base.html:11
+msgid "Home"
+msgstr "Inicio"
+
+#: templates/base.html:12 templates/post_detail.html:7
+#: templates/tag_list.html:2 templates/tag_list.html:4
+msgid "Tags"
+msgstr "Etiquetas"
+
+#: templates/base.html:13 templates/search.html:2 templates/search.html:8
+msgid "Search"
+msgstr "Buscar"
+
+#: templates/base.html:14
+msgid "Citation Stats"
+msgstr "Estadísticas de citas"
+
+#: templates/base.html:17 templates/base.html:61 templates/notifications.html:2
+#: templates/notifications.html:4
+msgid "Notifications"
+msgstr "Notificaciones"
+
+#: templates/base.html:18
+msgid "New Post"
+msgstr "Nueva publicación"
+
+#: templates/base.html:20
+msgid "Logout"
+msgstr "Cerrar sesión"
+
+#: templates/base.html:22 templates/login.html:2 templates/login.html:4
+#: templates/login.html:8
+msgid "Login"
+msgstr "Iniciar sesión"
+
+#: templates/base.html:23 templates/register.html:2 templates/register.html:4
+#: templates/register.html:8
+msgid "Register"
+msgstr "Registrarse"
+
+#: templates/base.html:49
+msgid "Continue"
+msgstr "Continuar"
+
+#: templates/base.html:50
+msgid "Close"
+msgstr "Cerrar"
+
+#: templates/citation_form.html:2
+#, python-format
+msgid "%(action)s Citation"
+msgstr ""
+
+#: templates/citation_form.html:4
+#, python-format
+msgid "%(action)s Citation for %(title)s"
+msgstr ""
+
+#: templates/citation_form.html:6 templates/post_detail.html:82
+msgid "Citation part (JSON)"
+msgstr "Parte de la cita (JSON)"
+
+#: templates/citation_form.html:7 templates/post_detail.html:83
+msgid "Citation text"
+msgstr "Texto de la cita"
+
+#: templates/citation_stats.html:2 templates/citation_stats.html:4
+msgid "Citation Statistics"
+msgstr "Estadísticas de citas"
+
+#: templates/citation_stats.html:7
+msgid "DOI / Citation"
+msgstr "DOI / Cita"
+
+#: templates/citation_stats.html:8
+msgid "Usage Count"
+msgstr "Número de usos"
+
+#: templates/citation_stats.html:9 templates/index.html:2
+msgid "Posts"
+msgstr "Publicaciones"
+
+#: templates/diff.html:2
+msgid "Diff"
+msgstr "Diferencia"
+
+#: templates/diff.html:4
+#, python-format
+msgid "Diff for %(title)s"
+msgstr "Diferencia para %(title)s"
+
+#: templates/diff.html:6
+msgid "Back to history"
+msgstr "Volver al historial"
+
+#: templates/history.html:2 templates/post_detail.html:114
+msgid "History"
+msgstr "Historial"
+
+#: templates/history.html:4
+#, python-format
+msgid "History for %(title)s"
+msgstr "Historial de %(title)s"
+
+#: templates/history.html:7 templates/index.html:7
+msgid "by"
+msgstr "por"
+
+#: templates/history.html:8
+msgid "diff"
+msgstr "diff"
+
+#: templates/index.html:4
+#, python-format
+msgid "Posts tagged \"%(tag)s\""
+msgstr "Publicaciones etiquetadas \"%(tag)s\""
+
+#: templates/index.html:4
+msgid "All Posts"
+msgstr "Todas las publicaciones"
+
+#: templates/index.html:9
+msgid "No posts yet."
+msgstr "No hay publicaciones."
+
+#: templates/login.html:6 templates/register.html:6
+msgid "Username"
+msgstr "Nombre de usuario"
+
+#: templates/login.html:7 templates/register.html:7
+msgid "Password"
+msgstr "Contraseña"
+
+#: templates/notifications.html:11
+msgid "No notifications."
+msgstr "Sin notificaciones."
+
+#: templates/post_detail.html:14
+msgid "Metadata"
+msgstr "Metadatos"
+
+#: templates/post_detail.html:16
+msgid "Common"
+msgstr "Común"
+
+#: templates/post_detail.html:24
+msgid "Your Metadata"
+msgstr "Tus metadatos"
+
+#: templates/post_detail.html:35
+msgid "Citations"
+msgstr "Citas"
+
+#: templates/post_detail.html:37
+msgid "Global"
+msgstr "Global"
+
+#: templates/post_detail.html:48 templates/post_detail.html:66
+msgid "Delete"
+msgstr "Eliminar"
+
+#: templates/post_detail.html:56
+msgid "Your Citations"
+msgstr "Tus citas"
+
+#: templates/post_detail.html:76 templates/post_detail.html:84
+msgid "Add Citation"
+msgstr "Agregar cita"
+
+#: templates/post_detail.html:79 templates/post_form.html:6
+msgid "Title"
+msgstr "Título"
+
+#: templates/post_detail.html:80
+msgid "Fetch Citation"
+msgstr "Obtener cita"
+
+#: templates/post_detail.html:107
+msgid "Other languages"
+msgstr "Otros idiomas"
+
+#: templates/post_detail.html:122
+msgid "Unwatch"
+msgstr "Dejar de seguir"
+
+#: templates/post_detail.html:126
+msgid "Watch"
+msgstr "Seguir"
+
+#: templates/post_form.html:2 templates/post_form.html:4
+#, python-format
+msgid "%(action)s Post"
+msgstr "Publicación %(action)s"
+
+#: templates/post_form.html:10
+msgid "Suggest Citation"
+msgstr "Sugerir cita"
+
+#: templates/post_form.html:13
+msgid "Path (e.g., docs/start)"
+msgstr "Ruta (ej., docs/start)"
+
+#: templates/post_form.html:14
+msgid "Language code"
+msgstr "Código de idioma"
+
+#: templates/post_form.html:15
+msgid "Comma separated tags"
+msgstr "Etiquetas separadas por comas"
+
+#: templates/post_form.html:16
+msgid "Post metadata (JSON)"
+msgstr "Metadatos de la publicación (JSON)"
+
+#: templates/post_form.html:17
+msgid "Your metadata (JSON)"
+msgstr "Tus metadatos (JSON)"
+
+#: templates/post_form.html:56
+msgid "Save"
+msgstr "Guardar"
+
+#: templates/search.html:4
+msgid "Search Posts"
+msgstr "Buscar publicaciones"
+
+#: templates/search.html:6
+msgid "Key"
+msgstr "Clave"
+
+#: templates/search.html:7
+msgid "Value"
+msgstr "Valor"
+
+#: templates/search.html:15
+msgid "No posts found."
+msgstr "No se encontraron publicaciones."
+
+#: templates/tag_list.html:9
+msgid "No tags yet."
+msgstr "Aún no hay etiquetas."
+

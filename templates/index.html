@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Posts{% endblock %}
+{% block title %}{{ _('Posts') }}{% endblock %}
 {% block content %}
-<h1>{% if tag %}Posts tagged "{{ tag.name }}"{% else %}All Posts{% endif %}</h1>
+<h1>{% if tag %}{{ _('Posts tagged "%(tag)s"', tag=tag.name) }}{% else %}{{ _('All Posts') }}{% endif %}</h1>
 <ul id="post-list">
   {% for post in posts %}
-    <li><a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.title }}</a> - {{ post.path }} ({{ post.language }}) by {{ post.author.username }}</li>
+    <li><a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.title }}</a> - {{ post.path }} ({{ post.language }}) {{ _('by') }} {{ post.author.username }}</li>
   {% else %}
-    <li>No posts yet.</li>
+    <li>{{ _('No posts yet.') }}</li>
   {% endfor %}
 </ul>
 {% endblock %}

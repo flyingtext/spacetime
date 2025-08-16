@@ -19,11 +19,16 @@ import requests
 from habanero import Crossref
 import bibtexparser
 from sqlalchemy import func, event
+from flask_babel import Babel, _
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dev-secret'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///wiki.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['BABEL_DEFAULT_LOCALE'] = 'en'
+app.config['BABEL_DEFAULT_TIMEZONE'] = 'UTC'
+app.config['LANGUAGES'] = ['en', 'es']
+app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -31,6 +36,13 @@ login_manager.login_view = 'login'
 
 socketio = SocketIO(app)
 cr = Crossref()
+
+babel = Babel(app)
+
+
+@babel.localeselector
+def get_locale():
+    return request.accept_languages.best_match(app.config['LANGUAGES'])
 
 
 def fetch_bibtex_by_title(title: str) -> str | None:
@@ -369,13 +381,13 @@ def register():
         username = request.form['username']
         password = request.form['password']
         if User.query.filter_by(username=username).first():
-            flash('Username already exists')
+            flash(_('Username already exists'))
             return redirect(url_for('register'))
         user = User(username=username)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
-        flash('Registration successful. Please log in.')
+        flash(_('Registration successful. Please log in.'))
         return redirect(url_for('login'))
     return render_template('register.html')
 
@@ -389,7 +401,7 @@ def login():
         if user and user.check_password(password):
             login_user(user)
             return redirect(url_for('index'))
-        flash('Invalid credentials')
+        flash(_('Invalid credentials'))
     return render_template('login.html')
 
 
@@ -443,7 +455,7 @@ def create_post():
             try:
                 meta_dict = json.loads(metadata_json)
             except ValueError:
-                flash('Invalid metadata JSON')
+                flash(_('Invalid metadata JSON'))
                 return redirect(url_for('create_post'))
             for key, value in meta_dict.items():
                 db.session.add(PostMetadata(post=post, key=key, value=value))
@@ -452,7 +464,7 @@ def create_post():
             try:
                 user_meta_dict = json.loads(user_metadata_json)
             except ValueError:
-                flash('Invalid user metadata JSON')
+                flash(_('Invalid user metadata JSON'))
                 return redirect(url_for('create_post'))
             for key, value in user_meta_dict.items():
                 db.session.add(
@@ -464,7 +476,7 @@ def create_post():
         db.session.add(rev)
         db.session.commit()
         return redirect(url_for('document', language=post.language, doc_path=post.path))
-    return render_template('post_form.html', action='Create', metadata='', user_metadata='')
+    return render_template('post_form.html', action=_('Create'), metadata='', user_metadata='')
 
 
 @app.route('/post/<int:post_id>')
@@ -588,7 +600,7 @@ def citation_suggest():
     data = request.get_json() or {}
     text = data.get('text', '').strip()
     if not text:
-        return {'error': 'Text is required'}, 400
+        return {'error': _('Text is required')}, 400
     return {'results': suggest_citations(text)}
 
 
@@ -597,15 +609,15 @@ def fetch_citation():
     data = request.get_json() or {}
     title = data.get('title', '').strip()
     if not title:
-        return {'error': 'Title is required'}, 400
+        return {'error': _('Title is required')}, 400
     bibtex = fetch_bibtex_by_title(title)
     if not bibtex:
-        return {'error': 'Citation not found'}, 404
+        return {'error': _('Citation not found')}, 404
     try:
         bib_db = bibtexparser.loads(bibtex)
         entry = bib_db.entries[0] if bib_db.entries else {}
     except Exception:
-        return {'error': 'Failed to parse BibTeX'}, 500
+        return {'error': _('Failed to parse BibTeX')}, 500
     entry.pop('ID', None)
     entry.pop('ENTRYTYPE', None)
     return {'part': entry, 'text': bibtex}
@@ -617,13 +629,13 @@ def new_citation(post_id: int):
     post = Post.query.get_or_404(post_id)
     text = request.form.get('citation_text', '').strip()
     if not text:
-        flash('Citation text is required.')
+        flash(_('Citation text is required.'))
         return redirect(url_for('post_detail', post_id=post.id))
     try:
         bib_db = bibtexparser.loads(text)
         entry = bib_db.entries[0] if bib_db.entries else {}
     except Exception:
-        flash('Failed to parse BibTeX')
+        flash(_('Failed to parse BibTeX'))
         return redirect(url_for('post_detail', post_id=post.id))
     entry.pop('ID', None)
     entry.pop('ENTRYTYPE', None)
@@ -634,14 +646,14 @@ def new_citation(post_id: int):
         if not existing:
             existing = UserPostCitation.query.filter_by(post_id=post.id, doi=doi).first()
         if existing:
-            flash('Citation with this DOI already exists.')
+            flash(_('Citation with this DOI already exists.'))
             return redirect(url_for('post_detail', post_id=post.id))
     else:
         existing = PostCitation.query.filter_by(post_id=post.id, citation_text=text).first()
         if not existing:
             existing = UserPostCitation.query.filter_by(post_id=post.id, citation_text=text).first()
         if existing:
-            flash('Citation with this text already exists.')
+            flash(_('Citation with this text already exists.'))
             return redirect(url_for('post_detail', post_id=post.id))
     if current_user.id == post.author_id or current_user.is_admin():
         citation = PostCitation(
@@ -676,18 +688,18 @@ def edit_citation(post_id: int, cid: int):
     if citation is None:
         citation = UserPostCitation.query.filter_by(id=cid, post_id=post.id).first_or_404()
     if current_user.id != citation.user_id and not current_user.is_admin():
-        flash('Permission denied.')
+        flash(_('Permission denied.'))
         return redirect(url_for('post_detail', post_id=post.id))
     if request.method == 'POST':
         text = request.form.get('citation_text', '').strip()
         if not text:
-            flash('Citation text is required.')
+            flash(_('Citation text is required.'))
             return redirect(url_for('edit_citation', post_id=post.id, cid=cid))
         try:
             bib_db = bibtexparser.loads(text)
             entry = bib_db.entries[0] if bib_db.entries else {}
         except Exception:
-            flash('Failed to parse BibTeX')
+            flash(_('Failed to parse BibTeX'))
             return redirect(url_for('edit_citation', post_id=post.id, cid=cid))
         entry.pop('ID', None)
         entry.pop('ENTRYTYPE', None)
@@ -706,7 +718,7 @@ def edit_citation(post_id: int, cid: int):
                 ).first()
             )
             if existing:
-                flash('Citation with this DOI already exists.')
+                flash(_('Citation with this DOI already exists.'))
                 return redirect(url_for('edit_citation', post_id=post.id, cid=cid))
         else:
             existing = (
@@ -722,7 +734,7 @@ def edit_citation(post_id: int, cid: int):
                 ).first()
             )
             if existing:
-                flash('Citation with this text already exists.')
+                flash(_('Citation with this text already exists.'))
                 return redirect(url_for('edit_citation', post_id=post.id, cid=cid))
         citation.citation_part = entry
         citation.citation_text = text
@@ -732,7 +744,7 @@ def edit_citation(post_id: int, cid: int):
         db.session.commit()
         return redirect(url_for('post_detail', post_id=post.id))
     part_json = json.dumps(citation.citation_part)
-    return render_template('citation_form.html', action='Edit', citation=citation,
+    return render_template('citation_form.html', action=_('Edit'), citation=citation,
                            citation_part=part_json, post=post)
 
 
@@ -744,7 +756,7 @@ def delete_citation(post_id: int, cid: int):
     if citation is None:
         citation = UserPostCitation.query.filter_by(id=cid, post_id=post.id).first_or_404()
     if current_user.id != citation.user_id and not current_user.is_admin():
-        flash('Permission denied.')
+        flash(_('Permission denied.'))
         return redirect(url_for('post_detail', post_id=post.id))
     db.session.delete(citation)
     db.session.commit()
@@ -756,7 +768,7 @@ def delete_citation(post_id: int, cid: int):
 def edit_post(post_id: int):
     post = Post.query.get_or_404(post_id)
     if current_user.id != post.author_id and not current_user.is_admin():
-        flash('Permission denied.')
+        flash(_('Permission denied.'))
         return redirect(url_for('document', language=post.language, doc_path=post.path))
     if request.method == 'POST':
         rev = Revision(post=post, user=current_user, title=post.title,
@@ -781,7 +793,7 @@ def edit_post(post_id: int):
             try:
                 meta_dict = json.loads(metadata_json)
             except ValueError:
-                flash('Invalid metadata JSON')
+                flash(_('Invalid metadata JSON'))
                 return redirect(url_for('edit_post', post_id=post.id))
             PostMetadata.query.filter_by(post_id=post.id).delete()
             for key, value in meta_dict.items():
@@ -793,7 +805,7 @@ def edit_post(post_id: int):
             try:
                 user_meta_dict = json.loads(user_metadata_json)
             except ValueError:
-                flash('Invalid user metadata JSON')
+                flash(_('Invalid user metadata JSON'))
                 return redirect(url_for('edit_post', post_id=post.id))
             UserPostMetadata.query.filter_by(post_id=post.id, user_id=current_user.id).delete()
             for key, value in user_meta_dict.items():
@@ -805,7 +817,7 @@ def edit_post(post_id: int):
         watchers = PostWatch.query.filter_by(post_id=post.id).all()
         for w in watchers:
             if w.user_id != current_user.id:
-                msg = f'Post "{post.title}" was updated.'
+                msg = _('Post "%(title)s" was updated.', title=post.title)
                 db.session.add(Notification(user_id=w.user_id, message=msg))
         db.session.commit()
         return redirect(url_for('document', language=post.language, doc_path=post.path))
@@ -815,7 +827,7 @@ def edit_post(post_id: int):
     user_entries = UserPostMetadata.query.filter_by(post_id=post.id, user_id=current_user.id).all()
     user_meta_dict = {m.key: m.value for m in user_entries}
     user_meta = json.dumps(user_meta_dict) if user_meta_dict else ''
-    return render_template('post_form.html', action='Edit', post=post, tags=tags_str,
+    return render_template('post_form.html', action=_('Edit'), post=post, tags=tags_str,
                            metadata=post_meta, user_metadata=user_meta)
 
 
