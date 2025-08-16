@@ -1,18 +1,18 @@
 {% extends "base.html" %}
-{% block title %}Search{% endblock %}
+{% block title %}{{ _('Search') }}{% endblock %}
 {% block content %}
-<h1>Search Posts</h1>
+<h1>{{ _('Search Posts') }}</h1>
 <form method="get">
-  <label>Key: <input type="text" name="key" value="{{ key }}"></label>
-  <label>Value: <input type="text" name="value" value="{{ value }}"></label>
-  <button type="submit">Search</button>
+  <label>{{ _('Key') }}: <input type="text" name="key" value="{{ key }}"></label>
+  <label>{{ _('Value') }}: <input type="text" name="value" value="{{ value }}"></label>
+  <button type="submit">{{ _('Search') }}</button>
 </form>
 {% if posts is not none %}
 <ul>
   {% for post in posts %}
     <li><a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.title }}</a> - {{ post.path }} ({{ post.language }})</li>
   {% else %}
-    <li>No posts found.</li>
+    <li>{{ _('No posts found.') }}</li>
   {% endfor %}
 </ul>
 {% endif %}
