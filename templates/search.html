@@ -11,8 +11,11 @@
       {% endfor %}
     </select>
   </label>
-  <label>{{ _('Value') }}: <input type="text" name="value" value="{{ value }}"></label>
-  <button type="submit">{{ _('Search') }}</button>
+    <label>{{ _('Value') }}: <input type="text" name="value" value="{{ value }}"></label>
+    <label>{{ _('Latitude') }}: <input type="text" name="lat" value="{{ lat if lat is not none else '' }}"></label>
+    <label>{{ _('Longitude') }}: <input type="text" name="lon" value="{{ lon if lon is not none else '' }}"></label>
+    <label>{{ _('Radius (km)') }}: <input type="text" name="radius" value="{{ radius if radius is not none else '' }}"></label>
+    <button type="submit">{{ _('Search') }}</button>
 </form>
 {% if posts is not none %}
 <ul>
@@ -21,8 +24,11 @@
   {% else %}
     <li>{{ _('No posts found.') }}</li>
   {% endfor %}
-</ul>
-{% else %}
+  </ul>
+  <script>
+    const postCoords = {{ coords_json|safe }};
+  </script>
+  {% else %}
   <p>{{ _('Select a key and enter a value. You can also choose "title" or "path" to search by post fields.') }}</p>
   {% if examples %}
   <p>{{ _('Example posts:') }}</p>
