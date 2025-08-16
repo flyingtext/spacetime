@@ -3,8 +3,8 @@
 {% block content %}
 <h1>{{ _('%(action)s Post', action=action) }}</h1>
 <form method="post">
-  <p><input name="title" placeholder="{{ _('Title') }}" value="{{ post.title if post else '' }}"></p>
-  <p><textarea name="body" rows="10" cols="50">{{ post.body if post else '' }}</textarea></p>
+  <p><input name="title" placeholder="{{ _('Title') }}" value="{{ post.title if post else prefill_title or '' }}"></p>
+  <p><textarea name="body" rows="10" cols="50">{{ post.body if post else prefill_body or '' }}</textarea></p>
   <div id="preview"></div>
   {% if post %}
   <p><button type="button" id="suggest-citations">{{ _('Suggest Citation') }}</button></p>
@@ -15,6 +15,7 @@
   <p><input name="tags" placeholder="{{ _('Comma separated tags') }}" value="{{ tags if tags else '' }}"></p>
   <p><textarea name="metadata" placeholder="{{ _('Post metadata (JSON)') }}" rows="5" cols="50">{{ metadata if metadata else '' }}</textarea></p>
   <p><textarea name="user_metadata" placeholder="{{ _('Your metadata (JSON)') }}" rows="5" cols="50">{{ user_metadata if user_metadata else '' }}</textarea></p>
+  {% if request_id %}<input type="hidden" name="request_id" value="{{ request_id }}">{% endif %}
   <p><button type="submit">{{ action }}</button></p>
 </form>
 <script>

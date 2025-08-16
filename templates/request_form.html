@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Request Post') }}{% endblock %}
+{% block content %}
+<h1>{{ _('Request Post') }}</h1>
+<form method="post">
+  <p><input name="title" placeholder="{{ _('Title') }}"></p>
+  <p><textarea name="description" rows="5" cols="50" placeholder="{{ _('Description') }}"></textarea></p>
+  <p><button type="submit">{{ _('Submit') }}</button></p>
+</form>
+{% endblock %}
