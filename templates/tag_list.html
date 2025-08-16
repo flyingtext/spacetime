@@ -39,12 +39,18 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 function createIcon(name){
   const svg = `\
   <svg xmlns="http://www.w3.org/2000/svg" width="120" height="40">
-    <rect width="120" height="40" rx="5" ry="5" fill="#0d6efd" fill-opacity="0.1" stroke="#0d6efd" />
+    <rect width="120" height="40" rx="5" ry="5" fill="#0d6efd" fill-opacity="0.1" stroke-width="0" />
     <text x="60" y="25" font-size="14" text-anchor="middle" fill="#0d6efd">${name}</text>
   </svg>`;
   return L.divIcon({html: svg, className: '', iconSize:[120,40], iconAnchor:[60,40]});
 }
-const markers = L.markerClusterGroup();
+const markers = L.markerClusterGroup({
+  spiderLegPolylineOptions: {
+    color: '#0d6efd',
+    weight: 1,
+    opacity: 1
+  }
+});
 tagLocations.forEach(t => {
   const marker = L.marker([t.lat, t.lon], {icon: createIcon(t.name)});
   marker.on('click', () => {
