@@ -28,6 +28,8 @@ following variables are supported:
 - `BABEL_DEFAULT_LOCALE` – default locale for translations.
 - `LANGUAGES` – comma-separated list of supported languages.
 - `BABEL_TRANSLATION_DIRECTORIES` – path to translation files.
+- `HOST` – hostname or IP address for the server.
+- `PORT` – port for the server.
 
 Example `.env`:
 
@@ -37,12 +39,14 @@ SQLALCHEMY_DATABASE_URI=sqlite:///wiki.db
 BABEL_DEFAULT_LOCALE=en
 LANGUAGES=en,es
 BABEL_TRANSLATION_DIRECTORIES=translations
+HOST=127.0.0.1
+PORT=5000
 ```
 
 ## Usage
 ```bash
-python app.py
+HOST=127.0.0.1 PORT=5000 python app.py
 ```
 The application creates `wiki.db` SQLite database on first run.
 
-Open browser at `http://127.0.0.1:5000/`.
+Open browser at `http://${HOST}:${PORT}/`.

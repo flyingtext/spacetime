@@ -1241,4 +1241,6 @@ if __name__ == '__main__':
         UserPostCitation.__table__.create(bind=db.engine, checkfirst=True)
         RequestedPost.__table__.create(bind=db.engine, checkfirst=True)
         db.create_all()
-    socketio.run(app, debug=True)
+    host = os.getenv("HOST", "127.0.0.1")
+    port = int(os.getenv("PORT", 5000))
+    socketio.run(app, host=host, port=port, debug=True)
