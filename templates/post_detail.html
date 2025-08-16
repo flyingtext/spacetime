@@ -74,11 +74,33 @@
 {% if current_user.is_authenticated %}
 <section>
   <h2>Add Citation</h2>
-  <form action="{{ url_for('new_citation', post_id=post.id) }}" method="post">
-    <p><textarea name="citation_part" placeholder="Citation part (JSON)" rows="4" cols="50"></textarea></p>
-    <p><textarea name="citation_text" placeholder="Citation text" rows="4" cols="50"></textarea></p>
+  <form id="citation-form" action="{{ url_for('new_citation', post_id=post.id) }}" method="post">
+    <p>
+      <input type="text" id="citation-title" placeholder="Title" />
+      <button type="button" id="fetch-citation">Fetch Citation</button>
+    </p>
+    <p><textarea id="citation-part" name="citation_part" placeholder="Citation part (JSON)" rows="4" cols="50"></textarea></p>
+    <p><textarea id="citation-text" name="citation_text" placeholder="Citation text" rows="4" cols="50"></textarea></p>
     <p><button type="submit">Add Citation</button></p>
   </form>
+  <script>
+  document.getElementById('fetch-citation').addEventListener('click', function() {
+      const title = document.getElementById('citation-title').value;
+      fetch('{{ url_for('fetch_citation') }}', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({title: title})
+      }).then(r => r.json())
+      .then(data => {
+          if (data.error) {
+              alert(data.error);
+              return;
+          }
+          document.getElementById('citation-part').value = JSON.stringify(data.part, null, 2);
+          document.getElementById('citation-text').value = data.text;
+      });
+  });
+  </script>
 </section>
 {% endif %}
 {% if translations %}

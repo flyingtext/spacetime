@@ -13,6 +13,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from markdown.extensions import Extension
 from markdown.inlinepatterns import InlineProcessor
 from markupsafe import Markup, escape
+import requests
+from habanero import Crossref
+import bibtexparser
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dev-secret'
@@ -22,6 +25,32 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+cr = Crossref()
+
+
+def fetch_bibtex_by_title(title: str) -> str | None:
+    """Return raw BibTeX for the first work matching the given title."""
+    if not title:
+        return None
+    try:
+        result = cr.works(query_title=title, limit=1)
+    except Exception:
+        return None
+    items = result.get('message', {}).get('items', [])
+    if not items:
+        return None
+    doi = items[0].get('DOI')
+    if not doi:
+        return None
+    url = f"https://api.crossref.org/works/{doi}/transform/application/x-bibtex"
+    try:
+        resp = requests.get(url, timeout=10)
+    except Exception:
+        return None
+    if resp.status_code != 200:
+        return None
+    return resp.text.strip()
 
 
 def map_link(lat: float, lon: float) -> str:
@@ -372,6 +401,25 @@ def document(language: str, doc_path: str):
         citations=citations,
         user_citations=user_citations,
     )
+
+
+@app.route('/citation/fetch', methods=['POST'])
+def fetch_citation():
+    data = request.get_json() or {}
+    title = data.get('title', '').strip()
+    if not title:
+        return {'error': 'Title is required'}, 400
+    bibtex = fetch_bibtex_by_title(title)
+    if not bibtex:
+        return {'error': 'Citation not found'}, 404
+    try:
+        bib_db = bibtexparser.loads(bibtex)
+        entry = bib_db.entries[0] if bib_db.entries else {}
+    except Exception:
+        return {'error': 'Failed to parse BibTeX'}, 500
+    entry.pop('ID', None)
+    entry.pop('ENTRYTYPE', None)
+    return {'part': entry, 'text': bibtex}
 
 
 @app.route('/post/<int:post_id>/citation/new', methods=['POST'])
