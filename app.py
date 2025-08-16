@@ -53,6 +53,16 @@ babel = Babel(app)
 
 geolocator = Nominatim(user_agent="spacetime_app")
 
+try:
+    import redis  # type: ignore
+
+    _cache_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    geocode_cache = redis.Redis.from_url(_cache_url, decode_responses=True)
+except Exception:
+    geocode_cache = None
+
+GEOCODE_CACHE_TTL = int(os.getenv("GEOCODE_CACHE_TTL", 60 * 60 * 24))
+
 
 def select_locale():
     return request.accept_languages.best_match(app.config['LANGUAGES'])
@@ -160,16 +170,36 @@ def map_link(lat: float, lon: float) -> str:
 
 
 def geocode_address(address: str) -> tuple[float, float] | None:
-    """Return ``(latitude, longitude)`` for ``address`` using Nominatim."""
+    """Return ``(latitude, longitude)`` for ``address`` using Nominatim.
+
+    Results are cached in ``geocode_cache`` keyed by the address string. Cache
+    failures are ignored so the geocoding still proceeds normally.
+    """
     if not address:
         return None
+    if geocode_cache:
+        try:
+            cached = geocode_cache.get(address)
+            if cached:
+                lat_str, lon_str = cached.split(",")
+                return float(lat_str), float(lon_str)
+        except Exception:
+            pass
     try:
         location = geolocator.geocode(address)
     except Exception:
         return None
     if not location:
         return None
-    return location.latitude, location.longitude
+    coords = location.latitude, location.longitude
+    if geocode_cache:
+        try:
+            geocode_cache.setex(
+                address, GEOCODE_CACHE_TTL, f"{coords[0]},{coords[1]}"
+            )
+        except Exception:
+            pass
+    return coords
 
 
 COORD_OUT_OF_RANGE_MSG = 'Coordinates out of range'
