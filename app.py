@@ -115,22 +115,39 @@ class PostTag(db.Model):
 
 class PostMetadata(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), unique=True, nullable=False)
-    data = db.Column(db.Text)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    key = db.Column(db.String(50), nullable=False)
+    value = db.Column(db.JSON, nullable=False)
 
-    post = db.relationship('Post', backref=db.backref('metadata', uselist=False, cascade='all, delete-orphan'))
+    __table_args__ = (
+        db.UniqueConstraint('post_id', 'key', name='uix_post_metadata_key'),
+    )
+
+    post = db.relationship(
+        'Post', backref=db.backref('metadata', cascade='all, delete-orphan')
+    )
 
 
 class UserPostMetadata(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    data = db.Column(db.Text)
+    key = db.Column(db.String(50), nullable=False)
+    value = db.Column(db.JSON, nullable=False)
 
-    __table_args__ = (db.UniqueConstraint('post_id', 'user_id', name='uix_post_user_metadata'),)
+    __table_args__ = (
+        db.UniqueConstraint('post_id', 'user_id', 'key', name='uix_post_user_metadata_key'),
+    )
 
     post = db.relationship('Post', backref='user_metadata')
     user = db.relationship('User')
+
+
+db.Index('ix_post_metadata_key_post', PostMetadata.key, PostMetadata.post_id)
+db.Index('ix_user_post_metadata_key_post_user',
+          UserPostMetadata.key,
+          UserPostMetadata.post_id,
+          UserPostMetadata.user_id)
 
 
 class Revision(db.Model):
@@ -221,20 +238,23 @@ def create_post():
 
         if metadata_json:
             try:
-                json.loads(metadata_json)
+                meta_dict = json.loads(metadata_json)
             except ValueError:
                 flash('Invalid metadata JSON')
                 return redirect(url_for('create_post'))
-            db.session.add(PostMetadata(post=post, data=metadata_json))
+            for key, value in meta_dict.items():
+                db.session.add(PostMetadata(post=post, key=key, value=value))
 
         if user_metadata_json:
             try:
-                json.loads(user_metadata_json)
+                user_meta_dict = json.loads(user_metadata_json)
             except ValueError:
                 flash('Invalid user metadata JSON')
                 return redirect(url_for('create_post'))
-            db.session.add(UserPostMetadata(post=post, user=current_user,
-                                            data=user_metadata_json))
+            for key, value in user_meta_dict.items():
+                db.session.add(
+                    UserPostMetadata(post=post, user=current_user, key=key, value=value)
+                )
 
         rev = Revision(post=post, user=current_user, title=title, body=body,
                        path=path, language=language)
@@ -247,12 +267,13 @@ def create_post():
 @app.route('/post/<int:post_id>')
 def post_detail(post_id: int):
     post = Post.query.get_or_404(post_id)
-    post_meta = json.loads(post.metadata.data) if post.metadata else {}
+    post_meta = {m.key: m.value for m in post.metadata}
     user_meta = {}
     if current_user.is_authenticated:
-        user_meta_obj = UserPostMetadata.query.filter_by(post_id=post.id, user_id=current_user.id).first()
-        if user_meta_obj and user_meta_obj.data:
-            user_meta = json.loads(user_meta_obj.data)
+        user_entries = UserPostMetadata.query.filter_by(
+            post_id=post.id, user_id=current_user.id
+        ).all()
+        user_meta = {m.key: m.value for m in user_entries}
     base = url_for('document', language=post.language, doc_path='')
     html_body = markdown.markdown(post.body,
                                   extensions=[WikiLinkExtension(base_url=base)])
@@ -263,12 +284,13 @@ def post_detail(post_id: int):
 @app.route('/docs/<string:language>/<path:doc_path>')
 def document(language: str, doc_path: str):
     post = Post.query.filter_by(language=language, path=doc_path).first_or_404()
-    post_meta = json.loads(post.metadata.data) if post.metadata else {}
+    post_meta = {m.key: m.value for m in post.metadata}
     user_meta = {}
     if current_user.is_authenticated:
-        user_meta_obj = UserPostMetadata.query.filter_by(post_id=post.id, user_id=current_user.id).first()
-        if user_meta_obj and user_meta_obj.data:
-            user_meta = json.loads(user_meta_obj.data)
+        user_entries = UserPostMetadata.query.filter_by(
+            post_id=post.id, user_id=current_user.id
+        ).all()
+        user_meta = {m.key: m.value for m in user_entries}
     base = url_for('document', language=language, doc_path='')
     html_body = markdown.markdown(post.body,
                                   extensions=[WikiLinkExtension(base_url=base)])
@@ -306,43 +328,38 @@ def edit_post(post_id: int):
 
         if metadata_json:
             try:
-                json.loads(metadata_json)
+                meta_dict = json.loads(metadata_json)
             except ValueError:
                 flash('Invalid metadata JSON')
                 return redirect(url_for('edit_post', post_id=post.id))
-            if post.metadata:
-                post.metadata.data = metadata_json
-            else:
-                db.session.add(PostMetadata(post=post, data=metadata_json))
+            PostMetadata.query.filter_by(post_id=post.id).delete()
+            for key, value in meta_dict.items():
+                db.session.add(PostMetadata(post=post, key=key, value=value))
         else:
-            if post.metadata:
-                db.session.delete(post.metadata)
+            PostMetadata.query.filter_by(post_id=post.id).delete()
 
         if user_metadata_json:
             try:
-                json.loads(user_metadata_json)
+                user_meta_dict = json.loads(user_metadata_json)
             except ValueError:
                 flash('Invalid user metadata JSON')
                 return redirect(url_for('edit_post', post_id=post.id))
-            user_meta = UserPostMetadata.query.filter_by(post_id=post.id, user_id=current_user.id).first()
-            if user_meta:
-                user_meta.data = user_metadata_json
-            else:
-                db.session.add(UserPostMetadata(post=post, user=current_user,
-                                                data=user_metadata_json))
+            UserPostMetadata.query.filter_by(post_id=post.id, user_id=current_user.id).delete()
+            for key, value in user_meta_dict.items():
+                db.session.add(
+                    UserPostMetadata(post=post, user=current_user, key=key, value=value)
+                )
         else:
-            user_meta = UserPostMetadata.query.filter_by(post_id=post.id, user_id=current_user.id).first()
-            if user_meta:
-                db.session.delete(user_meta)
+            UserPostMetadata.query.filter_by(post_id=post.id, user_id=current_user.id).delete()
 
         db.session.commit()
         return redirect(url_for('document', language=post.language, doc_path=post.path))
     tags_str = ', '.join([t.name for t in post.tags])
-    post_meta = post.metadata.data if post.metadata else ''
-    user_meta = ''
-    user_meta_obj = UserPostMetadata.query.filter_by(post_id=post.id, user_id=current_user.id).first()
-    if user_meta_obj:
-        user_meta = user_meta_obj.data
+    post_meta_dict = {m.key: m.value for m in post.metadata}
+    post_meta = json.dumps(post_meta_dict) if post_meta_dict else ''
+    user_entries = UserPostMetadata.query.filter_by(post_id=post.id, user_id=current_user.id).all()
+    user_meta_dict = {m.key: m.value for m in user_entries}
+    user_meta = json.dumps(user_meta_dict) if user_meta_dict else ''
     return render_template('post_form.html', action='Edit', post=post, tags=tags_str,
                            metadata=post_meta, user_metadata=user_meta)
 
@@ -384,5 +401,7 @@ def tag_filter(name: str):
 
 if __name__ == '__main__':
     with app.app_context():
+        PostMetadata.__table__.create(bind=db.engine, checkfirst=True)
+        UserPostMetadata.__table__.create(bind=db.engine, checkfirst=True)
         db.create_all()
     app.run(debug=True)
