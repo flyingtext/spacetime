@@ -1455,8 +1455,8 @@ def settings():
     title = get_setting('site_title', '')
     home_page = get_setting('home_page_path', '')
     if request.method == 'POST':
-        title = request.form.get('site_title', '').strip()
-        home_page = request.form.get('home_page_path', '').strip()
+        title = request.form.get('site_title', title).strip()
+        home_page = request.form.get('home_page_path', home_page).strip()
 
         title_setting = Setting.query.filter_by(key='site_title').first()
         if title_setting:
