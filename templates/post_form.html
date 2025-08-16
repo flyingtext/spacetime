@@ -23,11 +23,11 @@
   {% endif %}
   <div class="mb-3">
     <label for="path">{{ _('Path (e.g., docs/start)') }}</label>
-    <input name="path" id="path" class="form-control" placeholder="{{ _('Path (e.g., docs/start)') }}" value="{{ post.path if post else '' }}">
+    <input name="path" id="path" class="form-control" placeholder="{{ _('Path (e.g., docs/start)') }}" value="{{ post.path if post else prefill_path or '' }}">
   </div>
   <div class="mb-3">
     <label for="language">{{ _('Language code') }}</label>
-    <input name="language" id="language" class="form-control" placeholder="{{ _('Language code') }}" value="{{ post.language if post else 'en' }}">
+    <input name="language" id="language" class="form-control" placeholder="{{ _('Language code') }}" value="{{ post.language if post else prefill_language or 'en' }}">
   </div>
   <div class="mb-3">
     <label for="tags">{{ _('Comma separated tags') }}</label>
