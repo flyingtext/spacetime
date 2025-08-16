@@ -34,10 +34,14 @@
 <section>
   <h2>Citations</h2>
   {% if citations %}
-  <h3>Common</h3>
+  <h3>Global</h3>
   <ul>
     {% for c in citations %}
-      <li><strong>{{ c.citation_part|format_metadata }}:</strong> {{ c.citation_text }}
+      <li>
+        <strong>{{ c.citation_part|format_metadata }}:</strong>
+        {{ c.citation_text }}
+        &mdash; {{ c.user.username }},
+        {{ c.created_at.strftime('%Y-%m-%d %H:%M') }}
         {% if current_user.is_authenticated and (current_user.id == c.user_id or current_user.is_admin()) %}
           <a href="{{ url_for('edit_citation', post_id=post.id, cid=c.id) }}">Edit</a>
           <form action="{{ url_for('delete_citation', post_id=post.id, cid=c.id) }}" method="post" style="display:inline">
@@ -52,7 +56,11 @@
   <h3>Your Citations</h3>
   <ul>
     {% for c in user_citations %}
-      <li><strong>{{ c.citation_part|format_metadata }}:</strong> {{ c.citation_text }}
+      <li>
+        <strong>{{ c.citation_part|format_metadata }}:</strong>
+        {{ c.citation_text }}
+        &mdash; {{ c.user.username }},
+        {{ c.created_at.strftime('%Y-%m-%d %H:%M') }}
         <a href="{{ url_for('edit_citation', post_id=post.id, cid=c.id) }}">Edit</a>
         <form action="{{ url_for('delete_citation', post_id=post.id, cid=c.id) }}" method="post" style="display:inline">
           <button type="submit">Delete</button>

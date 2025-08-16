@@ -299,22 +299,37 @@ def post_detail(post_id: int):
     post = Post.query.get_or_404(post_id)
     post_meta = {m.key: m.value for m in post.metadata}
     user_meta = {}
-    citations = post.citations
+    citations = (
+        PostCitation.query.filter_by(post_id=post.id)
+        .order_by(PostCitation.created_at.desc())
+        .all()
+    )
     user_citations = []
     if current_user.is_authenticated:
         user_entries = UserPostMetadata.query.filter_by(
             post_id=post.id, user_id=current_user.id
         ).all()
         user_meta = {m.key: m.value for m in user_entries}
-        user_citations = UserPostCitation.query.filter_by(
-            post_id=post.id, user_id=current_user.id
-        ).all()
+        user_citations = (
+            UserPostCitation.query.filter_by(
+                post_id=post.id, user_id=current_user.id
+            )
+            .order_by(UserPostCitation.created_at.desc())
+            .all()
+        )
     base = url_for('document', language=post.language, doc_path='')
-    html_body = markdown.markdown(post.body,
-                                  extensions=[WikiLinkExtension(base_url=base)])
-    return render_template('post_detail.html', post=post, html_body=html_body,
-                           metadata=post_meta, user_metadata=user_meta,
-                           citations=citations, user_citations=user_citations)
+    html_body = markdown.markdown(
+        post.body, extensions=[WikiLinkExtension(base_url=base)]
+    )
+    return render_template(
+        'post_detail.html',
+        post=post,
+        html_body=html_body,
+        metadata=post_meta,
+        user_metadata=user_meta,
+        citations=citations,
+        user_citations=user_citations,
+    )
 
 
 @app.route('/docs/<string:language>/<path:doc_path>')
@@ -322,24 +337,41 @@ def document(language: str, doc_path: str):
     post = Post.query.filter_by(language=language, path=doc_path).first_or_404()
     post_meta = {m.key: m.value for m in post.metadata}
     user_meta = {}
-    citations = post.citations
+    citations = (
+        PostCitation.query.filter_by(post_id=post.id)
+        .order_by(PostCitation.created_at.desc())
+        .all()
+    )
     user_citations = []
     if current_user.is_authenticated:
         user_entries = UserPostMetadata.query.filter_by(
             post_id=post.id, user_id=current_user.id
         ).all()
         user_meta = {m.key: m.value for m in user_entries}
-        user_citations = UserPostCitation.query.filter_by(
-            post_id=post.id, user_id=current_user.id
-        ).all()
+        user_citations = (
+            UserPostCitation.query.filter_by(
+                post_id=post.id, user_id=current_user.id
+            )
+            .order_by(UserPostCitation.created_at.desc())
+            .all()
+        )
     base = url_for('document', language=language, doc_path='')
-    html_body = markdown.markdown(post.body,
-                                  extensions=[WikiLinkExtension(base_url=base)])
-    translations = Post.query.filter(Post.path == doc_path, Post.language != language).all()
-    return render_template('post_detail.html', post=post, html_body=html_body,
-                           translations=translations, metadata=post_meta,
-                           user_metadata=user_meta, citations=citations,
-                           user_citations=user_citations)
+    html_body = markdown.markdown(
+        post.body, extensions=[WikiLinkExtension(base_url=base)]
+    )
+    translations = Post.query.filter(
+        Post.path == doc_path, Post.language != language
+    ).all()
+    return render_template(
+        'post_detail.html',
+        post=post,
+        html_body=html_body,
+        translations=translations,
+        metadata=post_meta,
+        user_metadata=user_meta,
+        citations=citations,
+        user_citations=user_citations,
+    )
 
 
 @app.route('/post/<int:post_id>/citation/new', methods=['POST'])
