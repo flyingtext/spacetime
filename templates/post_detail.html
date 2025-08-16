@@ -58,8 +58,7 @@
   <ul class="list-group">
     {% for c in citations %}
       <li class="list-group-item text-break">
-        <strong>{{ c.citation_part|format_metadata }}:</strong>
-        {{ c.citation_text }}
+        {{ c.citation_part|mla_citation(c.doi) }}
         &mdash; <a href="{{ url_for('profile', username=c.user.username) }}">{{ c.user.username }}</a>,
         {{ c.created_at.strftime('%Y-%m-%d %H:%M') }}
         {% if current_user.is_authenticated and (current_user.id == c.user_id or current_user.is_admin()) %}
@@ -77,8 +76,7 @@
   <ul class="list-group">
     {% for c in user_citations %}
       <li class="list-group-item text-break">
-        <strong>{{ c.citation_part|format_metadata }}:</strong>
-        {{ c.citation_text }}
+        {{ c.citation_part|mla_citation(c.doi) }}
         &mdash; <a href="{{ url_for('profile', username=c.user.username) }}">{{ c.user.username }}</a>,
         {{ c.created_at.strftime('%Y-%m-%d %H:%M') }}
         <a href="{{ url_for('edit_citation', post_id=post.id, cid=c.id) }}" class="btn btn-sm btn-secondary">{{ _('Edit') }}</a>

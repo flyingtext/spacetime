@@ -104,7 +104,7 @@ def fetch_bibtex_by_title(title: str) -> str | None:
     items = result.get('message', {}).get('items', [])
     if not items:
         return None
-    doi = items[0].get('DOI')
+    doi = normalize_doi(items[0].get('DOI'))
     if not doi:
         return None
     url = f"https://api.crossref.org/works/{doi}/transform/application/x-bibtex"
@@ -135,7 +135,7 @@ def suggest_citations(markdown_text: str) -> dict[str, list[dict]]:
         items = query_res.get("message", {}).get("items", [])
         candidates: list[dict] = []
         for item in items:
-            doi = item.get("DOI")
+            doi = normalize_doi(item.get("DOI"))
             if not doi:
                 continue
             url = f"https://api.crossref.org/works/{doi}/transform/application/x-bibtex"
@@ -153,6 +153,7 @@ def suggest_citations(markdown_text: str) -> dict[str, list[dict]]:
                 entry = {}
             entry.pop("ID", None)
             entry.pop("ENTRYTYPE", None)
+            entry['doi'] = doi
             candidates.append({"text": bibtex, "part": entry, "doi": doi})
     if candidates:
         results[sentence] = candidates
@@ -327,6 +328,56 @@ def format_metadata_value(value):
 
 
 app.jinja_env.filters['format_metadata'] = format_metadata_value
+
+
+def normalize_doi(doi: str | None) -> str | None:
+    """Return DOI in canonical lowercase form without URL prefix."""
+    if not doi:
+        return None
+    doi = doi.strip()
+    doi = re.sub(r'^https?://(dx\.)?doi\.org/', '', doi, flags=re.I)
+    return doi.lower()
+
+
+def format_citation_mla(part: dict, doi: str | None = None) -> Markup:
+    """Format citation metadata in MLA style with DOI link."""
+    doi = normalize_doi(doi or part.get('doi'))
+    authors = part.get('author')
+    title = part.get('title')
+    container = part.get('journal') or part.get('booktitle')
+    publisher = part.get('publisher')
+    year = part.get('year')
+    volume = part.get('volume')
+    number = part.get('number')
+    pages = part.get('pages')
+
+    pieces: list[str] = []
+    if authors:
+        pieces.append(str(escape(str(authors).rstrip('.'))))
+    if title:
+        pieces.append(f"\"{escape(str(title).rstrip('.'))}\"")
+    if container:
+        pieces.append(f"<em>{escape(str(container).rstrip('.'))}</em>")
+    vol_issue: list[str] = []
+    if volume:
+        vol_issue.append(f"vol. {escape(str(volume))}")
+    if number:
+        vol_issue.append(f"no. {escape(str(number))}")
+    if vol_issue:
+        pieces.append(', '.join(vol_issue))
+    if publisher:
+        pieces.append(str(escape(str(publisher).rstrip('.'))))
+    if year:
+        pieces.append(str(escape(str(year).rstrip('.'))))
+    if pages:
+        pieces.append(f"pp. {escape(str(pages).rstrip('.'))}")
+    citation = '. '.join(pieces)
+    if doi:
+        citation += f". <a href=\"https://doi.org/{doi}\">https://doi.org/{doi}</a>"
+    return Markup(citation)
+
+
+app.jinja_env.filters['mla_citation'] = format_citation_mla
 
 
 def extract_location(meta: dict) -> tuple[dict | None, str | None]:
@@ -1180,6 +1231,9 @@ def fetch_citation():
         return {'error': _('Failed to parse BibTeX')}, 500
     entry.pop('ID', None)
     entry.pop('ENTRYTYPE', None)
+    doi = normalize_doi(entry.get('doi'))
+    if doi:
+        entry['doi'] = doi
     return {'part': entry, 'text': bibtex}
 
 
@@ -1199,7 +1253,9 @@ def new_citation(post_id: int):
         return redirect(url_for('post_detail', post_id=post.id))
     entry.pop('ID', None)
     entry.pop('ENTRYTYPE', None)
-    doi = entry.get('doi')
+    doi = normalize_doi(entry.get('doi'))
+    if doi:
+        entry['doi'] = doi
     # Ensure uniqueness by DOI or citation text
     if doi:
         existing = PostCitation.query.filter_by(post_id=post.id, doi=doi).first()
@@ -1263,8 +1319,9 @@ def edit_citation(post_id: int, cid: int):
             return redirect(url_for('edit_citation', post_id=post.id, cid=cid))
         entry.pop('ID', None)
         entry.pop('ENTRYTYPE', None)
-        doi = entry.get('doi')
+        doi = normalize_doi(entry.get('doi'))
         if doi:
+            entry['doi'] = doi
             existing = (
                 PostCitation.query.filter(
                     PostCitation.post_id == post.id,
