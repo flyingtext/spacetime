@@ -3,6 +3,7 @@ import json
 import os
 import re
 import markdown
+from collections import Counter
 from datetime import datetime, timezone
 from xml.etree.ElementTree import Element, SubElement, tostring
 from urllib.parse import urlparse, quote
@@ -146,19 +147,37 @@ def fetch_bibtex_by_title(title: str) -> str | None:
     return resp.text.strip()
 
 
+STOPWORDS = {
+    'the', 'and', 'or', 'for', 'with', 'to', 'of', 'a', 'an', 'in', 'on',
+    'at', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+    'that', 'this', 'it', 'as', 'we', 'you', 'he', 'she', 'they', 'them',
+    'his', 'her', 'its', 'our', 'their', 'have', 'has', 'had', 'do', 'does',
+    'did'
+}
+
+
 def suggest_citations(markdown_text: str) -> dict[str, list[dict]]:
     """Split markdown text into sentences and return BibTeX suggestions.
 
     Each sentence is queried against Crossref sequentially. For every result
     the BibTeX is fetched and parsed into a dict with ``text`` and ``part``
     (fields without ID/ENTRYTYPE). Sentences with no suggestions are skipped.
+
+    The query to Crossref is built from high‑frequency words within each
+    sentence rather than the full sentence text.
     """
 
     sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", markdown_text) if s.strip()]
     results: dict[str, list[dict]] = {}
     for sentence in sentences:
+        words = re.findall(r"\b\w+\b", sentence.lower())
+        words = [w for w in words if w not in STOPWORDS]
+        if not words:
+            continue
+        freq = Counter(words)
+        query = " ".join([w for w, _ in freq.most_common(5)])
         try:
-            query_res = cr.works(query=sentence, limit=3)
+            query_res = cr.works(query=query, limit=3)
         except Exception:
             continue
         items = query_res.get("message", {}).get("items", [])
@@ -184,8 +203,8 @@ def suggest_citations(markdown_text: str) -> dict[str, list[dict]]:
             entry.pop("ENTRYTYPE", None)
             entry['doi'] = doi
             candidates.append({"text": bibtex, "part": entry, "doi": doi})
-    if candidates:
-        results[sentence] = candidates
+        if candidates:
+            results[sentence] = candidates
     return results
 
 
@@ -618,6 +637,11 @@ class Post(db.Model):
     longitude = db.Column(db.Float)
     __table_args__ = (db.UniqueConstraint('path', 'language', name='uix_path_language'),)
 
+    @property
+    def display_title(self) -> str:
+        """Return title or a placeholder if the post was deleted."""
+        return self.title or _('[deleted]')
+
 
 @event.listens_for(Post.__table__, 'after_create')
 def create_post_fts(target, connection, **kw):
@@ -965,7 +989,7 @@ def rss_feed():
     SubElement(channel, 'description').text = f'RSS feed for {title}'
     for post in posts:
         item = SubElement(channel, 'item')
-        SubElement(item, 'title').text = post.title
+        SubElement(item, 'title').text = post.display_title
         SubElement(item, 'link').text = url_for(
             'document', language=post.language, doc_path=post.path, _external=True
         )
@@ -1101,7 +1125,7 @@ def profile(username: str):
         if p.latitude is not None and p.longitude is not None:
             post_locations.append(
                 {
-                    'title': p.title,
+                    'title': p.display_title,
                     'lat': p.latitude,
                     'lon': p.longitude,
                     'url': url_for('document', language=p.language, doc_path=p.path),
@@ -2114,7 +2138,7 @@ def tag_list():
             snippet = (p.body[:100] + '...') if len(p.body) > 100 else p.body
             posts_data.append(
                 {
-                    'title': p.title,
+                    'title': p.display_title,
                     'url': url_for('document', language=p.language, doc_path=p.path),
                     'snippet': snippet,
                     'views': get_view_count(p),

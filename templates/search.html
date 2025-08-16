@@ -48,7 +48,7 @@
 {% if posts is not none %}
 <ul class="list-group">
   {% for post in posts %}
-    <li class="list-group-item"><a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.title }}</a> - {{ post.path }} ({{ post.language }}){% if post.tags %} - {% for tag in post.tags %}<a href="{{ url_for('tag_filter', name=tag.name) }}">{{ tag.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</li>
+    <li class="list-group-item"><a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.display_title }}</a> - {{ post.path }} ({{ post.language }}){% if post.tags %} - {% for tag in post.tags %}<a href="{{ url_for('tag_filter', name=tag.name) }}">{{ tag.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</li>
   {% else %}
     <li class="list-group-item">{{ _('No posts found.') }}</li>
   {% endfor %}
@@ -62,7 +62,7 @@
   <p>{{ _('Example posts:') }}</p>
   <ul class="list-group">
     {% for post in examples %}
-      <li class="list-group-item">{{ post.title }} - {{ post.path }} ({{ post.language }})</li>
+      <li class="list-group-item">{{ post.display_title }} - {{ post.path }} ({{ post.language }})</li>
     {% endfor %}
   </ul>
   {% endif %}

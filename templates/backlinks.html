@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Backlinks for {{ post.title }}{% endblock %}
+{% block title %}Backlinks for {{ post.display_title }}{% endblock %}
 {% block content %}
-<h1>{{ _('Backlinks for "%(title)s"', title=post.title) }}</h1>
+<h1>{{ _('Backlinks for "%(title)s"', title=post.display_title) }}</h1>
 <ul class="list-group">
   {% for p in backlinks %}
-    <li class="list-group-item"><a href="{{ url_for('post_detail', post_id=p.id) }}">{{ p.title }}</a></li>
+    <li class="list-group-item"><a href="{{ url_for('post_detail', post_id=p.id) }}">{{ p.display_title }}</a></li>
   {% else %}
     <li class="list-group-item">{{ _('No backlinks') }}</li>
   {% endfor %}

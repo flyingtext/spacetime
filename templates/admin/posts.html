@@ -20,7 +20,7 @@
     {% for post in pagination.items %}
     <tr>
       <td>{{ post.id }}</td>
-      <td><a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.title }}</a></td>
+      <td><a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.display_title }}</a></td>
       <td>{{ post.path }}</td>
       <td>{{ post.language }}</td>
       <td>

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ post.title }}{% endblock %}
+{% block title %}{{ post.display_title }}{% endblock %}
 {% block content %}
 <nav id="reading-breadcrumb" aria-label="breadcrumb" class="mb-2" style="display:none;">
   <ol class="breadcrumb mb-0"></ol>
@@ -351,7 +351,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const key = 'postBreadcrumb';
   const maxItems = 10;
-  const title = {{ post.title|tojson }};
+  const title = {{ post.display_title|tojson }};
   const url = window.location.pathname;
   let items;
   try {

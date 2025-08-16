@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}{{ _('History') }} - {{ post.title }}{% endblock %}
+{% block title %}{{ _('History') }} - {{ post.display_title }}{% endblock %}
 {% block content %}
-<h1>{{ _('History for %(title)s', title=post.title) }}</h1>
+<h1>{{ _('History for %(title)s', title=post.display_title) }}</h1>
 <ul class="list-group">
   {% for rev in revisions %}
       <li class="list-group-item">{{ rev.created_at }} {{ _('by') }} <a href="{{ url_for('profile', username=rev.user.username) }}">{{ rev.user.username }}</a> -
