@@ -18,13 +18,22 @@
       <nav class="toc-container sticky-top">
         <h2>{{ _('Contents') }}</h2>
         {{ toc|safe }}
-        {% if metadata %}
+        {% if metadata or location %}
         <h3>{{ _('Common') }}</h3>
         <table class="table table-sm">
           <tbody>
             {% for key, value in metadata.items() %}
             <tr><th scope="row">{{ key }}</th><td>{{ value|format_metadata }}</td></tr>
             {% endfor %}
+            {% if location %}
+            <tr>
+              <th scope="row">{{ _('Location') }}</th>
+              <td>
+                {% if location_name %}{{ location_name }} {% endif %}
+                <span class="text-muted">({{ location.lat }}, {{ location.lon }})</span>
+              </td>
+            </tr>
+            {% endif %}
           </tbody>
         </table>
         {% endif %}
@@ -51,13 +60,22 @@
         </div>
         <div class="offcanvas-body">
           {{ toc|safe }}
-          {% if metadata %}
+          {% if metadata or location %}
           <h3>{{ _('Common') }}</h3>
           <table class="table table-sm">
             <tbody>
               {% for key, value in metadata.items() %}
               <tr><th scope="row">{{ key }}</th><td>{{ value|format_metadata }}</td></tr>
               {% endfor %}
+              {% if location %}
+              <tr>
+                <th scope="row">{{ _('Location') }}</th>
+                <td>
+                  {% if location_name %}{{ location_name }} {% endif %}
+                  <span class="text-muted">({{ location.lat }}, {{ location.lon }})</span>
+                </td>
+              </tr>
+              {% endif %}
             </tbody>
           </table>
           {% endif %}
@@ -89,16 +107,25 @@
     <a href="{{ url_for('tag_filter', name=tag.name) }}">{{ tag.name }}</a>
   {% endfor %}
 </p>
-{% if not toc and (metadata or user_metadata) %}
+{% if not toc and (metadata or user_metadata or location) %}
 <section>
   <h2>{{ _('Metadata') }}</h2>
-  {% if metadata %}
+  {% if metadata or location %}
   <h3>{{ _('Common') }}</h3>
   <table class="table table-sm">
     <tbody>
       {% for key, value in metadata.items() %}
       <tr><th scope="row">{{ key }}</th><td>{{ value|format_metadata }}</td></tr>
       {% endfor %}
+      {% if location %}
+      <tr>
+        <th scope="row">{{ _('Location') }}</th>
+        <td>
+          {% if location_name %}{{ location_name }} {% endif %}
+          <span class="text-muted">({{ location.lat }}, {{ location.lon }})</span>
+        </td>
+      </tr>
+      {% endif %}
     </tbody>
   </table>
   {% endif %}
@@ -175,11 +202,7 @@
 {% if current_user.is_authenticated %}
 <section>
   <h2>{{ _('Suggest Citation') }}</h2>
-  <button type="button" id="suggest-citations" class="btn btn-secondary">{{ _('Suggest Citation') }}</button>
-  <div id="citation-progress" class="progress d-none mt-2">
-    <div id="citation-progress-bar" class="progress-bar" role="progressbar" style="width:0%"></div>
-  </div>
-  <div id="citation-results" class="mt-3"></div>
+  <p>{{ _('Use the buttons next to each paragraph to get suggestions.') }}</p>
 </section>
 <section>
   <h2>{{ _('Add Citation') }}</h2>
@@ -242,6 +265,7 @@
       }
       showSpinner();
   });
+
   const suggestBtn = document.getElementById('suggest-citations');
   if (suggestBtn) {
       suggestBtn.addEventListener('click', async () => {
@@ -304,11 +328,13 @@
               } catch (e) {
                   if (signal.aborted) break;
               }
-              progressBar.style.width = ((i + 1) / lines.length * 100) + '%';
           }
-          progress.classList.add('d-none');
+          btn.disabled = false;
       });
-  }
+      wrapper.appendChild(btn);
+      wrapper.appendChild(result);
+      p.insertAdjacentElement('afterend', wrapper);
+  });
   </script>
 </section>
 {% endif %}
