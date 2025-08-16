@@ -156,3 +156,25 @@ pre {
     height: 300px;
   }
 }
+
+.tag-card {
+  border: 1px solid var(--border-color);
+  background-color: var(--nav-bg-color);
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  margin: 0.5rem;
+}
+
+.tag-card ul {
+  list-style: none;
+  padding-left: 0;
+  margin-bottom: 0;
+}
+
+.tag-card li {
+  font-size: 0.9rem;
+}
+
+.tag-card h5 {
+  margin: 0 0 0.5rem 0;
+}
