@@ -27,7 +27,7 @@
   {% endfor %}
 </p>
 {% if metadata or user_metadata %}
-<section>
+<section class="mb-4">
   <h2>{{ _('Metadata') }}</h2>
   {% if metadata %}
   <h3>{{ _('Common') }}</h3>
@@ -51,7 +51,7 @@
 </section>
 {% endif %}
 {% if citations or user_citations %}
-<section>
+<section class="mb-4">
   <h2>{{ _('Citations') }}</h2>
   {% if citations %}
   <h3>{{ _('Global') }}</h3>
@@ -90,7 +90,7 @@
 </section>
 {% endif %}
 {% if current_user.is_authenticated %}
-<section>
+<section class="mb-4">
   <h2>{{ _('Add Citation') }}</h2>
   <form id="citation-form" action="{{ url_for('new_citation', post_id=post.id) }}" method="post">
     <div class="mb-3 d-flex gap-2">

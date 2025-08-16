@@ -3,14 +3,14 @@
 {% block content %}
 <h1>{{ user.username }}</h1>
 <p>{{ user.bio }}</p>
-<section>
+<section class="mb-4">
   <h2>{{ _('Contribution Metrics') }}</h2>
   <ul class="list-group">
     <li class="list-group-item">{{ _('Posts') }}: {{ post_count }}</li>
     <li class="list-group-item">{{ _('Citations') }}: {{ citation_count }}</li>
   </ul>
 </section>
-<section>
+<section class="mb-4">
   <h2>{{ _('Recent Posts') }}</h2>
   <ul class="list-group">
   {% for p in posts %}
@@ -20,7 +20,7 @@
   {% endfor %}
   </ul>
 </section>
-<section>
+<section class="mb-4">
   <h2>{{ _('Edited Posts') }}</h2>
   <ul class="list-group">
   {% for p in edited_posts %}
@@ -31,7 +31,7 @@
   </ul>
 </section>
 {% if post_locations %}
-<section>
+<section class="mb-4">
   <h2>{{ _('Contribution Map') }}</h2>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <div id="profile-map" style="height: 400px;"></div>
@@ -58,7 +58,7 @@
 </section>
 {% endif %}
 {% if current_user.is_authenticated and current_user.id == user.id %}
-<section>
+<section class="mb-4">
   <h2>{{ _('Edit Profile') }}</h2>
   <form method="post">
     <div class="mb-3">

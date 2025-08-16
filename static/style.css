@@ -206,3 +206,8 @@ pre {
 .tag-card h5 {
   margin: 0 0 0.5rem 0;
 }
+
+/* Section spacing utility */
+.mb-4 {
+  margin-bottom: 1.5rem !important;
+}
