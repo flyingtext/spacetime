@@ -11,6 +11,10 @@
       <label for="home_page_path" class="form-label">{{ _('Home page path') }}</label>
       <input type="text" id="home_page_path" name="home_page_path" class="form-control" value="{{ home_page_path }}">
     </div>
+    <div class="mb-3">
+      <label for="timezone" class="form-label">{{ _('Timezone') }}</label>
+      <input type="text" id="timezone" name="timezone" class="form-control" value="{{ timezone }}">
+    </div>
     <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
   </form>
 {% endblock %}
