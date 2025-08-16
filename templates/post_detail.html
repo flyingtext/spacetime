@@ -48,7 +48,7 @@
       <li>
         <strong>{{ c.citation_part|format_metadata }}:</strong>
         {{ c.citation_text }}
-        &mdash; {{ c.user.username }},
+        &mdash; <a href="{{ url_for('profile', username=c.user.username) }}">{{ c.user.username }}</a>,
         {{ c.created_at.strftime('%Y-%m-%d %H:%M') }}
         {% if current_user.is_authenticated and (current_user.id == c.user_id or current_user.is_admin()) %}
           <a href="{{ url_for('edit_citation', post_id=post.id, cid=c.id) }}">{{ _('Edit') }}</a>
@@ -67,7 +67,7 @@
       <li>
         <strong>{{ c.citation_part|format_metadata }}:</strong>
         {{ c.citation_text }}
-        &mdash; {{ c.user.username }},
+        &mdash; <a href="{{ url_for('profile', username=c.user.username) }}">{{ c.user.username }}</a>,
         {{ c.created_at.strftime('%Y-%m-%d %H:%M') }}
         <a href="{{ url_for('edit_citation', post_id=post.id, cid=c.id) }}">{{ _('Edit') }}</a>
         <form action="{{ url_for('delete_citation', post_id=post.id, cid=c.id) }}" method="post" style="display:inline">
