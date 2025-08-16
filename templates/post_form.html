@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsoneditor@9/dist/jsoneditor.min.css" />
+<link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css" />
 <h1>{{ _('%(action)s Post', action=action) }}</h1>
 <form method="post">
   <div class="mb-3">
@@ -74,8 +75,9 @@
 <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsoneditor@9/dist/jsoneditor.min.js"></script>
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
 <script>
-const bodyInput = document.querySelector('textarea[name="body"]');
+const easyMDE = new EasyMDE({ element: document.getElementById('body') });
 const previewEl = document.getElementById('preview');
 const formEl = document.querySelector('form');
 formEl.addEventListener('keydown', function (e) {
@@ -121,12 +123,16 @@ function updatePreview() {
   fetch('{{ url_for('markdown_preview') }}', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({text: bodyInput.value})
+    body: JSON.stringify({
+      text: easyMDE.value(),
+      language: document.getElementById('language').value
+    })
   }).then(r => r.json()).then(data => {
     previewEl.innerHTML = data.html || '';
   });
 }
-bodyInput.addEventListener('input', updatePreview);
+easyMDE.codemirror.on('change', updatePreview);
+document.getElementById('language').addEventListener('input', updatePreview);
 updatePreview();
 
 const map = L.map('map').setView([0, 0], 2);
@@ -184,7 +190,7 @@ document.getElementById('find-coordinates').addEventListener('click', function (
 {% if post %}
 <script>
 document.getElementById('suggest-citations').addEventListener('click', function () {
-  const body = document.querySelector('textarea[name="body"]').value;
+  const body = easyMDE.value();
   const lines = body.split('\n').filter(l => l.trim());
   const container = document.getElementById('citation-results');
   container.innerHTML = '';
