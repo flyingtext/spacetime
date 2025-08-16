@@ -43,7 +43,7 @@
   <div id="map" style="height:300px"></div>
   <input type="hidden" name="lat" id="lat" value="{{ lat or '' }}">
   <input type="hidden" name="lon" id="lon" value="{{ lon or '' }}">
-  <p id="geocode-error" style="color:red"></p>
+    <p id="geocode-error" class="error-message"></p>
   <div class="mb-3">
     <label for="metadata">{{ _('Post metadata (JSON)') }}</label>
     <textarea name="metadata" id="metadata" class="form-control d-none" placeholder="{{ _('Post metadata (JSON)') }}" rows="5" cols="50">{{ metadata if metadata else '' }}</textarea>
