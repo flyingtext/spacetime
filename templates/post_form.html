@@ -8,6 +8,8 @@
   <p><input name="path" placeholder="Path (e.g., docs/start)" value="{{ post.path if post else '' }}"></p>
   <p><input name="language" placeholder="Language code" value="{{ post.language if post else 'en' }}"></p>
   <p><input name="tags" placeholder="Comma separated tags" value="{{ tags if tags else '' }}"></p>
+  <p><textarea name="metadata" placeholder="Post metadata (JSON)" rows="5" cols="50">{{ metadata if metadata else '' }}</textarea></p>
+  <p><textarea name="user_metadata" placeholder="Your metadata (JSON)" rows="5" cols="50">{{ user_metadata if user_metadata else '' }}</textarea></p>
   <p><button type="submit">{{ action }}</button></p>
 </form>
 {% endblock %}
