@@ -93,6 +93,25 @@ def ensure_revision_comment_column() -> None:
 ensure_revision_comment_column()
 
 
+def ensure_requested_post_comment_column() -> None:
+    with app.app_context():
+        inspector = inspect(db.engine)
+        try:
+            cols = [c["name"] for c in inspector.get_columns("requested_post")]
+        except NoSuchTableError:
+            return
+        if "admin_comment" not in cols:
+            with db.engine.begin() as conn:
+                conn.execute(
+                    text(
+                        "ALTER TABLE requested_post ADD COLUMN admin_comment VARCHAR(200) DEFAULT ''"
+                    )
+                )
+
+
+ensure_requested_post_comment_column()
+
+
 def fetch_bibtex_by_title(title: str) -> str | None:
     """Return raw BibTeX for the first work matching the given title."""
     if not title:
@@ -649,6 +668,7 @@ class RequestedPost(db.Model):
     description = db.Column(db.Text, nullable=False)
     requester_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    admin_comment = db.Column(db.String(200), default='')
 
     requester = db.relationship('User', backref='requested_posts')
 
@@ -914,6 +934,23 @@ def request_post():
 def requested_posts():
     reqs = RequestedPost.query.order_by(RequestedPost.created_at.desc()).all()
     return render_template('requested_posts.html', requests=reqs)
+
+
+@app.route('/admin/requested', methods=['GET', 'POST'])
+@login_required
+def admin_requested_posts():
+    if not current_user.is_admin():
+        abort(403)
+    if request.method == 'POST':
+        req_id = request.form.get('request_id', type=int)
+        comment = request.form.get('comment', '').strip()
+        req = RequestedPost.query.get_or_404(req_id)
+        req.admin_comment = comment
+        db.session.commit()
+        flash(_('Comment updated'))
+        return redirect(url_for('admin_requested_posts'))
+    reqs = RequestedPost.query.order_by(RequestedPost.created_at.desc()).all()
+    return render_template('admin/requested_posts.html', requests=reqs)
 
 
 def _slugify(title: str) -> str:

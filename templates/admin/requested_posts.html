@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Manage Requested Posts') }}{% endblock %}
+{% block content %}
+<h1>{{ _('Manage Requested Posts') }}</h1>
+<ul class="list-group">
+  {% for req in requests %}
+  <li class="list-group-item">
+    <form method="post" class="row g-2 align-items-center">
+      <input type="hidden" name="request_id" value="{{ req.id }}">
+      <div class="col-md-4">
+        <strong>{{ req.title }}</strong><br>
+        <small>{{ req.description }}</small><br>
+        <small><a href="{{ url_for('profile', username=req.requester.username) }}">{{ req.requester.username }}</a></small>
+      </div>
+      <div class="col-md-6">
+        <input type="text" name="comment" class="form-control" value="{{ req.admin_comment }}" placeholder="{{ _('Comment') }}">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary btn-sm">{{ _('Save') }}</button>
+      </div>
+    </form>
+  </li>
+  {% else %}
+  <li class="list-group-item">{{ _('No requests yet.') }}</li>
+  {% endfor %}
+</ul>
+{% endblock %}
