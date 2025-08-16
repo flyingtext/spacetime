@@ -35,15 +35,19 @@
   </div>
   <div class="mb-3">
     <label for="address-input">{{ _('Address') }}</label>
-    <input id="address-input" class="form-control" placeholder="{{ _('Address') }}">
-  </div>
-  <div class="mb-3">
-    <button type="button" id="find-coordinates" class="btn btn-secondary">{{ _('Find Coordinates') }}</button>
-  </div>
-  <div id="map" style="height:300px"></div>
-  <input type="hidden" name="lat" id="lat" value="{{ lat or '' }}">
-  <input type="hidden" name="lon" id="lon" value="{{ lon or '' }}">
+    <div class="row g-2">
+      <div class="col-md-6">
+        <input id="address-input" class="form-control mb-2" placeholder="{{ _('Address') }}">
+        <button type="button" id="find-coordinates" class="btn btn-secondary">{{ _('Find Coordinates') }}</button>
+      </div>
+      <div class="col-md-6">
+        <div id="map" style="height:300px"></div>
+      </div>
+    </div>
+    <input type="hidden" name="lat" id="lat" value="{{ lat or '' }}">
+    <input type="hidden" name="lon" id="lon" value="{{ lon or '' }}">
     <p id="geocode-error" class="error-message"></p>
+  </div>
   <div class="mb-3">
     <label for="metadata">{{ _('Post metadata (JSON)') }}</label>
     <textarea name="metadata" id="metadata" class="form-control d-none" placeholder="{{ _('Post metadata (JSON)') }}" rows="5" cols="50">{{ metadata if metadata else '' }}</textarea>
