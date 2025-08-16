@@ -1,9 +1,16 @@
+import difflib
 import markdown
-from flask import Flask, render_template, redirect, url_for, request, flash
+from datetime import datetime
+from xml.etree.ElementTree import Element
+
+from flask import (Flask, render_template, redirect, url_for, request, flash,
+                   abort)
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (LoginManager, login_user, login_required,
                          logout_user, current_user, UserMixin)
 from werkzeug.security import generate_password_hash, check_password_hash
+from markdown.extensions import Extension
+from markdown.inlinepatterns import InlineProcessor
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dev-secret'
@@ -13,6 +20,36 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+
+class WikiLinkInlineProcessor(InlineProcessor):
+    def __init__(self, pattern, base_url):
+        super().__init__(pattern)
+        self.base_url = base_url
+
+    def handleMatch(self, m, data):
+        label = m.group(1)
+        if '|' in label:
+            target, text = label.split('|', 1)
+        else:
+            target = text = label
+        el = Element('a', {'href': f'{self.base_url}{target}'})
+        el.text = text
+        return el, m.start(0), m.end(0)
+
+
+class WikiLinkExtension(Extension):
+    def __init__(self, **kwargs):
+        self.config = {'base_url': ['/docs/', 'Base URL for wiki links']}
+        super().__init__(**kwargs)
+
+    def extendMarkdown(self, md):
+        base_url = self.getConfig('base_url')
+        md.inlinePatterns.register(
+            WikiLinkInlineProcessor(r'\[\[([^\]]+)\]\]', base_url),
+            'wikilink',
+            75,
+        )
 
 
 class User(UserMixin, db.Model):
@@ -52,6 +89,20 @@ class PostTag(db.Model):
     __tablename__ = 'post_tag'
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), primary_key=True)
     tag_id = db.Column(db.Integer, db.ForeignKey('tag.id'), primary_key=True)
+
+
+class Revision(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    path = db.Column(db.String(200), nullable=False)
+    language = db.Column(db.String(8), nullable=False, default='en')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User')
+    post = db.relationship('Post', backref='revisions')
 
 
 @login_manager.user_loader
@@ -121,6 +172,10 @@ def create_post():
         post = Post(title=title, body=body, path=path, language=language,
                     author=current_user, tags=tags)
         db.session.add(post)
+        db.session.flush()
+        rev = Revision(post=post, user=current_user, title=title, body=body,
+                       path=path, language=language)
+        db.session.add(rev)
         db.session.commit()
         return redirect(url_for('document', language=post.language, doc_path=post.path))
     return render_template('post_form.html', action='Create')
@@ -129,14 +184,18 @@ def create_post():
 @app.route('/post/<int:post_id>')
 def post_detail(post_id: int):
     post = Post.query.get_or_404(post_id)
-    html_body = markdown.markdown(post.body)
+    base = url_for('document', language=post.language, doc_path='')
+    html_body = markdown.markdown(post.body,
+                                  extensions=[WikiLinkExtension(base_url=base)])
     return render_template('post_detail.html', post=post, html_body=html_body)
 
 
 @app.route('/docs/<string:language>/<path:doc_path>')
 def document(language: str, doc_path: str):
     post = Post.query.filter_by(language=language, path=doc_path).first_or_404()
-    html_body = markdown.markdown(post.body)
+    base = url_for('document', language=language, doc_path='')
+    html_body = markdown.markdown(post.body,
+                                  extensions=[WikiLinkExtension(base_url=base)])
     translations = Post.query.filter(Post.path == doc_path, Post.language != language).all()
     return render_template('post_detail.html', post=post, html_body=html_body,
                            translations=translations)
@@ -150,6 +209,9 @@ def edit_post(post_id: int):
         flash('Permission denied.')
         return redirect(url_for('document', language=post.language, doc_path=post.path))
     if request.method == 'POST':
+        rev = Revision(post=post, user=current_user, title=post.title,
+                       body=post.body, path=post.path, language=post.language)
+        db.session.add(rev)
         post.title = request.form['title']
         post.body = request.form['body']
         post.path = request.form['path']
@@ -166,6 +228,29 @@ def edit_post(post_id: int):
         return redirect(url_for('document', language=post.language, doc_path=post.path))
     tags_str = ', '.join([t.name for t in post.tags])
     return render_template('post_form.html', action='Edit', post=post, tags=tags_str)
+
+
+@app.route('/post/<int:post_id>/history')
+def history(post_id: int):
+    post = Post.query.get_or_404(post_id)
+    revisions = Revision.query.filter_by(post_id=post_id).order_by(Revision.created_at.desc()).all()
+    return render_template('history.html', post=post, revisions=revisions)
+
+
+@app.route('/post/<int:post_id>/diff/<int:rev_id>')
+def revision_diff(post_id: int, rev_id: int):
+    post = Post.query.get_or_404(post_id)
+    revision = Revision.query.get_or_404(rev_id)
+    if revision.post_id != post.id:
+        abort(404)
+    diff = difflib.unified_diff(
+        revision.body.splitlines(),
+        post.body.splitlines(),
+        fromfile=f'rev {revision.id}',
+        tofile='current',
+        lineterm='',
+    )
+    return render_template('diff.html', post=post, revision=revision, diff='\n'.join(diff))
 
 
 @app.route('/tags')
