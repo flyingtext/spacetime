@@ -167,12 +167,14 @@
           img.style.display = 'none';
         }
         const cont = document.getElementById('ogContinue');
-        cont.onclick = () => { window.location.href = url; };
-        cont.href = url;
         const modal = new bootstrap.Modal(document.getElementById('ogModal'));
+        cont.onclick = () => { window.open(url, '_blank'); modal.hide(); };
+        cont.href = url;
+        cont.target = '_blank';
+        cont.rel = 'noopener noreferrer';
         modal.show();
       })
-      .catch(() => { window.location.href = url; });
+      .catch(() => { window.open(url, '_blank'); });
   });
 </script>
 <script>
