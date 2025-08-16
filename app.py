@@ -1,4 +1,5 @@
 import difflib
+import json
 import markdown
 from datetime import datetime
 from xml.etree.ElementTree import Element
@@ -91,6 +92,26 @@ class PostTag(db.Model):
     tag_id = db.Column(db.Integer, db.ForeignKey('tag.id'), primary_key=True)
 
 
+class PostMetadata(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), unique=True, nullable=False)
+    data = db.Column(db.Text)
+
+    post = db.relationship('Post', backref=db.backref('metadata', uselist=False, cascade='all, delete-orphan'))
+
+
+class UserPostMetadata(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    data = db.Column(db.Text)
+
+    __table_args__ = (db.UniqueConstraint('post_id', 'user_id', name='uix_post_user_metadata'),)
+
+    post = db.relationship('Post', backref='user_metadata')
+    user = db.relationship('User')
+
+
 class Revision(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
@@ -173,12 +194,33 @@ def create_post():
                     author=current_user, tags=tags)
         db.session.add(post)
         db.session.flush()
+
+        metadata_json = request.form.get('metadata', '').strip()
+        user_metadata_json = request.form.get('user_metadata', '').strip()
+
+        if metadata_json:
+            try:
+                json.loads(metadata_json)
+            except ValueError:
+                flash('Invalid metadata JSON')
+                return redirect(url_for('create_post'))
+            db.session.add(PostMetadata(post=post, data=metadata_json))
+
+        if user_metadata_json:
+            try:
+                json.loads(user_metadata_json)
+            except ValueError:
+                flash('Invalid user metadata JSON')
+                return redirect(url_for('create_post'))
+            db.session.add(UserPostMetadata(post=post, user=current_user,
+                                            data=user_metadata_json))
+
         rev = Revision(post=post, user=current_user, title=title, body=body,
                        path=path, language=language)
         db.session.add(rev)
         db.session.commit()
         return redirect(url_for('document', language=post.language, doc_path=post.path))
-    return render_template('post_form.html', action='Create')
+    return render_template('post_form.html', action='Create', metadata='', user_metadata='')
 
 
 @app.route('/post/<int:post_id>')
@@ -224,10 +266,50 @@ def edit_post(post_id: int):
                 tag = Tag(name=name)
                 db.session.add(tag)
             post.tags.append(tag)
+        metadata_json = request.form.get('metadata', '').strip()
+        user_metadata_json = request.form.get('user_metadata', '').strip()
+
+        if metadata_json:
+            try:
+                json.loads(metadata_json)
+            except ValueError:
+                flash('Invalid metadata JSON')
+                return redirect(url_for('edit_post', post_id=post.id))
+            if post.metadata:
+                post.metadata.data = metadata_json
+            else:
+                db.session.add(PostMetadata(post=post, data=metadata_json))
+        else:
+            if post.metadata:
+                db.session.delete(post.metadata)
+
+        if user_metadata_json:
+            try:
+                json.loads(user_metadata_json)
+            except ValueError:
+                flash('Invalid user metadata JSON')
+                return redirect(url_for('edit_post', post_id=post.id))
+            user_meta = UserPostMetadata.query.filter_by(post_id=post.id, user_id=current_user.id).first()
+            if user_meta:
+                user_meta.data = user_metadata_json
+            else:
+                db.session.add(UserPostMetadata(post=post, user=current_user,
+                                                data=user_metadata_json))
+        else:
+            user_meta = UserPostMetadata.query.filter_by(post_id=post.id, user_id=current_user.id).first()
+            if user_meta:
+                db.session.delete(user_meta)
+
         db.session.commit()
         return redirect(url_for('document', language=post.language, doc_path=post.path))
     tags_str = ', '.join([t.name for t in post.tags])
-    return render_template('post_form.html', action='Edit', post=post, tags=tags_str)
+    post_meta = post.metadata.data if post.metadata else ''
+    user_meta = ''
+    user_meta_obj = UserPostMetadata.query.filter_by(post_id=post.id, user_id=current_user.id).first()
+    if user_meta_obj:
+        user_meta = user_meta_obj.data
+    return render_template('post_form.html', action='Edit', post=post, tags=tags_str,
+                           metadata=post_meta, user_metadata=user_meta)
 
 
 @app.route('/post/<int:post_id>/history')
