@@ -915,9 +915,18 @@ def all_posts():
     tag = None
     if tag_name:
         tag = Tag.query.filter_by(name=tag_name).first_or_404()
-        posts = tag.posts
+        posts = (
+            Post.query.join(Post.tags)
+            .filter(Tag.id == tag.id, Post.title != '', Post.body != '')
+            .order_by(Post.id.desc())
+            .all()
+        )
     else:
-        posts = Post.query.order_by(Post.id.desc()).all()
+        posts = (
+            Post.query.filter(Post.title != '', Post.body != '')
+            .order_by(Post.id.desc())
+            .all()
+        )
     categories = get_category_tags()
     return render_template('index.html', posts=posts, tag=tag, categories=categories)
 
