@@ -13,6 +13,16 @@
   --bs-list-group-bg: var(--background-color);
   --bs-list-group-color: var(--text-color);
   --bs-list-group-border-color: var(--border-color);
+  --bs-list-group-action-color: var(--text-color);
+  --bs-list-group-action-hover-color: var(--text-color);
+  --bs-list-group-action-hover-bg: var(--toc-bg-color);
+  --bs-list-group-action-active-color: var(--text-color);
+  --bs-list-group-action-active-bg: var(--toc-bg-color);
+  --bs-list-group-active-color: var(--text-color);
+  --bs-list-group-active-bg: var(--toc-bg-color);
+  --bs-list-group-active-border-color: var(--border-color);
+  --bs-list-group-disabled-color: var(--text-color);
+  --bs-list-group-disabled-bg: var(--background-color);
   --navbar-toggler-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(0, 0, 0, 0.55)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 
