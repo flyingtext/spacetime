@@ -19,6 +19,18 @@ def test_render_markdown_wikilink_spaces():
     assert '<a href="/docs/My%20Page">My Page</a>' in html
 
 
+def test_render_markdown_with_toc_no_headings():
+    html, toc = render_markdown('Just text', with_toc=True)
+    assert '<p>Just text</p>' in html
+    assert toc == ''
+
+
+def test_render_markdown_with_toc_headings():
+    html, toc = render_markdown('# Heading', with_toc=True)
+    assert '<h1 id="heading">Heading</h1>' in html
+    assert '<a href="#heading">Heading</a>' in toc
+
+
 @pytest.fixture
 def client():
     app.config['TESTING'] = True

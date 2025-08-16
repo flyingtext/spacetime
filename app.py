@@ -565,6 +565,8 @@ def render_markdown(text: str, base_url: str = '/docs/', with_toc: bool = False)
     if with_toc:
         md = markdown.Markdown(extensions=extensions + ['toc'])
         html = md.convert(text or '')
+        if not getattr(md, 'toc_tokens', None):
+            return html, ''
         return html, md.toc
     html = markdown.markdown(text or '', extensions=extensions)
     return html, ''
@@ -1661,7 +1663,6 @@ def edit_post(post_id: int):
 
         for key, value in meta_dict.items():
             db.session.add(PostMetadata(post=post, key=key, value=value))
-        # Preserve existing view count without creating a duplicate record
         if current_views:
             db.session.add(current_views)
 
