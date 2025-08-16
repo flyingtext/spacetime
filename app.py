@@ -1511,13 +1511,17 @@ def settings():
     home_page = get_setting('home_page_path', '')
     timezone_value = get_setting('timezone', 'UTC')
     if request.method == 'POST':
-        if 'site_title' in request.form:
-            title = request.form['site_title'].strip()
-            title_setting = Setting.query.filter_by(key='site_title').first()
-            if title_setting:
-                title_setting.value = title
-            else:
-                db.session.add(Setting(key='site_title', value=title))
+
+        title = request.form.get('site_title', title).strip()
+        home_page = request.form.get('home_page_path', home_page).strip()
+        timezone_value = request.form.get('timezone', timezone_value).strip() or 'UTC'
+
+        title_setting = Setting.query.filter_by(key='site_title').first()
+        if title_setting:
+            title_setting.value = title
+        else:
+            title_setting = Setting(key='site_title', value=title)
+            db.session.add(title_setting)
 
         if 'home_page_path' in request.form:
             home_page = request.form['home_page_path'].strip()
@@ -1546,6 +1550,7 @@ def tag_list():
     tags = Tag.query.order_by(Tag.name).all()
     tag_locations = []
     tag_info = []
+    tag_posts_data = []
     for tag in tags:
         post = next(
             (p for p in tag.posts if p.latitude is not None and p.longitude is not None),
@@ -1566,9 +1571,24 @@ def tag_list():
             reverse=True,
         )[:3]
         tag_info.append({'tag': tag, 'top_posts': top_posts})
+        posts_data = []
+        for p, _ in top_posts:
+            snippet = (p.body[:100] + '...') if len(p.body) > 100 else p.body
+            posts_data.append(
+                {
+                    'title': p.title,
+                    'url': url_for('document', language=p.language, doc_path=p.path),
+                    'snippet': snippet,
+                }
+            )
+        tag_posts_data.append({'tag': tag.name, 'posts': posts_data})
     tag_locations_json = json.dumps(tag_locations)
+    tag_posts_json = json.dumps(tag_posts_data)
     return render_template(
-        'tag_list.html', tag_info=tag_info, tag_locations_json=tag_locations_json
+        'tag_list.html',
+        tag_info=tag_info,
+        tag_locations_json=tag_locations_json,
+        tag_posts_json=tag_posts_json,
     )
 
 
