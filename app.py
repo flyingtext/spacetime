@@ -155,12 +155,24 @@ def map_link(lat: float, lon: float) -> str:
     return f"https://www.openstreetmap.org/?mlat={lat}&mlon={lon}#map=12/{lat}/{lon}"
 
 
+COORD_OUT_OF_RANGE_MSG = 'Coordinates out of range'
+
+
 def format_metadata_value(value):
     if isinstance(value, dict):
         lat = value.get('lat') or value.get('latitude')
         lon = value.get('lon') or value.get('lng') or value.get('longitude')
         if lat is not None and lon is not None:
-            return Markup(f'<a href="{map_link(lat, lon)}">{lat}, {lon}</a>')
+            try:
+                lat_f = float(lat)
+                lon_f = float(lon)
+            except (TypeError, ValueError):
+                return Markup(escape(json.dumps(value)))
+            if -90 <= lat_f <= 90 and -180 <= lon_f <= 180:
+                return Markup(
+                    f'<a href="{map_link(lat_f, lon_f)}">{lat_f}, {lon_f}</a>'
+                )
+            return Markup(_(COORD_OUT_OF_RANGE_MSG))
         return Markup(escape(json.dumps(value)))
     if isinstance(value, list):
         return Markup(escape(json.dumps(value)))
@@ -168,6 +180,41 @@ def format_metadata_value(value):
 
 
 app.jinja_env.filters['format_metadata'] = format_metadata_value
+
+
+def extract_location(meta: dict) -> tuple[dict | None, str | None]:
+    """Extract location dict from metadata if within valid range."""
+    location = None
+    warning = None
+    for value in meta.values():
+        if isinstance(value, dict):
+            lat = value.get('lat') or value.get('latitude')
+            lon = value.get('lon') or value.get('lng') or value.get('longitude')
+            if lat is not None and lon is not None:
+                try:
+                    lat_f = float(lat)
+                    lon_f = float(lon)
+                except (TypeError, ValueError):
+                    continue
+                if -90 <= lat_f <= 90 and -180 <= lon_f <= 180:
+                    location = {'lat': lat_f, 'lon': lon_f}
+                    break
+                warning = COORD_OUT_OF_RANGE_MSG
+    if location is None:
+        lat = meta.get('lat') or meta.get('latitude')
+        lon = meta.get('lon') or meta.get('lng') or meta.get('longitude')
+        if lat is not None and lon is not None:
+            try:
+                lat_f = float(lat)
+                lon_f = float(lon)
+            except (TypeError, ValueError):
+                pass
+            else:
+                if -90 <= lat_f <= 90 and -180 <= lon_f <= 180:
+                    location = {'lat': lat_f, 'lon': lon_f}
+                else:
+                    warning = COORD_OUT_OF_RANGE_MSG
+    return location, warning
 
 
 class WikiLinkInlineProcessor(InlineProcessor):
@@ -583,33 +630,9 @@ def create_post():
 def post_detail(post_id: int):
     post = Post.query.get_or_404(post_id)
     post_meta = {m.key: m.value for m in post.metadata}
-    location = None
-    for value in post_meta.values():
-        if isinstance(value, dict):
-            lat = value.get('lat') or value.get('latitude')
-            lon = value.get('lon') or value.get('lng') or value.get('longitude')
-            if lat is not None and lon is not None:
-                try:
-                    location = {'lat': float(lat), 'lon': float(lon)}
-                except (TypeError, ValueError):
-                    location = None
-                if location:
-                    break
-    if location is None:
-        lat = (
-            post_meta.get('lat')
-            or post_meta.get('latitude')
-        )
-        lon = (
-            post_meta.get('lon')
-            or post_meta.get('lng')
-            or post_meta.get('longitude')
-        )
-        if lat is not None and lon is not None:
-            try:
-                location = {'lat': float(lat), 'lon': float(lon)}
-            except (TypeError, ValueError):
-                location = None
+    location, warning = extract_location(post_meta)
+    if warning:
+        flash(_(warning))
     user_meta = {}
     citations = (
         PostCitation.query.filter_by(post_id=post.id)
