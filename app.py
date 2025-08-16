@@ -1582,6 +1582,8 @@ def tag_list():
                     'title': p.title,
                     'url': url_for('document', language=p.language, doc_path=p.path),
                     'snippet': snippet,
+                    'views': get_view_count(p),
+                    'author': p.author.username,
                 }
             )
         tag_posts_data.append({'tag': tag.name, 'posts': posts_data})

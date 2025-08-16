@@ -2,47 +2,57 @@
 {% block title %}{{ _('Tags') }}{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-<div id="tag-map-container" style="position:relative;height:80vh">
-  <div id="tag-icons" class="d-flex flex-wrap" style="position:absolute;top:10px;left:10px;z-index:1000;">
-    {% for item in tag_info %}
-      {% set tag = item.tag %}
-      <button class="tag-icon btn btn-primary btn-sm me-1 mb-1" data-tag="{{ tag.name }}">{{ tag.name }}</button>
-    {% endfor %}
-  </div>
-  <div id="tag-map" style="height:100%;"></div>
-</div>
-<div id="tag-results" class="mt-3"></div>
-{% if not tag_info %}
-<p>{{ _('No tags yet.') }}</p>
-{% endif %}
+<style>
+  .container { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+</style>
+<div id="tag-info" class="p-3 border-bottom"></div>
+<div id="tag-map"></div>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
+const navHeight = document.querySelector('nav').offsetHeight;
+const mapDiv = document.getElementById('tag-map');
+mapDiv.style.position = 'fixed';
+mapDiv.style.top = navHeight + 'px';
+mapDiv.style.left = '0';
+mapDiv.style.right = '0';
+mapDiv.style.bottom = '0';
+const infoDiv = document.getElementById('tag-info');
+infoDiv.style.position = 'fixed';
+infoDiv.style.top = navHeight + 'px';
+infoDiv.style.left = '0';
+infoDiv.style.right = '0';
+infoDiv.style.background = 'rgba(255,255,255,0.9)';
+infoDiv.style.zIndex = '1000';
+infoDiv.style.maxHeight = '30vh';
+infoDiv.style.overflowY = 'auto';
+infoDiv.style.display = 'none';
 const tagLocations = {{ tag_locations_json|safe }};
 const tagPosts = {{ tag_posts_json|safe }};
-const map = L.map('tag-map').setView([0, 0], 2);
+const map = L.map('tag-map').setView([0,0],2);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
+function createIcon(name){
+  const svg = `\
+  <svg xmlns="http://www.w3.org/2000/svg" width="120" height="40">
+    <rect width="120" height="40" rx="5" ry="5" fill="white" stroke="#0d6efd" />
+    <text x="60" y="25" font-size="14" text-anchor="middle" fill="#0d6efd">${name}</text>
+  </svg>`;
+  return L.divIcon({html: svg, className: '', iconSize:[120,40], iconAnchor:[60,40]});
+}
 tagLocations.forEach(t => {
-  const marker = L.marker([t.lat, t.lon]).addTo(map);
-  marker.bindPopup(`<a href="${t.url}">${t.name}</a>`);
-});
-document.querySelectorAll('.tag-icon').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const name = btn.dataset.tag;
-    const info = tagPosts.find(t => t.tag === name);
-    const container = document.getElementById('tag-results');
+  const marker = L.marker([t.lat, t.lon], {icon: createIcon(t.name)}).addTo(map);
+  marker.on('click', () => {
+    const info = tagPosts.find(tp => tp.tag === t.name);
     if(info){
-      let html = `<h3>${name}</h3><ul class="list-unstyled">`;
+      let html = `<h3>${t.name}</h3>`;
       info.posts.forEach(p => {
-        html += `<li class="mb-2"><a href="${p.url}">${p.title}</a><p class="small text-muted mb-0">${p.snippet}</p></li>`;
+        html += `<div class="mb-2"><a href="${p.url}">${p.title}</a><div class="small text-muted">${p.author} · ${p.views} views</div><p class="small mb-0">${p.snippet}</p></div>`;
       });
-      html += '</ul>';
-      container.innerHTML = html;
-      container.scrollIntoView({behavior:'smooth'});
+      infoDiv.innerHTML = html;
+      infoDiv.style.display = 'block';
     }
   });
 });
 </script>
 {% endblock %}
-
