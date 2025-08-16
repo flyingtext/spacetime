@@ -986,7 +986,17 @@ def delete_post(post_id: int):
     if post.author_id != current_user.id and not current_user.is_admin():
         flash(_('Permission denied.'))
         return redirect(url_for('post_detail', post_id=post.id))
-    db.session.delete(post)
+    rev = Revision(
+        post=post,
+        user=current_user,
+        title=post.title,
+        body=post.body,
+        path=post.path,
+        language=post.language,
+    )
+    db.session.add(rev)
+    post.title = ''
+    post.body = ''
     db.session.commit()
     flash(_('Post deleted.'))
     return redirect(url_for('index'))
