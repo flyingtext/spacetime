@@ -143,11 +143,41 @@ class UserPostMetadata(db.Model):
     user = db.relationship('User')
 
 
+class PostCitation(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    citation_part = db.Column(db.JSON, nullable=False)
+    citation_text = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    post = db.relationship(
+        'Post', backref=db.backref('citations', cascade='all, delete-orphan')
+    )
+    user = db.relationship('User')
+
+
+class UserPostCitation(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    citation_part = db.Column(db.JSON, nullable=False)
+    citation_text = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    post = db.relationship('Post', backref='user_citations')
+    user = db.relationship('User')
+
+
 db.Index('ix_post_metadata_key_post', PostMetadata.key, PostMetadata.post_id)
 db.Index('ix_user_post_metadata_key_post_user',
           UserPostMetadata.key,
           UserPostMetadata.post_id,
           UserPostMetadata.user_id)
+db.Index('ix_post_citation_post_id', PostCitation.post_id)
+db.Index('ix_post_citation_user_id', PostCitation.user_id)
+db.Index('ix_user_post_citation_post_id', UserPostCitation.post_id)
+db.Index('ix_user_post_citation_user_id', UserPostCitation.user_id)
 
 
 class Revision(db.Model):
@@ -424,5 +454,7 @@ if __name__ == '__main__':
     with app.app_context():
         PostMetadata.__table__.create(bind=db.engine, checkfirst=True)
         UserPostMetadata.__table__.create(bind=db.engine, checkfirst=True)
+        PostCitation.__table__.create(bind=db.engine, checkfirst=True)
+        UserPostCitation.__table__.create(bind=db.engine, checkfirst=True)
         db.create_all()
     app.run(debug=True)
