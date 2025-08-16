@@ -113,7 +113,8 @@ Response
 
 ### `/citation/suggest` (`POST`)
 
-Suggest citations for multiple sentences of text.
+Suggest citations for multiple sentences of text. Only the most frequent
+keywords from each sentence are used when querying external services.
 
 **Parameters**
 
@@ -142,7 +143,8 @@ Response
 
 ### `/citation/suggest_line` (`POST`)
 
-Like `/citation/suggest` but processes one line at a time.
+Like `/citation/suggest` but processes one line at a time, extracting the
+most frequent words from that line to build the search query.
 
 **Parameters**
 
