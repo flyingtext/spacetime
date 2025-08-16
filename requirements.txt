@@ -11,3 +11,4 @@ markdown==3.5.1
 python-dotenv==1.0.1
 redis==5.0.0
 requests==2.31.0
+tzdata==2024.1
