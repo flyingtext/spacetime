@@ -4,7 +4,7 @@ import sys
 import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from app import app, db, User, Post, Tag
+from app import app, db, User, Post, Tag, PostMetadata
 
 
 @pytest.fixture
@@ -42,3 +42,30 @@ def test_tags_page_includes_locations(client):
     assert 'tagLocations' in data
     assert '"lat": 10.0' in data
     assert '/tag/t1' in data
+
+
+def test_tags_page_uses_metadata_for_locations(client):
+    with app.app_context():
+        user = User.query.filter_by(username='u').first()
+        tag = Tag(name='t2')
+        db.session.add(tag)
+        db.session.commit()
+        post = Post(
+            title='Post2',
+            body='body',
+            path='p2',
+            language='en',
+            author_id=user.id,
+            tags=[tag],
+        )
+        db.session.add(post)
+        db.session.flush()
+        db.session.add_all([
+            PostMetadata(post=post, key='lat', value='30.0'),
+            PostMetadata(post=post, key='lon', value='40.0'),
+        ])
+        db.session.commit()
+    resp = client.get('/tags')
+    data = resp.get_data(as_text=True)
+    assert '"lat": 30.0' in data
+    assert '/tag/t2' in data

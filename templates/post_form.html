@@ -35,14 +35,17 @@
   </div>
   <div class="mb-3">
     <label for="address-input">{{ _('Address') }}</label>
-    <input id="address-input" class="form-control" placeholder="{{ _('Address') }}">
-  </div>
-  <div class="mb-3">
-    <button type="button" id="find-coordinates" class="btn btn-secondary">{{ _('Find Coordinates') }}</button>
-  </div>
-  <div id="map" style="height:300px"></div>
-  <input type="hidden" name="lat" id="lat" value="{{ lat or '' }}">
-  <input type="hidden" name="lon" id="lon" value="{{ lon or '' }}">
+    <div class="row g-2">
+      <div class="col-md-6">
+        <input id="address-input" class="form-control mb-2" placeholder="{{ _('Address') }}">
+        <button type="button" id="find-coordinates" class="btn btn-secondary">{{ _('Find Coordinates') }}</button>
+      </div>
+      <div class="col-md-6">
+        <div id="map" style="height:300px"></div>
+      </div>
+    </div>
+    <input type="hidden" name="lat" id="lat" value="{{ lat or '' }}">
+    <input type="hidden" name="lon" id="lon" value="{{ lon or '' }}">
     <p id="geocode-error" class="error-message"></p>
     <details class="mb-3">
       <summary>{{ _('Post metadata (JSON)') }}</summary>
@@ -76,8 +79,13 @@ const bodyInput = document.querySelector('textarea[name="body"]');
 const previewEl = document.getElementById('preview');
 const formEl = document.querySelector('form');
 formEl.addEventListener('keydown', function (e) {
-  if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
-    e.preventDefault();
+  if (e.key === 'Enter') {
+    if (e.target.id === 'address-input') {
+      e.preventDefault();
+      document.getElementById('find-coordinates').click();
+    } else if (e.target.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+    }
   }
 });
 
