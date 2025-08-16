@@ -206,3 +206,14 @@ pre {
 .tag-card h5 {
   margin: 0 0 0.5rem 0;
 }
+
+footer {
+  border-top: 1px solid var(--border-color);
+  margin-top: 2rem;
+  padding-top: 1rem;
+  text-align: center;
+}
+
+footer a {
+  margin: 0 0.5rem;
+}
