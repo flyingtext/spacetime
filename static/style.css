@@ -127,7 +127,8 @@ textarea::placeholder,
 }
 
 .toc { margin: 0; }
-.toc ul { list-style: none; padding-left: 0; }
+.toc ul { list-style: none; padding-left: 1rem; }
+.toc > ul { padding-left: 0; }
 .toc a { text-decoration: none; }
 
 @media (max-width: 767.98px) {
