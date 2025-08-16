@@ -30,10 +30,14 @@
       <ul class="navbar-nav mb-2 mb-lg-0">
         {% if current_user.is_authenticated %}
           {% set unread = current_user.notifications | selectattr('read_at', 'equalto', None) | list | length %}
+          <li class="nav-item">
+            <a class="nav-link position-relative" href="{{ url_for('notifications') }}" aria-label="{{ _('Notifications') }}" title="{{ _('Notifications') }}" id="notif-link">🔔
+              <span id="notif-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" {% if not unread %}style="display:none"{% endif %}>{{ unread }}</span>
+            </a>
+          </li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">{{ current_user.username }}</a>
             <ul class="dropdown-menu dropdown-menu-end">
-              <li><a class="dropdown-item" href="{{ url_for('notifications') }}">{{ _('Notifications') }}{% if unread %} ({{ unread }}){% endif %}</a></li>
               <li><a class="dropdown-item" href="{{ url_for('create_post') }}">{{ _('New Post') }}</a></li>
               <li><a class="dropdown-item" href="{{ url_for('request_post') }}">{{ _('Request Post') }}</a></li>
               {% if current_user.is_admin() %}
@@ -86,8 +90,7 @@
 <script>
   const socket = io();
   const currentUserId = {{ current_user.id if current_user.is_authenticated else 'null' }};
-  const notifUrl = "{{ url_for('notifications') }}";
-  const notifLabel = "{{ _('Notifications') }}";
+  const notifCount = document.getElementById('notif-count');
 
   socket.on('new_post', data => {
     const list = document.getElementById('post-list');
@@ -103,13 +106,10 @@
   });
 
   socket.on('new_notification', data => {
-    if (currentUserId && data.user_id === currentUserId) {
-      const link = document.querySelector('a[href="' + notifUrl + '"]');
-      if (link) {
-        const match = link.textContent.match(/\((\d+)\)/);
-        let count = match ? parseInt(match[1]) + 1 : 1;
-        link.textContent = `${notifLabel} (${count})`;
-      }
+    if (currentUserId && data.user_id === currentUserId && notifCount) {
+      let count = parseInt(notifCount.textContent || '0') + 1;
+      notifCount.textContent = count;
+      notifCount.style.display = 'inline';
     }
   });
 </script>
