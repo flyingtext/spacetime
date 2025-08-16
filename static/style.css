@@ -187,15 +187,15 @@ pre {
 }
 
 #map, #map-offcanvas {
-  height: 400px;
+  height: 250px;
   width: 100%;
-  max-width: 600px;
+  max-width: 100%;
   margin: 1em 0;
 }
 
 @media (max-width: 600px) {
   #map, #map-offcanvas {
-    height: 300px;
+    height: 200px;
   }
 }
 
