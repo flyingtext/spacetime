@@ -5,11 +5,19 @@
 {% if current_user.is_authenticated %}
   <p><a href="{{ url_for('create_post') }}" class="btn btn-primary">{{ _('New Post') }}</a></p>
 {% endif %}
-<ul id="post-list" class="list-group">
+<div id="post-list" class="row row-cols-1 row-cols-md-2 g-4">
   {% for post in posts %}
-      <li class="list-group-item"><a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.title }}</a> - {{ post.path }} ({{ post.language }}) {{ _('by') }} <a href="{{ url_for('profile', username=post.author.username) }}">{{ post.author.username }}</a></li>
+    <div class="col">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title"><a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.title }}</a></h5>
+          <p class="card-text">{{ post.path }} ({{ post.language }})</p>
+          <p class="card-text"><small class="text-muted">{{ _('by') }} <a href="{{ url_for('profile', username=post.author.username) }}">{{ post.author.username }}</a></small></p>
+        </div>
+      </div>
+    </div>
   {% else %}
-    <li class="list-group-item">{{ _('No posts yet.') }}</li>
+    <p>{{ _('No posts yet.') }}</p>
   {% endfor %}
-</ul>
+</div>
 {% endblock %}

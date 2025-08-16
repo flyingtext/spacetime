@@ -1119,15 +1119,27 @@ def create_post():
         return redirect(url_for('document', language=post.language, doc_path=post.path))
 
     req_id = request.args.get('request_id')
-    prefill_title = prefill_body = None
+    prefill_title = request.args.get('title')
+    prefill_body = None
+    prefill_path = request.args.get('path')
+    prefill_language = request.args.get('language')
     if req_id:
         req = RequestedPost.query.get_or_404(req_id)
         prefill_title = req.title
         prefill_body = req.description
-    return render_template('post_form.html', action=_('Create'), metadata='',
-                           user_metadata='', prefill_title=prefill_title,
-                           prefill_body=prefill_body, request_id=req_id,
-                           lat=None, lon=None)
+    return render_template(
+        'post_form.html',
+        action=_('Create'),
+        metadata='',
+        user_metadata='',
+        prefill_title=prefill_title,
+        prefill_body=prefill_body,
+        prefill_path=prefill_path,
+        prefill_language=prefill_language,
+        request_id=req_id,
+        lat=None,
+        lon=None,
+    )
 
 
 @app.route('/post/<int:post_id>')
@@ -1249,7 +1261,15 @@ def document(language: str, doc_path: str):
             return redirect(
                 url_for('document', language=language, doc_path=redirect_entry.new_path)
             )
-        abort(404)
+        title = doc_path.rsplit('/', 1)[-1]
+        return redirect(
+            url_for(
+                'create_post',
+                title=title,
+                path=doc_path,
+                language=language,
+            )
+        )
     views = increment_view_count(post)
     post_meta = {m.key: m.value for m in post.metadata}
     user_meta = {}
@@ -1590,6 +1610,8 @@ def edit_post(post_id: int):
 
         for key, value in meta_dict.items():
             db.session.add(PostMetadata(post=post, key=key, value=value))
+        if current_views:
+            db.session.add(PostMetadata(post=post, key='views', value=current_views))
 
         if user_metadata_json:
             try:
