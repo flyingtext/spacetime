@@ -63,6 +63,22 @@ nav a {
   background-image: var(--navbar-toggler-icon);
 }
 
+.dropdown-menu {
+  background-color: var(--nav-bg-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.dropdown-item {
+  color: var(--text-color);
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background-color: var(--toc-bg-color);
+  color: var(--text-color);
+}
+
 a {
   color: var(--link-color);
 }
