@@ -768,6 +768,21 @@ def requested_posts():
     return render_template('requested_posts.html', requests=reqs)
 
 
+def _slugify(title: str) -> str:
+    slug = re.sub(r'[^a-zA-Z0-9]+', '-', title.strip().lower()).strip('-')
+    return slug or 'post'
+
+
+def generate_unique_path(title: str, language: str) -> str:
+    base = _slugify(title)
+    path = base
+    counter = 1
+    while Post.query.filter_by(path=path, language=language).first():
+        path = f"{base}-{counter}"
+        counter += 1
+    return path
+
+
 @app.route('/post/new', methods=['GET', 'POST'])
 @login_required
 def create_post():
@@ -776,8 +791,13 @@ def create_post():
     if request.method == 'POST':
         title = request.form['title']
         body = request.form['body']
-        path = request.form['path']
+        path = request.form['path'].strip()
         language = request.form['language']
+        if not path:
+            path = generate_unique_path(title, language)
+        elif Post.query.filter_by(path=path, language=language).first():
+            flash(_('Path already exists'))
+            return redirect(url_for('create_post'))
         tag_names = [t.strip() for t in request.form['tags'].split(',') if t.strip()]
         tags = []
         for name in tag_names:
@@ -1201,8 +1221,20 @@ def edit_post(post_id: int):
         db.session.add(rev)
         post.title = request.form['title']
         post.body = request.form['body']
-        post.path = request.form['path']
-        post.language = request.form['language']
+        new_path = request.form['path'].strip()
+        new_language = request.form['language']
+        if not new_path:
+            new_path = generate_unique_path(post.title, new_language)
+        elif (
+            (new_path != old_path or new_language != old_language)
+            and Post.query.filter_by(path=new_path, language=new_language)
+            .filter(Post.id != post.id)
+            .first()
+        ):
+            flash(_('Path already exists'))
+            return redirect(url_for('edit_post', post_id=post.id))
+        post.path = new_path
+        post.language = new_language
         if post.path != old_path:
             db.session.add(
                 Redirect(old_path=old_path, new_path=post.path, language=old_language)
