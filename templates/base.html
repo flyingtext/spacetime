@@ -12,6 +12,8 @@
   <a href="{{ url_for('search') }}">Search</a> |
   <a href="{{ url_for('citation_stats') }}">Citation Stats</a> |
   {% if current_user.is_authenticated %}
+    {% set unread = current_user.notifications | selectattr('read_at', 'equalto', None) | list | length %}
+    <a href="{{ url_for('notifications') }}">Notifications{% if unread %} ({{ unread }}){% endif %}</a> |
     <a href="{{ url_for('create_post') }}">New Post</a> |
     <span>{{ current_user.username }}</span> |
     <a href="{{ url_for('logout') }}">Logout</a>
