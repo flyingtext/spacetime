@@ -2,12 +2,15 @@
 {% block title %}{{ _('Tags') }}{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
 <style>
   .container { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
 </style>
 <div id="tag-info" class="p-3 border-bottom"></div>
 <div id="tag-map"></div>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 <script>
 const navHeight = document.querySelector('nav').offsetHeight;
 const mapDiv = document.getElementById('tag-map');
@@ -36,13 +39,14 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 function createIcon(name){
   const svg = `\
   <svg xmlns="http://www.w3.org/2000/svg" width="120" height="40">
-    <rect width="120" height="40" rx="5" ry="5" fill="white" stroke="#0d6efd" />
+    <rect width="120" height="40" rx="5" ry="5" fill="#0d6efd" fill-opacity="0.1" stroke="#0d6efd" />
     <text x="60" y="25" font-size="14" text-anchor="middle" fill="#0d6efd">${name}</text>
   </svg>`;
   return L.divIcon({html: svg, className: '', iconSize:[120,40], iconAnchor:[60,40]});
 }
+const markers = L.markerClusterGroup();
 tagLocations.forEach(t => {
-  const marker = L.marker([t.lat, t.lon], {icon: createIcon(t.name)}).addTo(map);
+  const marker = L.marker([t.lat, t.lon], {icon: createIcon(t.name)});
   marker.on('click', () => {
     const info = tagPosts.find(tp => tp.tag === t.name);
     if(info){
@@ -54,6 +58,8 @@ tagLocations.forEach(t => {
       infoDiv.style.display = 'block';
     }
   });
+  markers.addLayer(marker);
 });
+map.addLayer(markers);
 </script>
 {% endblock %}
