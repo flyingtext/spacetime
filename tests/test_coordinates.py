@@ -1,9 +1,10 @@
 import os
 import sys
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import pytest
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import app
 from app import (
     format_metadata_value,
     extract_location,
@@ -12,7 +13,8 @@ from app import (
 )
 
 
-def test_format_metadata_value_valid():
+def test_format_metadata_value_valid(monkeypatch):
+    monkeypatch.setattr(app, 'reverse_geocode_coords', lambda lat, lon: None)
     value = {'lat': 10, 'lon': 20}
     result = format_metadata_value(value)
     assert 'href' in result
