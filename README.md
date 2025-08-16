@@ -50,3 +50,11 @@ HOST=127.0.0.1 PORT=5000 python app.py
 The application creates `wiki.db` SQLite database on first run.
 
 Open browser at `http://${HOST}:${PORT}/`.
+
+## Testing
+
+Run the test suite with [pytest](https://docs.pytest.org/):
+
+```bash
+pytest
+```
