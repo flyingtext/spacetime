@@ -443,6 +443,25 @@ document.addEventListener('DOMContentLoaded', () => {
     if (themeToggle) {
         themeToggle.addEventListener('click', () => setTimeout(updateTiles, 0));
     }
+    const toggleFullscreen = () => {
+      el.classList.toggle('map-fullscreen');
+      document.body.classList.toggle('overflow-hidden');
+      setTimeout(() => map.invalidateSize(), 200);
+    };
+    const fullscreenControl = L.control({position: 'topleft'});
+    fullscreenControl.onAdd = () => {
+      const btn = L.DomUtil.create('button', 'btn btn-sm btn-light');
+      btn.type = 'button';
+      btn.innerHTML = '⛶';
+      btn.title = 'Toggle fullscreen';
+      L.DomEvent.on(btn, 'click', (e) => {
+        L.DomEvent.stopPropagation(e);
+        L.DomEvent.preventDefault(e);
+        toggleFullscreen();
+      });
+      return btn;
+    };
+    fullscreenControl.addTo(map);
     const layer = L.geoJSON(data).addTo(map);
     try {
       map.fitBounds(layer.getBounds());

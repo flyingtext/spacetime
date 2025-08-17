@@ -5,6 +5,7 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app import app, db, User, Post, Tag
+from sqlalchemy import text
 
 
 @pytest.fixture
@@ -12,6 +13,8 @@ def client():
     app.config['TESTING'] = True
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
     with app.app_context():
+        db.drop_all()
+        db.session.execute(text('DROP TABLE IF EXISTS post_fts'))
         db.create_all()
         user = User(username='u')
         user.set_password('pw')
@@ -31,6 +34,7 @@ def client():
         yield client
     with app.app_context():
         db.drop_all()
+        db.session.execute(text('DROP TABLE IF EXISTS post_fts'))
 
 
 def test_search_prioritizes_tag_title_body(client):
