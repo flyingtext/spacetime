@@ -445,7 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const toggleFullscreen = () => {
       el.classList.toggle('map-fullscreen');
-      document.body.classList.toggle('overflow-hidden');
+      document.body.classList.toggle('map-fullscreen-active');
       setTimeout(() => map.invalidateSize(), 200);
     };
     const fullscreenControl = L.control({position: 'topleft'});
