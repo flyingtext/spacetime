@@ -7,7 +7,7 @@
 <div class="d-flex flex-column">
   <h1 class="mb-0">{{ post.title }} ({{ post.language }})</h1>
   <div class="text-muted text-end mt-1">
-    {% if created_at %}{{ created_at.strftime('%Y-%m-%d %H:%M') }} · {% endif %}{{ _('Views') }}: {{ views }}
+    {% if created_at %}{{ created_at|format_datetime }} · {% endif %}{{ _('Views') }}: {{ views }}
   </div>
 </div>
 <p><small>{{ post.path }}</small></p>
@@ -176,7 +176,7 @@
         {% if c.context %}<strong>{{ c.context }}</strong> - {% endif %}
         {{ c.citation_part|mla_citation(c.doi) }}
         &mdash; <a href="{{ url_for('profile', username=c.user.username) }}">{{ c.user.username }}</a>,
-        {{ c.created_at.strftime('%Y-%m-%d %H:%M') }}
+        {{ c.created_at|format_datetime }}
         {% if current_user.is_authenticated and (current_user.id == c.user_id or current_user.is_admin()) %}
           <a href="{{ url_for('edit_citation', post_id=post.id, cid=c.id) }}" class="btn btn-sm btn-secondary">{{ _('Edit') }}</a>
           <form action="{{ url_for('delete_citation', post_id=post.id, cid=c.id) }}" method="post" class="d-inline" onsubmit="return confirm('{{ _('Are you sure?') }}');">
@@ -195,7 +195,7 @@
         {% if c.context %}<strong>{{ c.context }}</strong> - {% endif %}
         {{ c.citation_part|mla_citation(c.doi) }}
         &mdash; <a href="{{ url_for('profile', username=c.user.username) }}">{{ c.user.username }}</a>,
-        {{ c.created_at.strftime('%Y-%m-%d %H:%M') }}
+        {{ c.created_at|format_datetime }}
         <a href="{{ url_for('edit_citation', post_id=post.id, cid=c.id) }}" class="btn btn-sm btn-secondary">{{ _('Edit') }}</a>
         <form action="{{ url_for('delete_citation', post_id=post.id, cid=c.id) }}" method="post" class="d-inline" onsubmit="return confirm('{{ _('Are you sure?') }}');">
           <button type="submit" class="btn btn-sm btn-danger">{{ _('Delete') }}</button>

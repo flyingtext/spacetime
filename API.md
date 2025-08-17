@@ -11,7 +11,7 @@ This document lists the HTTP endpoints provided by the Spacetime application.
 | `/citation/suggest` | `POST` | Suggest citations for provided text |
 | `/citation/suggest_line` | `POST` | Return citation suggestions for a single line of text |
 | `/citations/stats` | `GET` | Summary statistics for citations |
-| `/docs/<string:language>/<path:doc_path>` | `GET` | Retrieve a document by language and path |
+| `/<string:language>/<path:doc_path>` | `GET` | Retrieve a document by language and path |
 | `/geocode` | `GET` | Geocode an address string |
 | `/login` | `GET, POST` | Log in a user |
 | `/logout` | `GET` | Log out current user |
@@ -110,7 +110,7 @@ Stop watching a post for changes.
 Remove the specified post.
 
 ### `/post/<string:language>/<path:doc_path>` (`GET`)
-Retrieve a post by language and path. The `/docs/<language>/<path>` route is an alias.
+Retrieve a post by language and path. The legacy `/docs/<language>/<path>` route is an alias.
 
 ### `/post/<int:post_id>/edit` (`GET, POST`)
 Edit an existing post. Accepts the same fields as `/post/new` plus an optional `comment`.
@@ -196,7 +196,7 @@ Content-Type: application/json
 Response
 
 ```json
-{"html": "<p><a href=\"/docs/es/Page\">Page</a></p>"}
+{"html": "<p><a href=\"/es/Page\">Page</a></p>"}
 ```
 
 ### `/og` (`GET`)

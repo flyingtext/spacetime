@@ -18,6 +18,7 @@ from flask import (
     abort,
     jsonify,
     Response,
+    session,
 )
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (LoginManager, login_user, login_required,
@@ -618,7 +619,7 @@ class WikiLinkInlineProcessor(InlineProcessor):
 
 class WikiLinkExtension(Extension):
     def __init__(self, **kwargs):
-        self.config = {'base_url': ['/docs/', 'Base URL for wiki links']}
+        self.config = {'base_url': ['/', 'Base URL for wiki links']}
         super().__init__(**kwargs)
 
     def extendMarkdown(self, md):
@@ -631,7 +632,7 @@ class WikiLinkExtension(Extension):
 
 
 # Markup rendering helpers
-def render_markdown(text: str, base_url: str = '/docs/', with_toc: bool = False) -> tuple[str, str]:
+def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> tuple[str, str]:
     """Return HTML and optional TOC from Markdown text with wiki links."""
     extensions: list[Extension | str] = [WikiLinkExtension(base_url=base_url)]
     if with_toc:
@@ -879,6 +880,26 @@ def get_category_tags(language: str | None = None) -> list[tuple[str, str]]:
     return categories
 
 
+def get_user_timezone() -> str:
+    tz = session.get('timezone')
+    if tz:
+        return tz
+    return get_setting('timezone', 'UTC') or 'UTC'
+
+
+@app.template_filter('format_datetime')
+def format_datetime(value: datetime, fmt: str = '%Y-%m-%d %H:%M') -> str:
+    tz_name = get_user_timezone()
+    try:
+        tzinfo = ZoneInfo(tz_name)
+    except ZoneInfoNotFoundError:
+        tzinfo = timezone.utc
+    dt = value
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(tzinfo).strftime(fmt)
+
+
 @app.context_processor
 def inject_settings():
     return {'get_setting': get_setting}
@@ -1079,15 +1100,18 @@ def recent_changes():
     revisions = (
         Revision.query.order_by(Revision.created_at.desc()).limit(20).all()
     )
-    tz_name = get_setting('timezone', 'UTC') or 'UTC'
-    try:
-        tzinfo = ZoneInfo(tz_name)
-    except ZoneInfoNotFoundError:
-        tzinfo = timezone.utc
-    for rev in revisions:
-        dt = rev.created_at.replace(tzinfo=timezone.utc).astimezone(tzinfo)
-        rev.display_time = dt.strftime('%Y-%m-%d %H:%M %Z')
     return render_template('recent.html', revisions=revisions)
+
+
+@app.route('/timezone', methods=['GET', 'POST'])
+def choose_timezone():
+    tz = session.get('timezone', get_setting('timezone', 'UTC') or 'UTC')
+    if request.method == 'POST':
+        tz = request.form.get('timezone', '').strip() or 'UTC'
+        session['timezone'] = tz
+        flash(_('Timezone updated.'))
+        return redirect(url_for('choose_timezone'))
+    return render_template('timezone.html', timezone=tz)
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -1496,9 +1520,10 @@ def delete_post(post_id: int):
     return redirect(url_for('index'))
 
 
-@app.route('/post/<string:language>/<path:doc_path>')
-@app.route('/docs/<string:language>/<path:doc_path>')
+@app.route('/<string:language>/<path:doc_path>')
 def document(language: str, doc_path: str):
+    if language not in app.config['LANGUAGES']:
+        abort(404)
     post = Post.query.filter_by(language=language, path=doc_path).first()
     if not post:
         redirect_entry = Redirect.query.filter_by(
@@ -1576,6 +1601,9 @@ def document(language: str, doc_path: str):
         views=views,
         created_at=created_at,
     )
+
+
+app.add_url_rule('/docs/<string:language>/<path:doc_path>', view_func=document)
 
 
 @app.route('/markdown/preview', methods=['POST'])

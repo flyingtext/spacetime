@@ -61,5 +61,5 @@ def test_doc_path_shows_reverse_geocode(client, monkeypatch):
         },
     )
     assert resp.status_code == 302
-    resp = client.get('/post/en/p')
+    resp = client.get('/en/p')
     assert b'Test Place' in resp.data
