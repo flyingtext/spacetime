@@ -153,6 +153,25 @@ def ensure_user_locale_timezone_columns() -> None:
 ensure_user_locale_timezone_columns()
 
 
+def ensure_post_created_at_column() -> None:
+    with app.app_context():
+        inspector = inspect(db.engine)
+        try:
+            cols = [c["name"] for c in inspector.get_columns("post")]
+        except NoSuchTableError:
+            return
+        if "created_at" not in cols:
+            with db.engine.begin() as conn:
+                conn.execute(
+                    text(
+                        "ALTER TABLE post ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP"
+                    )
+                )
+
+
+ensure_post_created_at_column()
+
+
 def fetch_bibtex_by_title(title: str) -> str | None:
     """Return raw BibTeX for the first work matching the given title."""
     if not title:
@@ -711,6 +730,7 @@ class Post(db.Model):
     tags = db.relationship('Tag', secondary='post_tag', backref='posts')
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     __table_args__ = (db.UniqueConstraint('path', 'language', name='uix_path_language'),)
 
     @property
@@ -2341,6 +2361,44 @@ def admin_stats():
         'citations': PostCitation.query.count(),
     }
     return render_template('admin/stats.html', stats=stats)
+
+
+@app.route('/admin/stats/posts_over_time')
+@login_required
+def admin_stats_posts_over_time():
+    if not current_user.is_admin():
+        abort(403)
+    daily = (
+        db.session.query(func.strftime('%Y-%m-%d', Post.created_at), func.count())
+        .group_by(func.strftime('%Y-%m-%d', Post.created_at))
+        .order_by(func.strftime('%Y-%m-%d', Post.created_at))
+        .all()
+    )
+    weekly = (
+        db.session.query(func.strftime('%Y-%W', Post.created_at), func.count())
+        .group_by(func.strftime('%Y-%W', Post.created_at))
+        .order_by(func.strftime('%Y-%W', Post.created_at))
+        .all()
+    )
+    monthly = (
+        db.session.query(func.strftime('%Y-%m', Post.created_at), func.count())
+        .group_by(func.strftime('%Y-%m', Post.created_at))
+        .order_by(func.strftime('%Y-%m', Post.created_at))
+        .all()
+    )
+    yearly = (
+        db.session.query(func.strftime('%Y', Post.created_at), func.count())
+        .group_by(func.strftime('%Y', Post.created_at))
+        .order_by(func.strftime('%Y', Post.created_at))
+        .all()
+    )
+    result = {
+        'daily': [{'period': d, 'count': c} for d, c in daily],
+        'weekly': [{'period': w, 'count': c} for w, c in weekly],
+        'monthly': [{'period': m, 'count': c} for m, c in monthly],
+        'yearly': [{'period': y, 'count': c} for y, c in yearly],
+    }
+    return jsonify(result)
 
 
 @app.route('/settings', methods=['GET', 'POST'])
