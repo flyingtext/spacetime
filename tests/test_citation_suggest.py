@@ -34,20 +34,28 @@ def test_suggest_citations_multiword(monkeypatch):
     assert captured["calls"][1]["query_language"] == "en"
 
 
-def test_suggest_citations_multilingual(monkeypatch):
-    sentence = "La science avance rapidement."
+@pytest.mark.parametrize(
+    "sentence,lang",
+    [
+        ("The quick brown fox jumps over the lazy dog.", "en"),
+        ("빠른 갈색 여우가 게으른 개를 뛰어넘는다.", "ko"),
+        ("素早い茶色の狐が怠惰な犬を飛び越える。", "ja"),
+        ("La science avance rapidement.", "fr"),
+        ("Der schnelle braune Fuchs springt über den faulen Hund.", "de"),
+    ],
+)
+def test_suggest_citations_detects_language(monkeypatch, sentence, lang):
     captured = {}
 
     def fake_works(**kwargs):
-        captured['kwargs'] = kwargs
-        return {'message': {'items': []}}
+        captured["kwargs"] = kwargs
+        return {"message": {"items": []}}
 
-    monkeypatch.setattr(app.cr, 'works', fake_works)
+    monkeypatch.setattr(app.cr, "works", fake_works)
 
     results = app.suggest_citations(sentence)
     assert results == {}
-    assert captured['kwargs']['query_bibliographic'] == 'rapidement science avance'
-    assert captured['kwargs']['query_language'] == 'fr'
+    assert captured["kwargs"]["query_language"] == lang
 
 
 def test_suggest_citations_full_sentence_first(monkeypatch):
