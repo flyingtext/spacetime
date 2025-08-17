@@ -91,6 +91,11 @@ nav a {
   color: var(--text-color);
 }
 
+/* Ensure close buttons remain visible in dark mode */
+.dark-mode .btn-close {
+  filter: invert(1);
+}
+
 .list-group-item {
   background-color: var(--background-color) !important;
   color: var(--text-color) !important;
