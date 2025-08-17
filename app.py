@@ -29,6 +29,7 @@ from flask_socketio import SocketIO
 from werkzeug.security import generate_password_hash, check_password_hash
 from markdown.extensions import Extension
 from markdown.inlinepatterns import InlineProcessor
+from markdown.blockprocessors import OListProcessor
 from markupsafe import Markup, escape
 import requests
 from habanero import Crossref
@@ -681,10 +682,86 @@ class WikiLinkExtension(Extension):
         )
 
 
+class PreserveOListProcessor(OListProcessor):
+    """Ordered list processor that preserves explicit numbering."""
+
+    def run(self, parent, blocks):
+        items = self.get_items_with_numbers(blocks.pop(0))
+        sibling = self.lastChild(parent)
+
+        if sibling is not None and sibling.tag in self.SIBLING_TAGS:
+            lst = sibling
+            if lst[-1].text:
+                p = Element('p')
+                p.text = lst[-1].text
+                lst[-1].text = ''
+                lst[-1].insert(0, p)
+            lch = self.lastChild(lst[-1])
+            if lch is not None and lch.tail:
+                p = SubElement(lst[-1], 'p')
+                p.text = lch.tail.lstrip()
+                lch.tail = ''
+            li = SubElement(lst, 'li')
+            self.parser.state.set('looselist')
+            num, firstitem = items.pop(0)
+            if num:
+                li.set('value', num)
+            self.parser.parseBlocks(li, [firstitem])
+            self.parser.state.reset()
+        elif parent.tag in ['ol', 'ul']:
+            lst = parent
+        else:
+            lst = SubElement(parent, self.TAG)
+            if not self.LAZY_OL and self.STARTSWITH != '1':
+                lst.attrib['start'] = self.STARTSWITH
+
+        self.parser.state.set('list')
+        for num, item in items:
+            if item.startswith(' ' * self.tab_length):
+                self.parser.parseBlocks(lst[-1], [item])
+            else:
+                li = SubElement(lst, 'li')
+                if num:
+                    li.set('value', num)
+                self.parser.parseBlocks(li, [item])
+        self.parser.state.reset()
+
+    def get_items_with_numbers(self, block: str) -> list[tuple[str | None, str]]:
+        items: list[tuple[str | None, str]] = []
+        for line in block.split('\n'):
+            m = self.CHILD_RE.match(line)
+            if m:
+                num_match = re.match(r'(\d+)', m.group(1))
+                num = num_match.group(1) if num_match else None
+                if not items and self.TAG == 'ol' and num:
+                    self.STARTSWITH = num
+                items.append((num, m.group(3)))
+            elif self.INDENT_RE.match(line):
+                if items[-1][1].startswith(' ' * self.tab_length):
+                    items[-1] = (items[-1][0], f"{items[-1][1]}\n{line}")
+                else:
+                    items.append((None, line))
+            else:
+                items[-1] = (items[-1][0], f"{items[-1][1]}\n{line}")
+        return items
+
+
+class PreserveOrderedListExtension(Extension):
+    """Markdown extension to preserve numbering in ordered lists."""
+
+    def extendMarkdown(self, md):
+        md.parser.blockprocessors.register(
+            PreserveOListProcessor(md.parser), 'olist', 40
+        )
+
+
 # Markup rendering helpers
 def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> tuple[str, str]:
     """Return HTML and optional TOC from Markdown text with wiki links."""
-    extensions: list[Extension | str] = [WikiLinkExtension(base_url=base_url)]
+    extensions: list[Extension | str] = [
+        WikiLinkExtension(base_url=base_url),
+        PreserveOrderedListExtension(),
+    ]
     if with_toc:
         md = markdown.Markdown(extensions=extensions + ['toc'])
         html = md.convert(text or '')
