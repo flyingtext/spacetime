@@ -9,22 +9,29 @@ import app
 
 def test_suggest_citations_multiword(monkeypatch):
     sentence = "The quick brown fox jumps over the lazy dog"
-    captured = {}
+    captured = {"calls": []}
 
     def fake_works(**kwargs):
-        captured['kwargs'] = kwargs
-        return {'message': {'items': [{'DOI': '10.1234/abc'}]}}
+        captured["calls"].append(kwargs)
+        # Return no results when queried with the full sentence to trigger the
+        # fallback behaviour.
+        if kwargs["query_bibliographic"] == sentence:
+            return {"message": {"items": []}}
+        # The fallback query should use the longest unique words.
+        assert kwargs["query_bibliographic"] == "quick brown jumps"
+        return {"message": {"items": [{"DOI": "10.1234/abc"}]}}
 
     def fake_get(url, timeout=10):
-        return SimpleNamespace(status_code=200, text='@article{a,title={T}}')
+        return SimpleNamespace(status_code=200, text="@article{a,title={T}}")
 
-    monkeypatch.setattr(app.cr, 'works', fake_works)
-    monkeypatch.setattr(app.requests, 'get', fake_get)
+    monkeypatch.setattr(app.cr, "works", fake_works)
+    monkeypatch.setattr(app.requests, "get", fake_get)
 
     results = app.suggest_citations(sentence)
     assert sentence in results
-    assert captured['kwargs']['query_bibliographic'] == 'quick brown jumps'
-    assert captured['kwargs']['query_language'] == 'en'
+    # Ensure two calls were made: full sentence then fallback sample words
+    assert captured["calls"][1]["query_bibliographic"] == "quick brown jumps"
+    assert captured["calls"][1]["query_language"] == "en"
 
 
 def test_suggest_citations_multilingual(monkeypatch):
@@ -41,3 +48,26 @@ def test_suggest_citations_multilingual(monkeypatch):
     assert results == {}
     assert captured['kwargs']['query_bibliographic'] == 'rapidement science avance'
     assert captured['kwargs']['query_language'] == 'fr'
+
+
+def test_suggest_citations_full_sentence_first(monkeypatch):
+    sentence = "Deep learning for cats"
+    captured = {"calls": []}
+
+    def fake_works(**kwargs):
+        captured["calls"].append(kwargs)
+        if kwargs["query_bibliographic"] == sentence:
+            # Simulate a successful lookup only when the full sentence is used
+            return {"message": {"items": [{"DOI": "10.1234/xyz"}]}}
+        return {"message": {"items": []}}
+
+    def fake_get(url, timeout=10):
+        return SimpleNamespace(status_code=200, text="@article{a,title={T}}")
+
+    monkeypatch.setattr(app.cr, "works", fake_works)
+    monkeypatch.setattr(app.requests, "get", fake_get)
+
+    results = app.suggest_citations(sentence)
+    # Ensure the first call used the full sentence
+    assert captured["calls"][0]["query_bibliographic"] == sentence
+    assert sentence in results
