@@ -34,3 +34,30 @@ def test_all_posts_route_returns_list(client):
     assert b'Home' in resp.data
     assert b'Other' in resp.data
     assert b'href="/posts"' in resp.data
+
+
+def test_posts_pagination(client):
+    with app.app_context():
+        user = User(username='author')
+        user.set_password('pw')
+        db.session.add(user)
+        for i in range(25):
+            db.session.add(
+                Post(
+                    title=f'Post {i}',
+                    body='Content',
+                    path=f'post-{i}',
+                    language='en',
+                    author=user,
+                )
+            )
+        db.session.commit()
+
+    resp = client.get('/posts')
+    assert resp.status_code == 200
+    assert b'Post 24' in resp.data
+    assert b'Post 4' not in resp.data
+
+    resp = client.get('/posts', query_string={'page': 2})
+    assert b'Post 4' in resp.data
+    assert b'Post 24' not in resp.data

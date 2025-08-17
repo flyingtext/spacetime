@@ -1072,23 +1072,21 @@ def load_user(user_id: str):
 @app.route('/posts')
 def all_posts():
     tag_name = request.args.get('tag', '').strip()
+    page = request.args.get('page', 1, type=int)
     tag = None
+
+    query = Post.query.filter(Post.title != '', Post.body != '')
     if tag_name:
         tag = Tag.query.filter_by(name=tag_name).first_or_404()
-        posts = (
-            Post.query.join(Post.tags)
-            .filter(Tag.id == tag.id, Post.title != '', Post.body != '')
-            .order_by(Post.id.desc())
-            .all()
-        )
-    else:
-        posts = (
-            Post.query.filter(Post.title != '', Post.body != '')
-            .order_by(Post.id.desc())
-            .all()
-        )
+        query = query.join(Post.tags).filter(Tag.id == tag.id)
+
+    pagination = (
+        query.order_by(Post.id.desc()).paginate(page=page, per_page=20, error_out=False)
+    )
     categories = get_category_tags()
-    return render_template('index.html', posts=posts, tag=tag, categories=categories)
+    return render_template(
+        'index.html', pagination=pagination, tag=tag, categories=categories
+    )
 
 
 @app.route('/')
@@ -2612,8 +2610,18 @@ def tag_list():
 @app.route('/tag/<string:name>')
 def tag_filter(name: str):
     tag = Tag.query.filter_by(name=name).first_or_404()
+    page = request.args.get('page', 1, type=int)
     categories = get_category_tags()
-    return render_template('index.html', posts=tag.posts, tag=tag, categories=categories)
+    query = (
+        Post.query.join(Post.tags)
+        .filter(Tag.id == tag.id, Post.title != '', Post.body != '')
+    )
+    pagination = query.order_by(Post.id.desc()).paginate(
+        page=page, per_page=20, error_out=False
+    )
+    return render_template(
+        'index.html', pagination=pagination, tag=tag, categories=categories
+    )
 
 
 @app.route('/search')
