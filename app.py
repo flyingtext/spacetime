@@ -3,6 +3,7 @@ import json
 import os
 import re
 import markdown
+import math
 from collections import Counter
 from datetime import datetime, timezone
 from xml.etree.ElementTree import Element, SubElement, tostring
@@ -19,6 +20,7 @@ from flask import (
     jsonify,
     Response,
     session,
+    current_app,
 )
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (LoginManager, login_user, login_required,
@@ -2650,6 +2652,8 @@ def search():
     lat = request.args.get('lat', type=float)
     lon = request.args.get('lon', type=float)
     radius = request.args.get('radius', type=float)
+    page = request.args.get('page', 1, type=int)
+    per_page = current_app.config.get('SEARCH_RESULTS_PER_PAGE', 20)
 
     # Gather distinct metadata keys for the dropdown and include title/path
     meta_keys = [k for (k,) in db.session.query(PostMetadata.key).distinct().all()]
@@ -2685,21 +2689,41 @@ def search():
     else:
         # Provide example posts to illustrate expected input format
         examples = Post.query.limit(5).all()
-
-    posts = posts_query
-    if posts is not None:
+    posts = None
+    pagination = None
+    if posts_query is not None:
         for name in tag_names:
-            posts = posts.filter(Post.tags.any(Tag.name == name))
-        posts = posts.all()
+            posts_query = posts_query.filter(Post.tags.any(Tag.name == name))
 
-    if posts is not None and lat is not None and lon is not None and radius is not None:
-        posts = [
-            p
-            for p in posts
-            if p.latitude is not None
-            and p.longitude is not None
-            and geopy_distance((lat, lon), (p.latitude, p.longitude)).km <= radius
-        ]
+        if lat is not None and lon is not None and radius is not None:
+            all_posts = posts_query.all()
+            filtered_posts = [
+                p
+                for p in all_posts
+                if p.latitude is not None
+                and p.longitude is not None
+                and geopy_distance((lat, lon), (p.latitude, p.longitude)).km <= radius
+            ]
+            total = len(filtered_posts)
+            start = (page - 1) * per_page
+            end = start + per_page
+            items = filtered_posts[start:end]
+            pagination = SimpleNamespace(
+                items=items,
+                page=page,
+                per_page=per_page,
+                total=total,
+                pages=math.ceil(total / per_page) if per_page else 0,
+                has_prev=page > 1,
+                has_next=page < math.ceil(total / per_page),
+                prev_num=page - 1,
+                next_num=page + 1,
+            )
+            posts = items
+        else:
+            posts_query = posts_query.order_by(Post.id.desc())
+            pagination = posts_query.paginate(page=page, per_page=per_page, error_out=False)
+            posts = pagination.items
 
     coords_json = (
         json.dumps([{'lat': p.latitude, 'lon': p.longitude} for p in posts])
@@ -2710,6 +2734,7 @@ def search():
     return render_template(
         'search.html',
         posts=posts,
+        pagination=pagination,
         q=q,
         tags=tags_raw,
         all_tags=all_tags,
