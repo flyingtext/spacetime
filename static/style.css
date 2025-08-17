@@ -184,6 +184,17 @@ pre {
   --bs-table-hover-bg: var(--toc-bg-color);
 }
 
+.citation-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.citation-table th,
+.citation-table td {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
 .dark-mode .table,
 .dark-mode .table th,
 .dark-mode .table td,
