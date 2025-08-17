@@ -72,15 +72,16 @@
     <input name="comment" id="comment" class="form-control" placeholder="{{ _('Edit summary') }}">
   </div>
   {% if request_id %}<input type="hidden" name="request_id" value="{{ request_id }}">{% endif %}
-  <div class="mb-3">
-    <button type="submit" class="btn btn-primary">{{ action }}</button>
-  </div>
+  
 </form>
-{% if post and current_user.is_authenticated and (current_user.id == post.author_id or current_user.is_admin()) %}
-<form action="{{ url_for('delete_post', post_id=post.id) }}" method="post" class="mt-3">
-  <button type="submit" class="btn btn-danger">{{ _('Delete') }}</button>
-</form>
-{% endif %}
+<div class="d-flex justify-content-end gap-2 mt-3">
+  <button type="submit" class="btn btn-primary" form="post-form">{{ action }}</button>
+  {% if post and current_user.is_authenticated and (current_user.id == post.author_id or current_user.is_admin()) %}
+  <form action="{{ url_for('delete_post', post_id=post.id) }}" method="post">
+    <button type="submit" class="btn btn-danger">{{ _('Delete') }}</button>
+  </form>
+  {% endif %}
+</div>
 <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsoneditor@9/dist/jsoneditor.min.js"></script>
