@@ -284,10 +284,10 @@ Response
 
 ### `/citation/suggest` (`POST`)
 
-Suggest citations for multiple sentences of text. Only the most frequent
-keywords from each sentence are used when querying external services.
-Keyword extraction is language-aware and currently supports Korean, English,
-Japanese, French, German and Chinese.
+Suggest citations for multiple sentences of text. A random selection of two or
+three words from each sentence is used when querying external services.
+Language detection uses the full sentence and currently supports Korean,
+English, Japanese, French, German and Chinese.
 
 **Parameters**
 
@@ -316,8 +316,8 @@ Response
 
 ### `/citation/suggest_line` (`POST`)
 
-Like `/citation/suggest` but processes one line at a time, extracting the
-most frequent words from that line to build the search query.
+Like `/citation/suggest` but processes one line at a time, selecting two or
+three random words from that line to build the search query.
 
 **Parameters**
 
