@@ -16,9 +16,9 @@
 {% endif %}
 <ul id="post-list" class="list-group mb-3">
   {% for post in pagination.items %}
-    <li class="list-group-item">
-      <h5 class="mb-1"><a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.display_title }}</a></h5>
-      <p class="mb-1">{{ post.path }} ({{ post.language }})</p>
+    <li class="list-group-item d-flex flex-wrap align-items-center gap-2">
+      <a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.display_title }}</a>
+      <span class="text-muted">{{ post.path }} ({{ post.language }})</span>
       <small class="text-muted">{{ _('by') }} <a href="{{ url_for('profile', username=post.author.username) }}">{{ post.author.username }}</a></small>
     </li>
   {% else %}
