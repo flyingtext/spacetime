@@ -263,6 +263,10 @@ pre {
   z-index: 2001;
 }
 
+body.map-fullscreen-active {
+  overflow: hidden;
+}
+
 @media (max-width: 600px) {
   #map, #map-offcanvas {
     height: 200px;
