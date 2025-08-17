@@ -47,6 +47,7 @@ def test_metadata_table_under_toc(client):
     assert '10.0' in nav_html
     assert 'Longitude' in nav_html
     assert '20.0' in nav_html
+    assert 'metadata-table' in nav_html
 
 
 def test_map_and_location_moved_under_toc(client):

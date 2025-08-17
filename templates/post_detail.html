@@ -20,7 +20,7 @@
         {{ toc|safe }}
         {% if metadata or locations or geodata %}
         <h3>{{ _('Common') }}</h3>
-        <table class="table table-sm">
+        <table class="table table-sm metadata-table">
           <tbody>
             {% for key, value in metadata.items() %}
             <tr><th scope="row">{{ key }}</th><td>{{ value|format_metadata }}</td></tr>
@@ -51,7 +51,7 @@
         {% endif %}
         {% if user_metadata %}
         <h3>{{ _('Your Metadata') }}</h3>
-        <table class="table table-sm">
+        <table class="table table-sm metadata-table">
           <tbody>
             {% for key, value in user_metadata.items() %}
             <tr><th scope="row">{{ key }}</th><td>{{ value|format_metadata }}</td></tr>
@@ -74,7 +74,7 @@
           {{ toc|safe }}
           {% if metadata or locations or geodata %}
           <h3>{{ _('Common') }}</h3>
-          <table class="table table-sm">
+          <table class="table table-sm metadata-table">
             <tbody>
               {% for key, value in metadata.items() %}
               <tr><th scope="row">{{ key }}</th><td>{{ value|format_metadata }}</td></tr>
@@ -105,7 +105,7 @@
           {% endif %}
           {% if user_metadata %}
           <h3>{{ _('Your Metadata') }}</h3>
-          <table class="table table-sm">
+          <table class="table table-sm metadata-table">
             <tbody>
               {% for key, value in user_metadata.items() %}
               <tr><th scope="row">{{ key }}</th><td>{{ value|format_metadata }}</td></tr>
@@ -136,7 +136,7 @@
   <h2>{{ _('Metadata') }}</h2>
   {% if metadata or locations or geodata %}
   <h3>{{ _('Common') }}</h3>
-  <table class="table table-sm">
+  <table class="table table-sm metadata-table">
     <tbody>
       {% for key, value in metadata.items() %}
       <tr><th scope="row">{{ key }}</th><td>{{ value|format_metadata }}</td></tr>
@@ -167,7 +167,7 @@
   {% endif %}
   {% if user_metadata %}
   <h3>{{ _('Your Metadata') }}</h3>
-  <table class="table table-sm">
+  <table class="table table-sm metadata-table">
     <tbody>
       {% for key, value in user_metadata.items() %}
       <tr><th scope="row">{{ key }}</th><td>{{ value|format_metadata }}</td></tr>

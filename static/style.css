@@ -216,6 +216,11 @@ pre {
   overflow-wrap: anywhere;
 }
 
+.metadata-table th {
+  white-space: nowrap;
+  width: 1%;
+}
+
 .dark-mode .table,
 .dark-mode .table th,
 .dark-mode .table td,
