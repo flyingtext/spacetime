@@ -170,31 +170,31 @@
   <h2>{{ _('Citations') }}</h2>
   {% if citations %}
   <ul class="list-group">
-    {% for c in citations %}
-      <li class="list-group-item text-break d-flex align-items-center gap-2">
-        <span>{% if c.context %}<strong>{{ c.context }}</strong> - {% endif %}{{ c.citation_part|mla_citation(c.doi) }} &mdash; <a href="{{ url_for('profile', username=c.user.username) }}">{{ c.user.username }}</a>, {{ c.created_at|format_datetime }}</span>
-        {% if current_user.is_authenticated and (current_user.id == c.user_id or current_user.is_admin()) %}
-          <a href="{{ url_for('edit_citation', post_id=post.id, cid=c.id) }}" class="btn btn-sm btn-secondary">{{ _('Edit') }}</a>
-          <form action="{{ url_for('delete_citation', post_id=post.id, cid=c.id) }}" method="post" class="d-inline" onsubmit="return confirm('{{ _('Are you sure?') }}');">
-            <button type="submit" class="btn btn-sm btn-danger">{{ _('Delete') }}</button>
-          </form>
-        {% endif %}
-      </li>
-    {% endfor %}
+      {% for c in citations %}
+        <li class="list-group-item d-flex align-items-center gap-2">
+          <span class="flex-grow-1 text-break" style="min-width:0;">{% if c.context %}<strong>{{ c.context }}</strong> - {% endif %}{{ c.citation_part|mla_citation(c.doi) }} &mdash; <a href="{{ url_for('profile', username=c.user.username) }}">{{ c.user.username }}</a>, {{ c.created_at|format_datetime }}</span>
+          {% if current_user.is_authenticated and (current_user.id == c.user_id or current_user.is_admin()) %}
+            <a href="{{ url_for('edit_citation', post_id=post.id, cid=c.id) }}" class="btn btn-sm btn-secondary">{{ _('Edit') }}</a>
+            <form action="{{ url_for('delete_citation', post_id=post.id, cid=c.id) }}" method="post" class="d-inline" onsubmit="return confirm('{{ _('Are you sure?') }}');">
+              <button type="submit" class="btn btn-sm btn-danger">{{ _('Delete') }}</button>
+            </form>
+          {% endif %}
+        </li>
+      {% endfor %}
   </ul>
   {% endif %}
   {% if user_citations %}
   <h3>{{ _('Your Citations') }}</h3>
   <ul class="list-group">
-    {% for c in user_citations %}
-      <li class="list-group-item text-break d-flex align-items-center gap-2">
-        <span>{% if c.context %}<strong>{{ c.context }}</strong> - {% endif %}{{ c.citation_part|mla_citation(c.doi) }} &mdash; <a href="{{ url_for('profile', username=c.user.username) }}">{{ c.user.username }}</a>, {{ c.created_at|format_datetime }}</span>
-        <a href="{{ url_for('edit_citation', post_id=post.id, cid=c.id) }}" class="btn btn-sm btn-secondary">{{ _('Edit') }}</a>
-        <form action="{{ url_for('delete_citation', post_id=post.id, cid=c.id) }}" method="post" class="d-inline" onsubmit="return confirm('{{ _('Are you sure?') }}');">
-          <button type="submit" class="btn btn-sm btn-danger">{{ _('Delete') }}</button>
-        </form>
-      </li>
-    {% endfor %}
+      {% for c in user_citations %}
+        <li class="list-group-item d-flex align-items-center gap-2">
+          <span class="flex-grow-1 text-break" style="min-width:0;">{% if c.context %}<strong>{{ c.context }}</strong> - {% endif %}{{ c.citation_part|mla_citation(c.doi) }} &mdash; <a href="{{ url_for('profile', username=c.user.username) }}">{{ c.user.username }}</a>, {{ c.created_at|format_datetime }}</span>
+          <a href="{{ url_for('edit_citation', post_id=post.id, cid=c.id) }}" class="btn btn-sm btn-secondary">{{ _('Edit') }}</a>
+          <form action="{{ url_for('delete_citation', post_id=post.id, cid=c.id) }}" method="post" class="d-inline" onsubmit="return confirm('{{ _('Are you sure?') }}');">
+            <button type="submit" class="btn btn-sm btn-danger">{{ _('Delete') }}</button>
+          </form>
+        </li>
+      {% endfor %}
   </ul>
   {% endif %}
 </section>
