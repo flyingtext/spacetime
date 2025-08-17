@@ -220,22 +220,36 @@ def suggest_citations(markdown_text: str) -> dict[str, list[dict]]:
         except LangDetectException:
             lang = None
 
-        words = re.findall(r"\w+", sentence)
-        if not words:
-            continue
-        unique_words = list(dict.fromkeys(words))
-        unique_words.sort(key=len, reverse=True)
-        sample_words = unique_words[:3]
-        query = " ".join(sample_words)
-
-        params = {"query_bibliographic": query, "limit": 3}
+        # Try querying Crossref with the full sentence first so that pasting a
+        # complete citation title yields suggestions.
+        params = {"query_bibliographic": sentence, "limit": 3}
         if lang:
             params["query_language"] = lang
         try:
             query_res = cr.works(**params)
+            items = query_res.get("message", {}).get("items", [])
         except Exception:
-            continue
-        items = query_res.get("message", {}).get("items", [])
+            items = []
+
+        # Fall back to using a subset of the longest unique words if the full
+        # sentence yields no results.
+        if not items:
+            words = re.findall(r"\w+", sentence)
+            if not words:
+                continue
+            unique_words = list(dict.fromkeys(words))
+            unique_words.sort(key=len, reverse=True)
+            sample_words = unique_words[:3]
+            query = " ".join(sample_words)
+
+            params = {"query_bibliographic": query, "limit": 3}
+            if lang:
+                params["query_language"] = lang
+            try:
+                query_res = cr.works(**params)
+            except Exception:
+                continue
+            items = query_res.get("message", {}).get("items", [])
         candidates: list[dict] = []
         for item in items:
             doi = normalize_doi(item.get("DOI"))
