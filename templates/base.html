@@ -215,7 +215,7 @@
 </script>
 <script>
   const storedTheme = localStorage.getItem('theme');
-  if (storedTheme === 'dark') {
+  if (storedTheme !== 'light') {
     document.body.classList.add('dark-mode');
   }
   document.getElementById('theme-toggle').addEventListener('click', () => {
