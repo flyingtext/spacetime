@@ -32,7 +32,7 @@ import requests
 from habanero import Crossref
 import bibtexparser
 from types import SimpleNamespace
-from sqlalchemy import func, event, or_, text, inspect
+from sqlalchemy import func, event, or_, text, inspect, select
 from sqlalchemy.exc import NoSuchTableError
 from flask_babel import Babel, _, get_locale
 from dotenv import load_dotenv
@@ -976,6 +976,9 @@ def inject_settings():
 
 @event.listens_for(Post, 'after_insert')
 def emit_new_post(mapper, connection, target):
+    username = connection.execute(
+        select(User.username).where(User.id == target.author_id)
+    ).scalar_one_or_none()
     socketio.emit(
         'new_post',
         {
@@ -983,6 +986,7 @@ def emit_new_post(mapper, connection, target):
             'title': target.title,
             'language': target.language,
             'path': target.path,
+            'author': username,
         },
     )
 
