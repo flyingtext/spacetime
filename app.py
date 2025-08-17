@@ -1097,7 +1097,12 @@ def rss_feed():
         limit = int(get_setting('rss_limit', '20'))
     except ValueError:
         limit = 20
-    posts = Post.query.order_by(Post.id.desc()).limit(limit).all()
+    posts = (
+        Post.query.filter(Post.title != '')
+        .order_by(Post.id.desc())
+        .limit(limit)
+        .all()
+    )
     root = Element('rss', version='2.0')
     channel = SubElement(root, 'channel')
     title = get_setting('site_title', 'Spacetime')
@@ -1129,7 +1134,11 @@ def rss_feed():
 @app.route('/sitemap.xml')
 def sitemap():
     """Generate a basic XML sitemap of all posts."""
-    posts = Post.query.order_by(Post.id.desc()).all()
+    posts = (
+        Post.query.filter(Post.title != '')
+        .order_by(Post.id.desc())
+        .all()
+    )
     root = Element('urlset', xmlns='http://www.sitemaps.org/schemas/sitemap/0.9')
     for post in posts:
         url_el = SubElement(root, 'url')
