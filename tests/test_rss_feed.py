@@ -18,12 +18,15 @@ def client():
         db.drop_all()
 
 
-def _create_post():
+def _create_post(title='Hello', body='World', path='hello'):
     with app.app_context():
-        user = User(username='author')
-        user.set_password('pw')
-        db.session.add(user)
-        post = Post(title='Hello', body='World', path='hello', language='en', author=user)
+        user = User.query.filter_by(username='author').first()
+        if not user:
+            user = User(username='author')
+            user.set_password('pw')
+            db.session.add(user)
+            db.session.commit()
+        post = Post(title=title, body=body, path=path, language='en', author=user)
         db.session.add(post)
         db.session.commit()
         rev = Revision(
@@ -36,6 +39,7 @@ def _create_post():
         )
         db.session.add(rev)
         db.session.commit()
+        return post.id
 
 
 def test_rss_feed_disabled(client):
@@ -52,3 +56,21 @@ def test_rss_feed_enabled(client):
     resp = client.get('/rss.xml')
     assert resp.status_code == 200
     assert b'Hello' in resp.data
+
+
+def test_rss_feed_skips_deleted_posts(client):
+    with app.app_context():
+        db.session.add(Setting(key='rss_enabled', value='true'))
+        db.session.commit()
+    _create_post(title='Hello', path='hello')
+    deleted_id = _create_post(title='Bye', path='bye')
+    with app.app_context():
+        post = Post.query.get(deleted_id)
+        post.title = ''
+        post.body = ''
+        db.session.commit()
+    resp = client.get('/rss.xml')
+    assert resp.status_code == 200
+    assert b'/en/hello' in resp.data
+    assert b'/en/bye' not in resp.data
+    assert b'[deleted]' not in resp.data
