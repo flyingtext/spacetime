@@ -363,7 +363,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const key = 'postBreadcrumb';
-  const maxItems = 10;
+  const maxItems = {{ get_setting('breadcrumb_limit', '10')|int }};
   const title = {{ post.display_title|tojson }};
   const deleteLabel = {{ _('Delete')|tojson }};
   const url = window.location.pathname;

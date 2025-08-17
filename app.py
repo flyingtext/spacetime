@@ -2465,6 +2465,7 @@ def settings():
     rss_limit = get_setting('rss_limit', '20')
     head_tags = get_setting('head_tags', '')
     category_tags = get_setting('post_categories', '')
+    breadcrumb_limit = get_setting('breadcrumb_limit', '10')
     if request.method == 'POST':
 
         title = request.form.get('site_title', title).strip()
@@ -2477,6 +2478,7 @@ def settings():
         timezone_value = tz_norm
         rss_enabled_val = 'rss_enabled' in request.form
         rss_limit = request.form.get('rss_limit', rss_limit).strip() or '20'
+        breadcrumb_limit = request.form.get('breadcrumb_limit', breadcrumb_limit).strip() or '10'
         head_tags_input = request.form.get('head_tags', head_tags)
         head_tags = "\n".join(line.strip() for line in head_tags_input.splitlines() if line.strip())
         category_tags = request.form.get('post_categories', category_tags).strip()
@@ -2532,6 +2534,11 @@ def settings():
             cat_setting.value = category_tags
         else:
             db.session.add(Setting(key='post_categories', value=category_tags))
+        breadcrumb_setting = Setting.query.filter_by(key='breadcrumb_limit').first()
+        if breadcrumb_setting:
+            breadcrumb_setting.value = breadcrumb_limit
+        else:
+            db.session.add(Setting(key='breadcrumb_limit', value=breadcrumb_limit))
 
         db.session.commit()
         flash(_('Settings updated.'))
@@ -2544,7 +2551,8 @@ def settings():
         rss_enabled=rss_enabled_val.lower() in ['true', '1', 'yes', 'on'],
         rss_limit=rss_limit,
         head_tags=head_tags,
-        post_categories=category_tags
+        post_categories=category_tags,
+        breadcrumb_limit=breadcrumb_limit
     )
 
 
