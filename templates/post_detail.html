@@ -449,23 +449,13 @@ document.addEventListener('DOMContentLoaded', () => {
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
   const data = { type: 'FeatureCollection', features: {{ geodata|tojson }} };
-  const darkUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-  const lightUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-  const isDark = () => document.body.classList.contains('dark-mode') || localStorage.getItem('theme') === 'dark';
 
   function initMap(el) {
     const map = L.map(el).setView([0, 0], 2);
-    const tiles = L.tileLayer(isDark() ? darkUrl : lightUrl, {
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
-    const updateTiles = () => {
-        tiles.setUrl(isDark() ? darkUrl : lightUrl);
-    };
-    const themeToggle = document.getElementById('theme-toggle');
-    if (themeToggle) {
-        themeToggle.addEventListener('click', () => setTimeout(updateTiles, 0));
-    }
     const layer = L.geoJSON(data).addTo(map);
     try {
       map.fitBounds(layer.getBounds());
