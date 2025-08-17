@@ -70,3 +70,24 @@ def test_tags_page_uses_metadata_for_locations(client):
     data = resp.get_data(as_text=True)
     assert '"lat": 30.0' in data
     assert '/tag/t2' in data
+
+
+def test_deleted_tag_is_excluded(client):
+    with app.app_context():
+        user = User.query.filter_by(username='u').first()
+        tag = Tag(name='[deleted]')
+        db.session.add(tag)
+        db.session.commit()
+        post = Post(
+            title='Deleted',
+            body='b',
+            path='pd',
+            language='en',
+            author_id=user.id,
+            tags=[tag],
+        )
+        db.session.add(post)
+        db.session.commit()
+    resp = client.get('/tags')
+    data = resp.get_data(as_text=True)
+    assert '[deleted]' not in data
