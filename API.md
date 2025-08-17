@@ -32,7 +32,7 @@ This document lists the HTTP endpoints provided by the Spacetime application.
 | `/post/<int:post_id>/watch` | `POST` | Watch a post for changes |
 | `/post/<string:language>/<path:doc_path>` | `GET` | View a post by language and path |
 | `/post/new` | `GET, POST` | Create a new post |
-| `/api/posts` | `POST` | Create a new post via JSON |
+| `/api/posts` | `POST` | Create a new post via JSON (supports location) |
 | `/post/request` | `GET, POST` | Request that a post be created |
 | `/posts` | `GET` | List all posts |
 | `/posts/requested` | `GET` | List user requested posts |
@@ -97,8 +97,8 @@ optional `lat`/`lon` coordinates.
 
 ### `/api/posts` (`POST`)
 Create a new post using a JSON body. Accepts `title` and `body` fields, with optional
-`path`, `language`, and `tags` (comma-separated string or list). Returns basic
-information about the created post.
+`path`, `language`, `address`, `lat`/`lon`, and `tags` (comma-separated string or list).
+Returns basic information about the created post.
 
 ### `/post/<int:post_id>` (`GET`)
 View an individual post by ID.
@@ -215,6 +215,9 @@ Create a new post with Markdown content.
 - `body` (string, required) – Markdown body
 - `path` (string, optional) – desired URL path
 - `language` (string, optional) – language code
+- `address` (string, optional) – human-readable address to geocode
+- `lat` (number, optional) – latitude; requires `lon`
+- `lon` (number, optional) – longitude; requires `lat`
 
 **Example**
 
@@ -224,7 +227,7 @@ Request
 POST /api/posts
 Content-Type: application/json
 
-{"title": "API Title", "body": "API Body", "path": "api-path", "language": "en"}
+{"title": "API Title", "body": "API Body", "path": "api-path", "language": "en", "lat": 1.0, "lon": 2.0}
 ```
 
 Response
