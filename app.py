@@ -2657,8 +2657,20 @@ def search():
     all_tags = [t.name for t in Tag.query.order_by(Tag.name).all()]
 
     posts_query = None
+    posts = None
     examples = None
     if q:
+        posts_by_tag = (
+            Post.query.join(Post.tags)
+            .filter(Tag.name.ilike(f'%{q}%'))
+            .order_by(Post.id)
+            .all()
+        )
+        posts_by_title = (
+            Post.query.filter(Post.title.ilike(f'%{q}%'))
+            .order_by(Post.id)
+            .all()
+        )
         ids = [
             row[0]
             for row in db.session.execute(
@@ -2666,7 +2678,24 @@ def search():
                 {'q': q},
             )
         ]
-        posts_query = Post.query.filter(Post.id.in_(ids)) if ids else Post.query.filter(False)
+        posts_by_body = (
+            Post.query.filter(Post.id.in_(ids)).order_by(Post.id).all()
+            if ids
+            else []
+        )
+        posts = []
+        seen: set[int] = set()
+        for group in (posts_by_tag, posts_by_title, posts_by_body):
+            for p in group:
+                if p.id not in seen:
+                    posts.append(p)
+                    seen.add(p.id)
+        if tag_names:
+            posts = [
+                p
+                for p in posts
+                if all(name in [t.name for t in p.tags] for name in tag_names)
+            ]
     elif key and value_raw:
         try:
             value = json.loads(value_raw)
@@ -2686,11 +2715,10 @@ def search():
         # Provide example posts to illustrate expected input format
         examples = Post.query.limit(5).all()
 
-    posts = posts_query
-    if posts is not None:
+    if posts_query is not None:
         for name in tag_names:
-            posts = posts.filter(Post.tags.any(Tag.name == name))
-        posts = posts.all()
+            posts_query = posts_query.filter(Post.tags.any(Tag.name == name))
+        posts = posts_query.all()
 
     if posts is not None and lat is not None and lon is not None and radius is not None:
         posts = [

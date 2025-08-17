@@ -15,15 +15,17 @@ def client():
         db.create_all()
         user = User(username='u')
         user.set_password('pw')
-        t1 = Tag(name='news')
-        t2 = Tag(name='science')
-        db.session.add_all([user, t1, t2])
+        t_apple = Tag(name='apple')
+        t_other = Tag(name='other')
+        db.session.add_all([user, t_apple, t_other])
         db.session.commit()
-        p1 = Post(title='Apple', body='apple banana', path='p1', language='en', author_id=user.id)
-        p1.tags.append(t1)
-        p2 = Post(title='Banana', body='banana carrot', path='p2', language='en', author_id=user.id)
-        p2.tags.append(t2)
-        db.session.add_all([p1, p2])
+        p_tag = Post(title='TagMatch', body='something else', path='p1', language='en', author_id=user.id)
+        p_tag.tags.append(t_apple)
+        p_title = Post(title='AppleTitle', body='something else', path='p2', language='en', author_id=user.id)
+        p_title.tags.append(t_other)
+        p_body = Post(title='BodyMatch', body='I like apple', path='p3', language='en', author_id=user.id)
+        p_body.tags.append(t_other)
+        db.session.add_all([p_tag, p_title, p_body])
         db.session.commit()
     with app.test_client() as client:
         yield client
@@ -31,15 +33,15 @@ def client():
         db.drop_all()
 
 
-def test_fulltext_search(client):
+def test_search_prioritizes_tag_title_body(client):
     resp = client.get('/search', query_string={'q': 'apple'})
     text = resp.get_data(as_text=True)
-    assert 'Apple' in text
-    assert 'Banana' not in text
+    assert text.index('TagMatch') < text.index('AppleTitle') < text.index('BodyMatch')
 
 
 def test_tag_filter(client):
-    resp = client.get('/search', query_string={'q': 'banana', 'tags': 'news'})
+    resp = client.get('/search', query_string={'q': 'apple', 'tags': 'other'})
     text = resp.get_data(as_text=True)
-    assert 'Apple' in text
-    assert 'Banana' not in text
+    assert 'TagMatch' not in text
+    assert 'AppleTitle' in text
+    assert 'BodyMatch' in text
