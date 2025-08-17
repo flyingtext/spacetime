@@ -31,7 +31,7 @@ def test_home_page_redirect(client):
 
     resp = client.get('/')
     assert resp.status_code == 302
-    assert resp.headers['Location'].endswith('/docs/en/home')
+    assert resp.headers['Location'].endswith('/en/home')
 
 
 def test_updating_home_page_path_preserves_site_title(client):

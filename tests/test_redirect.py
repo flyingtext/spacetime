@@ -53,4 +53,4 @@ def test_redirect_on_path_change(client):
 
     resp = client.get('/docs/en/old')
     assert resp.status_code == 302
-    assert resp.headers['Location'].endswith('/docs/en/new')
+    assert resp.headers['Location'].endswith('/en/new')

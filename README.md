@@ -6,7 +6,7 @@ Simple wiki-style bulletin board built with Flask and SQLite. Supports user regi
 - User registration and login with role support (admin/user)
 - Create and edit Markdown posts
 - Global tag management; posts can be filtered by tags
-- Hierarchical document paths using `/docs/<lang>/<path>` addresses
+- Hierarchical document paths using `/<lang>/<path>` addresses (legacy `/docs/<lang>/<path>` supported)
 - Link posts written in different languages that share the same path
 - Permissions: authors or admins can edit posts
 

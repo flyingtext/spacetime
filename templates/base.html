@@ -105,6 +105,8 @@
     <a href="{{ url_for('index') }}">{{ _('Home') }}</a>
     |
     <a href="{{ url_for('tag_list') }}">{{ _('Tags') }}</a>
+    |
+    <a href="{{ url_for('choose_timezone') }}">{{ _('Timezone') }}</a>
     {% if get_setting('rss_enabled', 'false').lower() in ['true', '1', 'yes', 'on'] %}
     |
     <a href="{{ url_for('rss_feed') }}">RSS</a>
@@ -142,7 +144,7 @@
       const item = document.createElement('li');
       item.classList.add('list-group-item');
       const link = document.createElement('a');
-      link.href = "/docs/" + data.language + "/" + data.path;
+      link.href = "/" + data.language + "/" + data.path;
       link.textContent = data.title;
       item.appendChild(link);
       list.prepend(item);

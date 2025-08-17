@@ -10,13 +10,13 @@ from app import app, render_markdown
 def test_render_markdown_and_wikilink():
     html, toc = render_markdown('**bold** and [[Page|link]]')
     assert '<strong>bold</strong>' in html
-    assert '<a href="/docs/Page">link</a>' in html
+    assert '<a href="/Page">link</a>' in html
     assert toc == ''
 
 
 def test_render_markdown_wikilink_spaces():
     html, _ = render_markdown('[[My Page]]')
-    assert '<a href="/docs/My%20Page">My Page</a>' in html
+    assert '<a href="/My%20Page">My Page</a>' in html
 
 
 def test_render_markdown_with_toc_no_headings():
@@ -40,4 +40,4 @@ def client():
 
 def test_markdown_preview_language(client):
     resp = client.post('/markdown/preview', json={'text': '[[Page]]', 'language': 'es'})
-    assert resp.get_json()['html'] == '<p><a href="/docs/es/Page">Page</a></p>'
+    assert resp.get_json()['html'] == '<p><a href="/es/Page">Page</a></p>'

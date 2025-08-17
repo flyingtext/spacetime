@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Timezone') }}{% endblock %}
+{% block content %}
+<h1>{{ _('Timezone') }}</h1>
+<form method="post">
+  <div class="mb-3">
+    <label for="timezone" class="form-label">{{ _('Timezone') }}</label>
+    <input type="text" id="timezone" name="timezone" class="form-control" value="{{ timezone }}">
+  </div>
+  <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
+</form>
+{% endblock %}

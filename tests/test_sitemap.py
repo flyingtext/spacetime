@@ -42,4 +42,4 @@ def test_sitemap(client):
     _create_post()
     resp = client.get('/sitemap.xml')
     assert resp.status_code == 200
-    assert b'http://localhost/docs/en/hello' in resp.data
+    assert b'http://localhost/en/hello' in resp.data
