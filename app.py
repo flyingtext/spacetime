@@ -69,6 +69,19 @@ login_manager.login_view = 'login'
 socketio = SocketIO(app)
 cr = Crossref()
 
+# Basic stopword list used to filter out common grammatical words when
+# constructing citation queries. This helps the "suggest citations" feature
+# produce more meaningful search terms for services like Crossref.
+STOPWORDS = {
+    'the', 'and', 'for', 'with', 'from', 'that', 'this', 'have', 'has', 'are',
+    'was', 'were', 'be', 'to', 'of', 'in', 'on', 'at', 'a', 'an', 'is', 'it',
+    'by', 'because', 'however', 'although', 'though', 'but',
+    # French articles/conjunctions
+    'la', 'le', 'les', 'des', 'du', 'de', 'un', 'une', 'et', 'en', 'que',
+    # Spanish articles/conjunctions
+    'el', 'los', 'las', 'por', 'con', 'para', 'y'
+}
+
 babel = Babel(app)
 
 geolocator = Nominatim(user_agent="spacetime_app")
@@ -232,9 +245,12 @@ def suggest_citations(markdown_text: str) -> dict[str, list[dict]]:
             items = []
 
         # Fall back to using a subset of the longest unique words if the full
-        # sentence yields no results.
+        # sentence yields no results. Stopwords and short grammatical tokens
+        # are removed before selecting the longest terms so that the query is
+        # more likely to yield meaningful suggestions.
         if not items:
-            words = re.findall(r"\w+", sentence)
+            words = re.findall(r"\w+", sentence.lower())
+            words = [w for w in words if w not in STOPWORDS]
             if not words:
                 continue
             unique_words = list(dict.fromkeys(words))

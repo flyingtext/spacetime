@@ -71,3 +71,20 @@ def test_suggest_citations_full_sentence_first(monkeypatch):
     # Ensure the first call used the full sentence
     assert captured["calls"][0]["query_bibliographic"] == sentence
     assert sentence in results
+
+
+def test_suggest_citations_removes_stopwords(monkeypatch):
+    sentence = "Because because because cat dog"
+    captured = {"calls": []}
+
+    def fake_works(**kwargs):
+        captured["calls"].append(kwargs)
+        return {"message": {"items": []}}
+
+    monkeypatch.setattr(app.cr, "works", fake_works)
+
+    results = app.suggest_citations(sentence)
+    assert results == {}
+    # Second call should remove the stopword "because" and only query with
+    # meaningful terms.
+    assert captured["calls"][1]["query_bibliographic"] == "cat dog"
