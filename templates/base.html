@@ -138,16 +138,38 @@
   const socket = io();
   const currentUserId = {{ current_user.id if current_user.is_authenticated else 'null' }};
   const notifCount = document.getElementById('notif-count');
+  const byText = {{ _('by')|tojson }};
 
   socket.on('new_post', data => {
     const list = document.getElementById('post-list');
     if (list) {
       const item = document.createElement('li');
       item.classList.add('list-group-item');
+
+      const title = document.createElement('h5');
+      title.classList.add('mb-1');
       const link = document.createElement('a');
       link.href = "/" + data.language + "/" + data.path;
       link.textContent = data.title;
-      item.appendChild(link);
+      title.appendChild(link);
+      item.appendChild(title);
+
+      const path = document.createElement('p');
+      path.classList.add('mb-1');
+      path.textContent = `${data.path} (${data.language})`;
+      item.appendChild(path);
+
+      if (data.author) {
+        const small = document.createElement('small');
+        small.classList.add('text-muted');
+        small.textContent = byText + ' ';
+        const authorLink = document.createElement('a');
+        authorLink.href = "/user/" + data.author;
+        authorLink.textContent = data.author;
+        small.appendChild(authorLink);
+        item.appendChild(small);
+      }
+
       list.prepend(item);
     }
   });
