@@ -432,15 +432,29 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 {% if geodata %}
+<div class="modal fade" id="mapModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ _('Map') }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _('Close') }}"></button>
+      </div>
+      <div class="modal-body">
+        <div id="map-modal" style="height:400px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
   const data = { type: 'FeatureCollection', features: {{ geodata|tojson }} };
-  document.querySelectorAll('#map, #map-offcanvas').forEach((el) => {
+  const darkUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+  const lightUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const isDark = () => document.body.classList.contains('dark-mode') || localStorage.getItem('theme') === 'dark';
+
+  function initMap(el) {
     const map = L.map(el).setView([0, 0], 2);
-    const darkUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-    const lightUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-    const isDark = () => document.body.classList.contains('dark-mode') || localStorage.getItem('theme') === 'dark';
     const tiles = L.tileLayer(isDark() ? darkUrl : lightUrl, {
         maxZoom: 19,
         attribution: '&copy; OpenStreetMap contributors'
@@ -452,40 +466,45 @@ document.addEventListener('DOMContentLoaded', () => {
     if (themeToggle) {
         themeToggle.addEventListener('click', () => setTimeout(updateTiles, 0));
     }
-    const toggleFullscreen = () => {
-      el.classList.toggle('map-fullscreen');
-      document.body.classList.toggle('map-fullscreen-active');
-      setTimeout(() => map.invalidateSize(), 200);
-    };
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && el.classList.contains('map-fullscreen')) {
-        toggleFullscreen();
-      }
-    });
-    const fullscreenControl = L.control({position: 'topleft'});
-    fullscreenControl.onAdd = () => {
-      const btn = L.DomUtil.create('button', 'btn btn-sm btn-light');
-      btn.type = 'button';
-      btn.innerHTML = '⛶';
-      btn.title = 'Toggle fullscreen';
-      L.DomEvent.on(btn, 'click', (e) => {
-        L.DomEvent.stopPropagation(e);
-        L.DomEvent.preventDefault(e);
-        toggleFullscreen();
-      });
-      return btn;
-    };
-    fullscreenControl.addTo(map);
     const layer = L.geoJSON(data).addTo(map);
     try {
       map.fitBounds(layer.getBounds());
     } catch (e) {
-      // If only a single point, getBounds may return empty; fallback
       if (data.features.length > 0) {
         const c = data.features[0].geometry.coordinates;
         map.setView([c[1], c[0]], 13);
       }
     }
+    return map;
+  }
+
+  let modalMap;
+  const showMapModal = () => {
+    const modalEl = document.getElementById('mapModal');
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+    if (!modalMap) {
+      modalMap = initMap('map-modal');
+    }
+    setTimeout(() => modalMap.invalidateSize(), 200);
+  };
+
+  document.querySelectorAll('#map, #map-offcanvas').forEach((el) => {
+    const map = initMap(el);
+    const modalControl = L.control({position: 'topleft'});
+    modalControl.onAdd = () => {
+      const btn = L.DomUtil.create('button', 'btn btn-sm btn-light');
+      btn.type = 'button';
+      btn.innerHTML = '⤢';
+      btn.title = '{{ _('Open larger map') }}';
+      L.DomEvent.on(btn, 'click', (e) => {
+        L.DomEvent.stopPropagation(e);
+        L.DomEvent.preventDefault(e);
+        showMapModal();
+      });
+      return btn;
+    };
+    modalControl.addTo(map);
   });
 </script>
 {% endif %}
