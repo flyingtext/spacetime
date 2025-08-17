@@ -638,6 +638,20 @@ class PreserveOListProcessor(OListProcessor):
 
     def run(self, parent, blocks):
         items = self.get_items_with_numbers(blocks.pop(0))
+
+        # If the list ends with a blank numbered item and there are no further
+        # items, treat the whole block as an unordered list. This avoids
+        # rendering stray list numbers when the source only contains a numbered
+        # prefix with no following content.
+        tag = self.TAG
+        if items and not items[-1][1].strip():
+            items = items[:-1]
+            if items:
+                tag = 'ul'
+                items = [(None, text) for _, text in items]
+            else:
+                return
+
         sibling = self.lastChild(parent)
 
         if sibling is not None and sibling.tag in self.SIBLING_TAGS:
@@ -655,15 +669,15 @@ class PreserveOListProcessor(OListProcessor):
             li = SubElement(lst, 'li')
             self.parser.state.set('looselist')
             num, firstitem = items.pop(0)
-            if num:
+            if tag == 'ol' and num:
                 li.set('value', num)
             self.parser.parseBlocks(li, [firstitem])
             self.parser.state.reset()
         elif parent.tag in ['ol', 'ul']:
             lst = parent
         else:
-            lst = SubElement(parent, self.TAG)
-            if not self.LAZY_OL and self.STARTSWITH != '1':
+            lst = SubElement(parent, tag)
+            if tag == 'ol' and not self.LAZY_OL and self.STARTSWITH != '1':
                 lst.attrib['start'] = self.STARTSWITH
 
         self.parser.state.set('list')
@@ -672,7 +686,7 @@ class PreserveOListProcessor(OListProcessor):
                 self.parser.parseBlocks(lst[-1], [item])
             else:
                 li = SubElement(lst, 'li')
-                if num:
+                if tag == 'ol' and num:
                     li.set('value', num)
                 self.parser.parseBlocks(li, [item])
         self.parser.state.reset()
