@@ -290,10 +290,6 @@ msgstr "Seguir"
 msgid "%(action)s Post"
 msgstr "Publicación %(action)s"
 
-#: templates/post_form.html:10
-msgid "Suggest Citation"
-msgstr "Sugerir cita"
-
 #: templates/post_form.html:13
 msgid "Path (e.g., docs/start)"
 msgstr "Ruta (ej., docs/start)"
