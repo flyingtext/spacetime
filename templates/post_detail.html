@@ -225,32 +225,34 @@
     <div class="mb-2">
       <input type="text" id="citation-context" name="citation_context" placeholder="{{ _('Citation context') }}" class="form-control form-control-sm" />
     </div>
-    <div class="mb-2 d-flex justify-content-end align-items-center">
-      <button type="submit" class="btn btn-sm btn-primary me-2">{{ _('Add Citation') }}</button>
-      <span>
-        <a href="{{ url_for('history', post_id=post.id) }}">{{ _('History') }}</a>
-        | <a href="{{ url_for('post_backlinks', post_id=post.id) }}">{{ _('Backlinks') }}</a>
-        {% if current_user.is_authenticated and (current_user.id == post.author_id or current_user.is_admin()) %}
-          | <a href="{{ url_for('edit_post', post_id=post.id) }}">{{ _('Edit') }}</a>
-          | <form action="{{ url_for('delete_post', post_id=post.id) }}" method="post" class="d-inline" onsubmit="return confirm('{{ _('Are you sure?') }}');">
-              <button type="submit" class="btn btn-link text-danger p-0">{{ _('Delete') }}</button>
-            </form>
-        {% endif %}
-        {% if current_user.is_authenticated %}
-          {% set watching = post.watchers | selectattr('user_id', 'equalto', current_user.id) | list | length > 0 %}
-          {% if watching %}
-            | <form action="{{ url_for('unwatch_post', post_id=post.id) }}" method="post" class="d-inline">
-              <button type="submit" class="btn btn-link p-0">{{ _('Unwatch') }}</button>
-            </form>
-          {% else %}
-            | <form action="{{ url_for('watch_post', post_id=post.id) }}" method="post" class="d-inline">
-              <button type="submit" class="btn btn-link p-0">{{ _('Watch') }}</button>
-            </form>
-          {% endif %}
-        {% endif %}
-      </span>
+    <div class="mb-2 d-flex justify-content-end">
+      <button type="submit" class="btn btn-sm btn-primary">{{ _('Add Citation') }}</button>
     </div>
   </form>
+  <div class="mb-2 d-flex justify-content-end align-items-center">
+    <div>
+      <a href="{{ url_for('history', post_id=post.id) }}">{{ _('History') }}</a>
+      | <a href="{{ url_for('post_backlinks', post_id=post.id) }}">{{ _('Backlinks') }}</a>
+      {% if current_user.is_authenticated and (current_user.id == post.author_id or current_user.is_admin()) %}
+        | <a href="{{ url_for('edit_post', post_id=post.id) }}">{{ _('Edit') }}</a>
+        | <form action="{{ url_for('delete_post', post_id=post.id) }}" method="post" class="d-inline" onsubmit="return confirm('{{ _('Are you sure?') }}');">
+            <button type="submit" class="btn btn-link text-danger p-0">{{ _('Delete') }}</button>
+          </form>
+      {% endif %}
+      {% if current_user.is_authenticated %}
+        {% set watching = post.watchers | selectattr('user_id', 'equalto', current_user.id) | list | length > 0 %}
+        {% if watching %}
+          | <form action="{{ url_for('unwatch_post', post_id=post.id) }}" method="post" class="d-inline">
+            <button type="submit" class="btn btn-link p-0">{{ _('Unwatch') }}</button>
+          </form>
+        {% else %}
+          | <form action="{{ url_for('watch_post', post_id=post.id) }}" method="post" class="d-inline">
+            <button type="submit" class="btn btn-link p-0">{{ _('Watch') }}</button>
+          </form>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
   <script>
   const citationTitle = document.getElementById('citation-title');
   citationTitle.addEventListener('keydown', function(e) {
