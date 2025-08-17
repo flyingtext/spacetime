@@ -87,7 +87,13 @@
 <script src="https://cdn.jsdelivr.net/npm/jsoneditor@9/dist/jsoneditor.min.js"></script>
 <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
 <script>
-const easyMDE = new EasyMDE({ element: document.getElementById('body') });
+const bodyEl = document.getElementById('body');
+let easyMDE;
+try {
+  easyMDE = new EasyMDE({ element: bodyEl });
+} catch (e) {
+  console.error(e);
+}
 const previewEl = document.getElementById('preview');
 const formEl = document.getElementById('post-form');
 formEl.addEventListener('keydown', function (e) {
@@ -134,7 +140,7 @@ function updatePreview() {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({
-      text: easyMDE.value(),
+      text: easyMDE ? easyMDE.value() : bodyEl.value,
       language: document.querySelector('input[name="language"]:checked').value
     }),
     noSpinner: true
@@ -142,7 +148,11 @@ function updatePreview() {
     previewEl.innerHTML = data.html || '';
   });
 }
-easyMDE.codemirror.on('change', updatePreview);
+if (easyMDE && easyMDE.codemirror) {
+  easyMDE.codemirror.on('change', updatePreview);
+} else {
+  bodyEl.addEventListener('input', updatePreview);
+}
 document.querySelectorAll('input[name="language"]').forEach(el => {
   el.addEventListener('change', updatePreview);
 });
