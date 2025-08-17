@@ -6,10 +6,13 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
 <style>
   .container { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+  #tag-info-content a { text-decoration: none; }
+  #tag-info-content h3 a { text-decoration: underline; }
 </style>
-<div id="tag-info" class="p-3 border-bottom position-relative" style="display:none">
+<div id="tag-info" class="border position-relative" style="display:none">
+  <div id="tag-info-handle" class="bg-light border-bottom" style="cursor:move; height:20px;"></div>
   <button id="tag-info-close" type="button" class="btn-close" aria-label="Close" style="position:absolute; top:8px; right:8px;"></button>
-  <div id="tag-info-content"></div>
+  <div id="tag-info-content" class="p-3"></div>
 </div>
 <div id="tag-map"></div>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -26,8 +29,10 @@ mapDiv.style.bottom = '0';
 const infoDiv = document.getElementById('tag-info');
 const infoContent = document.getElementById('tag-info-content');
 const closeBtn = document.getElementById('tag-info-close');
+const dragHandle = document.getElementById('tag-info-handle');
 
 function positionInfoDiv(){
+  if(infoDiv.dataset.dragged === 'true') return;
   infoDiv.style.position = 'fixed';
   infoDiv.style.top = navHeight + 'px';
   infoDiv.style.background = 'rgba(255,255,255,0.9)';
@@ -35,9 +40,11 @@ function positionInfoDiv(){
   infoDiv.style.overflowY = 'auto';
   infoDiv.style.color = '#000';
   if(window.innerWidth >= 768){
-    infoDiv.style.left = 'auto';
-    infoDiv.style.right = '10px';
-    infoDiv.style.width = '400px';
+    const width = 400;
+    infoDiv.style.width = width + 'px';
+    const mapRect = mapDiv.getBoundingClientRect();
+    infoDiv.style.left = (mapRect.right - width - 10) + 'px';
+    infoDiv.style.right = 'auto';
     infoDiv.style.maxHeight = '50vh';
     infoDiv.style.border = '1px solid rgba(0,0,0,0.1)';
     infoDiv.style.borderRadius = '0.5rem';
@@ -59,6 +66,31 @@ window.addEventListener('resize', positionInfoDiv);
 closeBtn.addEventListener('click', () => {
   infoDiv.style.display = 'none';
 });
+
+let isDragging = false;
+let offsetX = 0;
+let offsetY = 0;
+
+dragHandle.addEventListener('mousedown', (e) => {
+  isDragging = true;
+  const rect = infoDiv.getBoundingClientRect();
+  offsetX = e.clientX - rect.left;
+  offsetY = e.clientY - rect.top;
+  infoDiv.dataset.dragged = 'true';
+  document.addEventListener('mousemove', onMouseMove);
+});
+
+document.addEventListener('mouseup', () => {
+  isDragging = false;
+  document.removeEventListener('mousemove', onMouseMove);
+});
+
+function onMouseMove(e){
+  if(!isDragging) return;
+  infoDiv.style.left = (e.clientX - offsetX) + 'px';
+  infoDiv.style.top = (e.clientY - offsetY) + 'px';
+  infoDiv.style.right = 'auto';
+}
 const tagLocations = {{ tag_locations_json|safe }};
 const tagPosts = {{ tag_posts_json|safe }};
 const map = L.map('tag-map').setView([0,0],2);
@@ -82,7 +114,8 @@ const markers = L.markerClusterGroup({
     color: '#0d6efd',
     weight: 1,
     opacity: 1
-  }
+  },
+  maxClusterRadius: 120
 });
   tagLocations.forEach(t => {
     const marker = L.marker([t.lat, t.lon], {icon: createIcon(t.name)});
@@ -99,6 +132,8 @@ const markers = L.markerClusterGroup({
         });
         infoContent.innerHTML = html;
         infoDiv.style.display = 'block';
+        infoDiv.dataset.dragged = 'false';
+        positionInfoDiv();
       }
     });
     markers.addLayer(marker);
