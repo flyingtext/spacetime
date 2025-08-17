@@ -218,6 +218,10 @@ pre {
   font-weight: bold;
 }
 
+#reading-breadcrumb {
+  font-size: 0.9rem;
+}
+
 #map, #map-offcanvas {
   height: 250px;
   width: 100%;
