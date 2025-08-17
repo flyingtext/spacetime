@@ -62,3 +62,8 @@ Run the test suite with [pytest](https://docs.pytest.org/):
 ```bash
 pytest
 ```
+
+## Development
+
+For instructions on setting up a development environment and contributing to the
+project, see the [development guide](docs/DEVELOPMENT.md).
