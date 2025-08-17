@@ -199,6 +199,15 @@ pre {
   width: 100%;
 }
 
+.view-log {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  margin-right: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.25rem;
+  background-color: var(--toc-bg-color);
+}
+
 .citation-table th:first-child,
 .citation-table td:first-child {
   width: 45%;
