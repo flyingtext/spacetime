@@ -33,6 +33,25 @@
 </div>
 <input type="search" id="tag-search" class="form-control" placeholder="{{ _('Search tags...') }}">
 <div id="tag-map"></div>
+<div class="container mt-4">
+  {% for info in tag_info %}
+    <div class="tag-card">
+      <h5>
+        <a href="{{ url_for('tag_filter', name=info.tag.name) }}" class="tag-pill">{{ info.tag.name }}</a>
+      </h5>
+      {% if info.top_posts %}
+        <ul>
+          {% for post, views in info.top_posts %}
+            <li>
+              <a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.display_title }}</a>
+              <span class="small text-muted">· {{ views }} {{ _('views') }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 <script>
