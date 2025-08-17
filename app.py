@@ -4,7 +4,6 @@ import os
 import re
 import markdown
 import math
-from collections import Counter
 from datetime import datetime, timezone
 from xml.etree.ElementTree import Element, SubElement, tostring
 from urllib.parse import urlparse, quote
@@ -199,80 +198,32 @@ def fetch_bibtex_by_title(title: str) -> str | None:
     return resp.text.strip()
 
 
-STOPWORDS: dict[str, set[str]] = {
-    'en': {
-        'the', 'and', 'or', 'for', 'with', 'to', 'of', 'a', 'an', 'in', 'on',
-        'at', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
-        'that', 'this', 'it', 'as', 'we', 'you', 'he', 'she', 'they', 'them',
-        'his', 'her', 'its', 'our', 'their', 'have', 'has', 'had', 'do', 'does',
-        'did'
-    },
-    'fr': {
-        'le', 'la', 'les', 'un', 'une', 'et', 'ou', 'pour', 'avec', 'à', 'de',
-        'des', 'du', 'est', 'sont', 'il', 'elle', 'nous', 'vous', 'ce', 'ces'
-    },
-    'de': {
-        'der', 'die', 'das', 'und', 'oder', 'für', 'mit', 'zu', 'auf', 'ein',
-        'eine', 'ist', 'sind', 'es', 'ich', 'du', 'er', 'sie', 'wir', 'ihr'
-    },
-    'ko': {
-        '그리고', '또는', '그러나', '그래서', '은', '는', '이', '가', '을', '를',
-        '에', '에서', '에게', '과', '와', '도', '로', '으로', '의'
-    },
-    'ja': {
-        'そして', 'または', 'しかし', 'で', 'は', 'が', 'を', 'に', 'へ', 'と',
-        'も', 'の', 'から', 'まで'
-    },
-    'zh': {
-        '和', '或', '但是', '在', '是', '的', '了', '與', '及', '而且'
-    },
-}
-
-
-def extract_keywords(sentence: str, max_words: int = 5) -> list[str]:
-    """Return up to ``max_words`` keywords from *sentence*.
-
-    Detects the sentence language and removes language-specific stopwords
-    before calculating word frequency.
-    """
-
-    try:
-        lang = detect(sentence)
-    except LangDetectException:
-        lang = 'en'
-    lang = lang.split('-')[0]
-    stopwords = STOPWORDS.get(lang, STOPWORDS['en'])
-    if lang in {'ja', 'zh'}:
-        words = [c for c in sentence if re.match(r"\w", c)]
-    else:
-        words = re.findall(r"\b\w+\b", sentence.lower())
-    words = [w.lower() for w in words if w.lower() not in stopwords]
-    if not words:
-        return []
-    freq = Counter(words)
-    return [w for w, _ in freq.most_common(max_words)]
 
 
 def suggest_citations(markdown_text: str) -> dict[str, list[dict]]:
-    """Split markdown text into sentences and return BibTeX suggestions.
+    """Split *markdown_text* into sentences and return BibTeX suggestions.
 
-    Each sentence is queried against Crossref sequentially. For every result
-    the BibTeX is fetched and parsed into a dict with ``text`` and ``part``
-    (fields without ID/ENTRYTYPE). Sentences with no suggestions are skipped.
-
-    The query to Crossref is built from high‑frequency words within each
-    sentence rather than the full sentence text.
+    Each sentence is queried against Crossref sequentially using the raw
+    sentence text. If the language of a sentence can be detected, it is
+    provided to Crossref via ``query.language`` to improve ranking. For every
+    result the BibTeX is fetched and parsed into a dict with ``text`` and
+    ``part`` (fields without ID/ENTRYTYPE). Sentences with no suggestions are
+    skipped.
     """
 
     sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", markdown_text) if s.strip()]
     results: dict[str, list[dict]] = {}
     for sentence in sentences:
-        keywords = extract_keywords(sentence)
-        if not keywords:
-            continue
-        query = " ".join(keywords)
+        lang = None
         try:
-            query_res = cr.works(query=query, limit=3)
+            lang = detect(sentence).split('-')[0]
+        except LangDetectException:
+            lang = None
+        params = {"query_bibliographic": sentence, "limit": 3}
+        if lang:
+            params["query_language"] = lang
+        try:
+            query_res = cr.works(**params)
         except Exception:
             continue
         items = query_res.get("message", {}).get("items", [])
