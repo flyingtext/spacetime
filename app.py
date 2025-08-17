@@ -2,7 +2,6 @@ import difflib
 import json
 import os
 import re
-import random
 import markdown
 import math
 from datetime import datetime, timezone
@@ -204,11 +203,11 @@ def fetch_bibtex_by_title(title: str) -> str | None:
 def suggest_citations(markdown_text: str) -> dict[str, list[dict]]:
     """Split *markdown_text* into sentences and return BibTeX suggestions.
 
-    Each sentence is queried against Crossref sequentially using a random
-    selection of 2 or 3 words from the sentence. If the language of a sentence
-    can be detected, it is provided to Crossref via ``query_language`` to
-    improve ranking. For every result the BibTeX is fetched and parsed into a
-    dict with ``text`` and ``part`` (fields without ID/ENTRYTYPE). Sentences
+    Each sentence is queried against Crossref sequentially using up to three
+    of the longest unique words from the sentence. If the language of a
+    sentence can be detected, it is provided to Crossref via ``query_language``
+    to improve ranking. For every result the BibTeX is fetched and parsed into
+    a dict with ``text`` and ``part`` (fields without ID/ENTRYTYPE). Sentences
     with no suggestions are skipped.
     """
 
@@ -224,8 +223,9 @@ def suggest_citations(markdown_text: str) -> dict[str, list[dict]]:
         words = re.findall(r"\w+", sentence)
         if not words:
             continue
-        k = min(len(words), random.choice([2, 3]))
-        sample_words = random.sample(words, k=k)
+        unique_words = list(dict.fromkeys(words))
+        unique_words.sort(key=len, reverse=True)
+        sample_words = unique_words[:3]
         query = " ".join(sample_words)
 
         params = {"query_bibliographic": query, "limit": 3}

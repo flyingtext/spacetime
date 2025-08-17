@@ -20,12 +20,10 @@ def test_suggest_citations_multiword(monkeypatch):
 
     monkeypatch.setattr(app.cr, 'works', fake_works)
     monkeypatch.setattr(app.requests, 'get', fake_get)
-    monkeypatch.setattr(app.random, 'choice', lambda seq: 3)
-    monkeypatch.setattr(app.random, 'sample', lambda seq, k: ['quick', 'fox', 'dog'])
 
     results = app.suggest_citations(sentence)
     assert sentence in results
-    assert captured['kwargs']['query_bibliographic'] == 'quick fox dog'
+    assert captured['kwargs']['query_bibliographic'] == 'quick brown jumps'
     assert captured['kwargs']['query_language'] == 'en'
 
 
@@ -38,10 +36,8 @@ def test_suggest_citations_multilingual(monkeypatch):
         return {'message': {'items': []}}
 
     monkeypatch.setattr(app.cr, 'works', fake_works)
-    monkeypatch.setattr(app.random, 'choice', lambda seq: 2)
-    monkeypatch.setattr(app.random, 'sample', lambda seq, k: ['science', 'avance'])
 
     results = app.suggest_citations(sentence)
     assert results == {}
-    assert captured['kwargs']['query_bibliographic'] == 'science avance'
+    assert captured['kwargs']['query_bibliographic'] == 'rapidement science avance'
     assert captured['kwargs']['query_language'] == 'fr'
