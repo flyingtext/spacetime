@@ -1650,7 +1650,9 @@ def post_detail(post_id: int):
     locations, warning = extract_locations(post_meta)
     post_lat = post.latitude
     post_lon = post.longitude
+    address = None
     if post_lat is not None and post_lon is not None:
+        address = reverse_geocode_coords(post_lat, post_lon)
         locations = [
             loc
             for loc in locations
@@ -1720,6 +1722,7 @@ def post_detail(post_id: int):
         user_citations=user_citations,
         views=views,
         created_at=created_at,
+        address=address,
     )
 
 
@@ -1815,7 +1818,9 @@ def document(language: str, doc_path: str):
     locations, warning = extract_locations(post_meta)
     post_lat = post.latitude
     post_lon = post.longitude
+    address = None
     if post_lat is not None and post_lon is not None:
+        address = reverse_geocode_coords(post_lat, post_lon)
         locations = [
             loc
             for loc in locations
@@ -1889,6 +1894,7 @@ def document(language: str, doc_path: str):
         user_citations=user_citations,
         views=views,
         created_at=created_at,
+        address=address,
     )
 
 
