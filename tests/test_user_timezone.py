@@ -1,8 +1,8 @@
 import os
 import sys
 from datetime import datetime
-import pytest
 
+import pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app import app, db, User, Post
 
@@ -24,7 +24,7 @@ def client():
         db.drop_all()
 
 
-def test_timezone_selection_affects_recent_display(client):
+def test_profile_timezone_and_locale(client):
     resp = client.post(
         '/post/new',
         data={
@@ -43,7 +43,18 @@ def test_timezone_selection_affects_recent_display(client):
         rev = post.revisions[0]
         rev.created_at = datetime(2024, 1, 1, 0, 0)
         db.session.commit()
-    client.post('/timezone', data={'timezone': 'Asia/Seoul'})
+
+    client.post('/user/u', data={'bio': '', 'locale': 'es', 'timezone': 'Asia/Seoul'})
+
+    resp = client.get('/user/u')
+    data = resp.get_data(as_text=True)
+    assert 'Locale' in data
+    assert 'es' in data
+    assert 'Timezone' in data
+    assert 'Asia/Seoul' in data
+
     resp = client.get('/recent')
-    assert '09:00' in resp.get_data(as_text=True)
-    assert 'KST' in resp.get_data(as_text=True)
+    data = resp.get_data(as_text=True)
+    assert '09:00' in data
+    assert 'KST' in data
+

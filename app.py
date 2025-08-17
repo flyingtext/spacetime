@@ -82,10 +82,17 @@ GEOCODE_CACHE_TTL = int(os.getenv("GEOCODE_CACHE_TTL", 60 * 60 * 24))
 
 
 def select_locale():
+    if current_user.is_authenticated and current_user.locale:
+        return current_user.locale
     return request.accept_languages.best_match(app.config['LANGUAGES'])
 
 
+def select_timezone() -> str:
+    return get_user_timezone()
+
+
 babel.locale_selector_func = select_locale
+babel.timezoneselector_func = select_timezone
 
 
 def ensure_revision_comment_column() -> None:
@@ -122,6 +129,27 @@ def ensure_requested_post_comment_column() -> None:
 
 
 ensure_requested_post_comment_column()
+
+
+def ensure_user_locale_timezone_columns() -> None:
+    with app.app_context():
+        inspector = inspect(db.engine)
+        try:
+            cols = [c["name"] for c in inspector.get_columns("user")]
+        except NoSuchTableError:
+            return
+        with db.engine.begin() as conn:
+            if "locale" not in cols:
+                conn.execute(text("ALTER TABLE user ADD COLUMN locale VARCHAR(8)"))
+            if "timezone" not in cols:
+                conn.execute(
+                    text(
+                        "ALTER TABLE user ADD COLUMN timezone VARCHAR(50) DEFAULT 'UTC'"
+                    )
+                )
+
+
+ensure_user_locale_timezone_columns()
 
 
 def fetch_bibtex_by_title(title: str) -> str | None:
@@ -655,6 +683,8 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(128), nullable=False)
     role = db.Column(db.String(20), default='user')
     bio = db.Column(db.Text)
+    locale = db.Column(db.String(8))
+    timezone = db.Column(db.String(50), default='UTC')
 
     def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)
@@ -881,6 +911,8 @@ def get_category_tags(language: str | None = None) -> list[tuple[str, str]]:
 
 
 def get_user_timezone() -> str:
+    if current_user.is_authenticated and current_user.timezone:
+        return current_user.timezone
     tz = session.get('timezone')
     if tz:
         return tz
@@ -1181,6 +1213,15 @@ def profile(username: str):
         if not current_user.is_authenticated or current_user.id != user.id:
             abort(403)
         user.bio = request.form.get('bio', '').strip() or None
+        locale = request.form.get('locale', '').strip()
+        user.locale = locale if locale in app.config['LANGUAGES'] else None
+        tz = request.form.get('timezone', '').strip() or 'UTC'
+        try:
+            ZoneInfo(tz)
+            user.timezone = tz
+        except ZoneInfoNotFoundError:
+            flash(_('Invalid timezone'))
+            return redirect(url_for('profile', username=user.username))
         db.session.commit()
         flash(_('Profile updated'))
         return redirect(url_for('profile', username=user.username))
@@ -1208,6 +1249,7 @@ def profile(username: str):
         citation_count=citation_count,
         post_locations=post_locations,
         post_locations_json=json.dumps(post_locations),
+        languages=app.config['LANGUAGES'],
     )
 
 
