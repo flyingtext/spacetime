@@ -358,6 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const key = 'postBreadcrumb';
   const maxItems = 10;
   const title = {{ post.display_title|tojson }};
+  const deleteLabel = {{ _('Delete')|tojson }};
   const url = window.location.pathname;
   let items;
   try {
@@ -373,24 +374,45 @@ document.addEventListener('DOMContentLoaded', () => {
   localStorage.setItem(key, JSON.stringify(items));
   const nav = document.getElementById('reading-breadcrumb');
   const ol = nav ? nav.querySelector('ol') : null;
-  if (nav && ol && items.length > 0) {
+
+  function render() {
+    if (!nav || !ol) return;
+    ol.innerHTML = '';
+    if (items.length === 0) {
+      nav.style.display = 'none';
+      return;
+    }
     nav.style.display = 'block';
     items.forEach((item, index) => {
       const li = document.createElement('li');
-      li.classList.add('breadcrumb-item');
+      li.classList.add('breadcrumb-item', 'd-flex', 'align-items-center');
       if (index === items.length - 1) {
-        li.textContent = item.title;
+        const span = document.createElement('span');
+        span.textContent = item.title;
         li.classList.add('active');
         li.setAttribute('aria-current', 'page');
+        li.appendChild(span);
       } else {
         const a = document.createElement('a');
         a.href = item.url;
         a.textContent = item.title;
         li.appendChild(a);
       }
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.classList.add('btn-close', 'ms-2');
+      btn.setAttribute('aria-label', deleteLabel);
+      btn.addEventListener('click', () => {
+        items = items.filter(i => i.url !== item.url);
+        localStorage.setItem(key, JSON.stringify(items));
+        render();
+      });
+      li.appendChild(btn);
       ol.appendChild(li);
     });
   }
+
+  render();
 });
 </script>
 {% if geodata %}
