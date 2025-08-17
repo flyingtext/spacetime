@@ -1011,16 +1011,24 @@ def normalize_timezone(tz: str) -> str | None:
 
 
 @app.template_filter('format_datetime')
-def format_datetime(value: datetime, fmt: str = '%Y-%m-%d %H:%M') -> str:
+def format_datetime(value: datetime, fmt: str = '%Y-%m-%d %H:%M %Z') -> str:
     tz_name = get_user_timezone()
     try:
         tzinfo = ZoneInfo(tz_name)
     except ZoneInfoNotFoundError:
         tzinfo = timezone.utc
+        tz_name = 'UTC'
     dt = value
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone(tzinfo).strftime(fmt)
+    local_dt = dt.astimezone(tzinfo)
+    formatted = local_dt.strftime(fmt)
+    abbr = local_dt.strftime('%Z')
+    if '%Z' not in fmt:
+        formatted = f"{formatted} {abbr}"
+    if tz_name != abbr:
+        formatted = f"{formatted} ({tz_name})"
+    return formatted
 
 
 @app.context_processor
