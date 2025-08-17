@@ -101,10 +101,10 @@ formEl.addEventListener('keydown', function (e) {
   }
 });
 
+const metaTextarea = document.getElementById('metadata');
 let metaEditor;
 let initialMeta = {};
 try {
-  const metaTextarea = document.getElementById('metadata');
   metaEditor = new JSONEditor(document.getElementById('metadata_editor'), {mode: 'code'});
   if (metaTextarea.value.trim()) {
     try { initialMeta = JSON.parse(metaTextarea.value); } catch (e) {}
@@ -199,6 +199,7 @@ function updateLocations() {
     const data = metaEditor.get();
     data.locations = locs;
     metaEditor.set(data);
+    try { metaTextarea.value = JSON.stringify(metaEditor.get()); } catch (e) {}
   } catch (e) {}
 }
 
