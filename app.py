@@ -1075,10 +1075,12 @@ def all_posts():
 def index():
     home_path = get_setting('home_page_path', '').strip()
     if home_path:
-        language = str(get_locale())
+        language = select_locale() or app.config['BABEL_DEFAULT_LOCALE']
         post = Post.query.filter_by(language=language, path=home_path).first()
         if post:
-            return redirect(url_for('document', language=language, doc_path=home_path))
+            return redirect(
+                url_for('document_docs', language=language, doc_path=home_path)
+            )
     return all_posts()
 
 
@@ -1666,7 +1668,11 @@ def document(language: str, doc_path: str):
     )
 
 
-app.add_url_rule('/docs/<string:language>/<path:doc_path>', view_func=document)
+app.add_url_rule(
+    '/docs/<string:language>/<path:doc_path>',
+    view_func=document,
+    endpoint='document_docs',
+)
 
 
 @app.route('/markdown/preview', methods=['POST'])
