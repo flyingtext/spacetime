@@ -149,7 +149,14 @@ document.querySelectorAll('input[name="language"]').forEach(el => {
 updatePreview();
 
 const map = L.map('map').setView([0, 0], 2);
+
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+
+const darkUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const lightUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const isDark = () => document.body.classList.contains('dark-mode') || localStorage.getItem('theme') !== 'light';
+const tiles = L.tileLayer(isDark() ? darkUrl : lightUrl, {
+
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 const drawnItems = new L.FeatureGroup();

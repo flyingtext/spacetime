@@ -135,7 +135,8 @@ const markers = L.markerClusterGroup({
     opacity: 1
   },
   maxClusterRadius: 120,
-  spiderfyDistanceMultiplier: 2.5,
+  // Increase spiderfy distance so large tag icons do not overlap
+  spiderfyDistanceMultiplier: 3.5,
   iconCreateFunction: function(cluster){
     const count = cluster.getChildCount();
     let c = ' marker-cluster-small';
