@@ -289,6 +289,14 @@ msgstr "Dejar de seguir"
 msgid "Watch"
 msgstr "Seguir"
 
+#: templates/post_detail.html:216
+msgid "Suggest Citation"
+msgstr "Sugerir cita"
+
+#: templates/post_detail.html:217
+msgid "Use the buttons next to each paragraph to get suggestions."
+msgstr "Usa los botones junto a cada párrafo para obtener sugerencias."
+
 #: templates/post_form.html:2 templates/post_form.html:4
 #, python-format
 msgid "%(action)s Post"
