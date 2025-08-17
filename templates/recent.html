@@ -5,7 +5,7 @@
 <ul class="list-group fs-5 mb-3">
     {% for rev in revisions %}
       <li class="list-group-item text-break" style="word-break: break-all;">
-        {{ rev.created_at|format_datetime('%Y-%m-%d %H:%M %Z') }} -
+        <span class="view-log">[{{ rev.created_at|format_datetime('%Y-%m-%d %H:%M %Z') }}]</span>
         <a href="{{ url_for('post_detail', post_id=rev.post_id) }}">{{ rev.title }}</a>
         (<a href="{{ url_for('revision_diff', post_id=rev.post_id, rev_id=rev.id) }}">{{ _('diff') }}</a>)
         {{ _('by') }} <a href="{{ url_for('profile', username=rev.user.username) }}">{{ rev.user.username }}</a>
