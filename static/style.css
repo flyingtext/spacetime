@@ -244,6 +244,20 @@ pre {
   margin: 1em 0;
 }
 
+.map-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  z-index: 2000;
+}
+
+.map-fullscreen .leaflet-control-container {
+  z-index: 2001;
+}
+
 @media (max-width: 600px) {
   #map, #map-offcanvas {
     height: 200px;
