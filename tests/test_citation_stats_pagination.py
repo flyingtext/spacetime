@@ -45,8 +45,8 @@ def test_citation_stats_pagination(client):
 
     resp = client.get('/citations/stats')
     assert resp.status_code == 200
-    assert resp.data.count(b'<tr>') - 1 == 20
+    assert resp.data.count(b'https://doi.org') == 20
 
     resp = client.get('/citations/stats', query_string={'page': 2})
     assert resp.status_code == 200
-    assert resp.data.count(b'<tr>') - 1 == 5
+    assert resp.data.count(b'https://doi.org') == 5
