@@ -202,10 +202,6 @@
 {% endif %}
 {% if current_user.is_authenticated %}
 <section>
-  <h2>{{ _('Suggest Citation') }}</h2>
-  <p>{{ _('Use the buttons next to each paragraph to get suggestions.') }}</p>
-</section>
-<section>
   <h2>{{ _('Add Citation') }}</h2>
   <form id="citation-form" action="{{ url_for('new_citation', post_id=post.id) }}" method="post">
     <div class="mb-2 d-flex gap-1">
@@ -289,55 +285,6 @@
           return;
       }
       showSpinner();
-  });
-  document.querySelectorAll('.post-body p').forEach(p => {
-      const btn = document.createElement('button');
-      btn.textContent = '{{ _('Suggest Citation') }}';
-      btn.className = 'btn btn-sm btn-secondary ms-2';
-      const result = document.createElement('div');
-      btn.addEventListener('click', async () => {
-          btn.disabled = true;
-          const resp = await fetch('{{ url_for('citation_suggest_line') }}', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ line: p.textContent })
-          });
-          const data = await resp.json();
-          result.innerHTML = '';
-          if (data.results) {
-              for (const [sentence, cands] of Object.entries(data.results)) {
-                  const section = document.createElement('div');
-                  const ps = document.createElement('p');
-                  ps.textContent = sentence;
-                  section.appendChild(ps);
-                  cands.forEach(c => {
-                      const container = document.createElement('div');
-                      container.className = 'd-flex align-items-start gap-2 mb-2';
-                      const pre = document.createElement('pre');
-                      pre.textContent = c.text;
-                      pre.className = 'mb-0';
-                      const saveBtn = document.createElement('button');
-                      saveBtn.textContent = '{{ _('Save') }}';
-                      saveBtn.className = 'btn btn-sm btn-secondary';
-                      saveBtn.addEventListener('click', () => {
-                          const fd = new FormData();
-                          fd.append('citation_text', c.text);
-                          fetch('{{ url_for('new_citation', post_id=post.id) }}', {
-                              method: 'POST',
-                              body: fd
-                          }).then(() => { saveBtn.disabled = true; });
-                      });
-                      container.appendChild(pre);
-                      container.appendChild(saveBtn);
-                      section.appendChild(container);
-                  });
-                  result.appendChild(section);
-              }
-          }
-          btn.disabled = false;
-      });
-      p.appendChild(btn);
-      p.insertAdjacentElement('afterend', result);
   });
   </script>
 </section>
