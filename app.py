@@ -2722,6 +2722,7 @@ def search():
 
 @app.route('/citations/stats')
 def citation_stats():
+    page = request.args.get('page', 1, type=int)
     all_citations = (
         db.session.query(
             PostCitation.doi.label('doi'),
@@ -2738,7 +2739,7 @@ def citation_stats():
         .subquery()
     )
 
-    rows = (
+    query = (
         db.session.query(
             all_citations.c.doi,
             all_citations.c.citation_text,
@@ -2747,8 +2748,10 @@ def citation_stats():
         )
         .group_by(all_citations.c.doi, all_citations.c.citation_text)
         .order_by(func.count().desc())
-        .all()
     )
+
+    pagination = query.paginate(page=page, per_page=20, error_out=False)
+    rows = pagination.items
 
     post_ids = set()
     for row in rows:
@@ -2772,7 +2775,7 @@ def citation_stats():
             }
         )
 
-    return render_template('citation_stats.html', stats=stats)
+    return render_template('citation_stats.html', stats=stats, pagination=pagination)
 
 
 if __name__ == '__main__':

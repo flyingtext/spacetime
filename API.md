@@ -179,6 +179,12 @@ Fetch citation metadata for the provided `title`.
 ### `/citations/stats` (`GET`)
 Return summary statistics for citations across posts.
 
+**Query Parameters**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `page` | integer | Page number of results to return (default `1`). Results are paginated with 20 items per page. |
+
 ## JSON API Examples
 
 The following endpoints return JSON responses and can be used programmatically.
