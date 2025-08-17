@@ -169,6 +169,12 @@ textarea::placeholder,
   border-color: var(--border-color);
 }
 
+#ogTitle,
+#ogDescription {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
 pre {
   background-color: var(--nav-bg-color);
   color: var(--text-color);
