@@ -249,10 +249,6 @@ msgstr "Tus metadatos"
 msgid "Citations"
 msgstr "Citas"
 
-#: templates/post_detail.html:37
-msgid "Global"
-msgstr "Global"
-
 #: templates/post_detail.html:48 templates/post_detail.html:66
 msgid "Delete"
 msgstr "Eliminar"
