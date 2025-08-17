@@ -31,6 +31,13 @@ def test_render_markdown_with_toc_headings():
     assert '<a href="#heading">Heading</a>' in toc
 
 
+def test_render_markdown_preserves_list_numbers():
+    html, _ = render_markdown('1. one\n3. three')
+    assert '<li value="1">one</li>' in html
+    assert '<li value="3">three</li>' in html
+    assert 'value="2"' not in html
+
+
 @pytest.fixture
 def client():
     app.config['TESTING'] = True
