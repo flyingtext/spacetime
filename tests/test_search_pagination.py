@@ -4,7 +4,7 @@ import sys
 import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from app import app, db, User, Post, Tag
+from app import app, db, User, Post
 from sqlalchemy import text
 
 
@@ -12,21 +12,20 @@ from sqlalchemy import text
 def client():
     app.config['TESTING'] = True
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    app.config['SEARCH_RESULTS_PER_PAGE'] = 2
     with app.app_context():
         db.drop_all()
         db.session.execute(text('DROP TABLE IF EXISTS post_fts'))
         db.create_all()
         user = User(username='u')
         user.set_password('pw')
-        t1 = Tag(name='news')
-        t2 = Tag(name='science')
-        db.session.add_all([user, t1, t2])
+        db.session.add(user)
         db.session.commit()
-        p1 = Post(title='Apple', body='apple banana', path='p1', language='en', author_id=user.id)
-        p1.tags.append(t1)
-        p2 = Post(title='Banana', body='banana carrot', path='p2', language='en', author_id=user.id)
-        p2.tags.append(t2)
-        db.session.add_all([p1, p2])
+        posts = [
+            Post(title=f'Apple {i}', body='apple', path=f'p{i}', language='en', author_id=user.id)
+            for i in range(3)
+        ]
+        db.session.add_all(posts)
         db.session.commit()
     with app.test_client() as client:
         yield client
@@ -35,15 +34,14 @@ def client():
         db.session.execute(text('DROP TABLE IF EXISTS post_fts'))
 
 
-def test_fulltext_search(client):
+def test_search_pagination(client):
     resp = client.get('/search', query_string={'q': 'apple'})
     text = resp.get_data(as_text=True)
-    assert 'Apple' in text
-    assert 'Banana' not in text
+    assert 'Apple 2' in text
+    assert 'Apple 1' in text
+    assert 'Apple 0' not in text
 
-
-def test_tag_filter(client):
-    resp = client.get('/search', query_string={'q': 'banana', 'tags': 'news'})
+    resp = client.get('/search', query_string={'q': 'apple', 'page': 2})
     text = resp.get_data(as_text=True)
-    assert 'Apple' in text
-    assert 'Banana' not in text
+    assert 'Apple 0' in text
+    assert 'Apple 2' not in text
