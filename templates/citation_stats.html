@@ -3,11 +3,6 @@
 {% block content %}
 <h1>{{ _('Citation Statistics') }}</h1>
   <table class="table citation-table">
-  <tr>
-    <th>{{ _('DOI / Citation') }}</th>
-    <th>{{ _('Usage Count') }}</th>
-    <th>{{ _('Posts') }}</th>
-  </tr>
   {% for item in stats %}
   <tr>
     <td>
@@ -16,8 +11,10 @@
       {% else %}
         <a href="https://scholar.google.com/scholar?q={{ item.citation_text | urlencode }}">{{ item.citation_text }}</a>
       {% endif %}
+      ({{ item.count }})
     </td>
-    <td>{{ item.count }}</td>
+  </tr>
+  <tr>
     <td>
       {% for post in item.posts %}
         <a href="{{ url_for('document', language=post.language, doc_path=post.path) }}">{{ post.display_title }}</a>{% if not loop.last %}, {% endif %}
@@ -25,7 +22,7 @@
     </td>
   </tr>
   {% endfor %}
-</table>
+  </table>
 <nav>
   <ul class="pagination">
     <li class="page-item{% if not pagination.has_prev %} disabled{% endif %}">
