@@ -25,6 +25,10 @@
             {% for key, value in metadata.items() %}
             <tr><th scope="row">{{ key }}</th><td>{{ value|format_metadata }}</td></tr>
             {% endfor %}
+            {% if lat is not none and lon is not none %}
+            <tr><th scope="row">{{ _('Latitude') }}</th><td>{{ lat }}</td></tr>
+            <tr><th scope="row">{{ _('Longitude') }}</th><td>{{ lon }}</td></tr>
+            {% endif %}
             {% if locations %}
               {% for loc in locations %}
               <tr>
@@ -75,6 +79,10 @@
               {% for key, value in metadata.items() %}
               <tr><th scope="row">{{ key }}</th><td>{{ value|format_metadata }}</td></tr>
               {% endfor %}
+              {% if lat is not none and lon is not none %}
+              <tr><th scope="row">{{ _('Latitude') }}</th><td>{{ lat }}</td></tr>
+              <tr><th scope="row">{{ _('Longitude') }}</th><td>{{ lon }}</td></tr>
+              {% endif %}
               {% if locations %}
                 {% for loc in locations %}
                 <tr>
@@ -84,7 +92,7 @@
                     <span class="text-muted">({{ loc.lat }}, {{ loc.lon }})</span>
                   </td>
                 </tr>
-                {% endfor %}
+              {% endfor %}
               {% endif %}
               {% if geodata %}
               <tr>
@@ -133,6 +141,10 @@
       {% for key, value in metadata.items() %}
       <tr><th scope="row">{{ key }}</th><td>{{ value|format_metadata }}</td></tr>
       {% endfor %}
+      {% if lat is not none and lon is not none %}
+      <tr><th scope="row">{{ _('Latitude') }}</th><td>{{ lat }}</td></tr>
+      <tr><th scope="row">{{ _('Longitude') }}</th><td>{{ lon }}</td></tr>
+      {% endif %}
       {% if locations %}
         {% for loc in locations %}
         <tr>

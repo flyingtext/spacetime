@@ -1616,15 +1616,40 @@ def post_detail(post_id: int):
     created_at = first_rev.created_at if first_rev else None
     post_meta = {m.key: m.value for m in post.metadata}
     locations, warning = extract_locations(post_meta)
+    post_lat = post.latitude
+    post_lon = post.longitude
+    if post_lat is not None and post_lon is not None:
+        locations = [
+            loc
+            for loc in locations
+            if not (
+                loc['lat'] == post_lat and loc['lon'] == post_lon
+            )
+        ]
     location_list = []
     for loc in locations:
         name = reverse_geocode_coords(loc['lat'], loc['lon'])
         location_list.append({'lat': loc['lat'], 'lon': loc['lon'], 'name': name})
     geodata = extract_geodata(post_meta)
+    if (
+        post_lat is not None
+        and post_lon is not None
+        and not any(
+            feat.get('geometry', {}).get('type') == 'Point'
+            and feat.get('geometry', {}).get('coordinates') == [post_lon, post_lat]
+            for feat in geodata
+        )
+    ):
+        geodata.append(
+            {
+                'type': 'Feature',
+                'geometry': {'type': 'Point', 'coordinates': [post_lon, post_lat]},
+                'properties': {},
+            }
+        )
     meta_no_coords = post_meta.copy()
-    if locations:
-        for key in ('lat', 'lon', 'latitude', 'longitude', 'lng', 'locations'):
-            meta_no_coords.pop(key, None)
+    for key in ('lat', 'lon', 'latitude', 'longitude', 'lng', 'locations'):
+        meta_no_coords.pop(key, None)
     if warning:
         flash(_(warning))
     user_meta = {}
@@ -1656,6 +1681,8 @@ def post_detail(post_id: int):
         metadata=meta_no_coords,
         locations=location_list,
         geodata=geodata,
+        lat=post_lat,
+        lon=post_lon,
         user_metadata=user_meta,
         citations=citations,
         user_citations=user_citations,
@@ -1754,15 +1781,40 @@ def document(language: str, doc_path: str):
     created_at = first_rev.created_at if first_rev else None
     post_meta = {m.key: m.value for m in post.metadata}
     locations, warning = extract_locations(post_meta)
+    post_lat = post.latitude
+    post_lon = post.longitude
+    if post_lat is not None and post_lon is not None:
+        locations = [
+            loc
+            for loc in locations
+            if not (
+                loc['lat'] == post_lat and loc['lon'] == post_lon
+            )
+        ]
     location_list = []
     for loc in locations:
         name = reverse_geocode_coords(loc['lat'], loc['lon'])
         location_list.append({'lat': loc['lat'], 'lon': loc['lon'], 'name': name})
     geodata = extract_geodata(post_meta)
+    if (
+        post_lat is not None
+        and post_lon is not None
+        and not any(
+            feat.get('geometry', {}).get('type') == 'Point'
+            and feat.get('geometry', {}).get('coordinates') == [post_lon, post_lat]
+            for feat in geodata
+        )
+    ):
+        geodata.append(
+            {
+                'type': 'Feature',
+                'geometry': {'type': 'Point', 'coordinates': [post_lon, post_lat]},
+                'properties': {},
+            }
+        )
     meta_no_coords = post_meta.copy()
-    if locations:
-        for key in ('lat', 'lon', 'latitude', 'longitude', 'lng', 'locations'):
-            meta_no_coords.pop(key, None)
+    for key in ('lat', 'lon', 'latitude', 'longitude', 'lng', 'locations'):
+        meta_no_coords.pop(key, None)
     if warning:
         flash(_(warning))
     user_meta = {}
@@ -1798,6 +1850,8 @@ def document(language: str, doc_path: str):
         metadata=meta_no_coords,
         locations=location_list,
         geodata=geodata,
+        lat=post_lat,
+        lon=post_lon,
         user_metadata=user_meta,
         citations=citations,
         user_citations=user_citations,
