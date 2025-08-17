@@ -50,3 +50,30 @@ def test_citation_stats_pagination(client):
     resp = client.get('/citations/stats', query_string={'page': 2})
     assert resp.status_code == 200
     assert resp.data.count(b'https://doi.org') == 5
+
+
+def test_citation_stats_pagination_ellipsis(client):
+    with app.app_context():
+        user = User.query.first()
+        post = Post.query.first()
+        for i in range(160):
+            db.session.add(
+                PostCitation(
+                    post_id=post.id,
+                    user_id=user.id,
+                    citation_part={'title': f'title{i}'},
+                    citation_text=f'Cite {i}',
+                    context='',
+                    doi=f'10.1000/{i}',
+                    bibtex_raw='@article{a}',
+                    bibtex_fields={'title': f'title{i}'},
+                )
+            )
+        db.session.commit()
+
+    resp = client.get('/citations/stats')
+    assert resp.status_code == 200
+    html = resp.data.decode('utf-8')
+    assert '<span class="page-link">…</span>' in html
+    assert 'href="/citations/stats?page=4"' not in html
+    assert 'href="/citations/stats?page=7"' in html
