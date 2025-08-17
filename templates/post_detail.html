@@ -451,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const data = { type: 'FeatureCollection', features: {{ geodata|tojson }} };
   const darkUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
   const lightUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-  const isDark = () => document.body.classList.contains('dark-mode') || localStorage.getItem('theme') === 'dark';
+  const isDark = () => document.body.classList.contains('dark-mode') || localStorage.getItem('theme') !== 'light';
 
   function initMap(el) {
     const map = L.map(el).setView([0, 0], 2);
