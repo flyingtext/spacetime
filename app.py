@@ -1478,6 +1478,23 @@ def api_create_post():
     body = (data.get('body') or '').strip()
     path = (data.get('path') or '').strip()
     language = (data.get('language') or '').strip()
+    address = (data.get('address') or '').strip()
+    lat_val = data.get('lat')
+    lon_val = data.get('lon')
+    lat = lon = None
+    if address and lat_val is None and lon_val is None:
+        coords = geocode_address(address)
+        if not coords:
+            return jsonify({'error': 'invalid address'}), 400
+        lat_val, lon_val = coords
+    if lat_val is not None and lon_val is not None:
+        try:
+            lat = float(lat_val)
+            lon = float(lon_val)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'invalid coordinates'}), 400
+    elif lat_val is not None or lon_val is not None:
+        return jsonify({'error': 'lat and lon required'}), 400
     if not title or not body:
         return jsonify({'error': 'title and body required'}), 400
     if language not in app.config['LANGUAGES']:
@@ -1512,6 +1529,11 @@ def api_create_post():
         tags=tags,
     )
     db.session.add(post)
+    if lat is not None and lon is not None:
+        post.latitude = lat
+        post.longitude = lon
+        db.session.add(PostMetadata(post=post, key='lat', value=str(lat)))
+        db.session.add(PostMetadata(post=post, key='lon', value=str(lon)))
     db.session.flush()
     update_post_links(post)
     comment = (data.get('comment') or '').strip()
