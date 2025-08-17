@@ -91,3 +91,26 @@ def test_deleted_tag_is_excluded(client):
     resp = client.get('/tags')
     data = resp.get_data(as_text=True)
     assert '[deleted]' not in data
+
+
+def test_tags_page_skips_deleted_posts(client):
+    with app.app_context():
+        user = User.query.filter_by(username='u').first()
+        tag = Tag.query.filter_by(name='t1').first()
+        post = Post(
+            title='Gone',
+            body='body',
+            path='pg',
+            language='en',
+            author_id=user.id,
+            tags=[tag],
+        )
+        db.session.add(post)
+        db.session.commit()
+        post.title = ''
+        post.body = ''
+        db.session.commit()
+    resp = client.get('/tags')
+    data = resp.get_data(as_text=True)
+    assert '/en/pg' not in data
+    assert '[deleted]' not in data

@@ -2652,6 +2652,8 @@ def tag_list():
     for tag in tags:
         coords = None
         for p in tag.posts:
+            if not p.title or not p.body:
+                continue
             if p.latitude is not None and p.longitude is not None:
                 coords = (p.latitude, p.longitude)
                 break
@@ -2674,7 +2676,7 @@ def tag_list():
                 }
             )
         top_posts = sorted(
-            [(p, get_view_count(p)) for p in tag.posts],
+            [(p, get_view_count(p)) for p in tag.posts if p.title and p.body],
             key=lambda x: x[1],
             reverse=True,
         )[:3]
