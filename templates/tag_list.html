@@ -115,7 +115,8 @@ const markers = L.markerClusterGroup({
     weight: 1,
     opacity: 1
   },
-  maxClusterRadius: 120
+  maxClusterRadius: 120,
+  spiderfyDistanceMultiplier: 2.5
 });
   tagLocations.forEach(t => {
     const marker = L.marker([t.lat, t.lon], {icon: createIcon(t.name)});
