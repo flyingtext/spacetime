@@ -3,6 +3,8 @@
 {% block content %}
 <h1>{{ user.username }}</h1>
 <p>{{ user.bio }}</p>
+{% if user.locale %}<p>{{ _('Locale') }}: {{ user.locale }}</p>{% endif %}
+{% if user.timezone %}<p>{{ _('Timezone') }}: {{ user.timezone }}</p>{% endif %}
 <section>
   <h2>{{ _('Contribution Metrics') }}</h2>
   <div class="row row-cols-1 row-cols-sm-2 g-4">
@@ -91,6 +93,18 @@
   <form method="post">
     <div class="mb-3">
       <textarea name="bio" placeholder="{{ _('Bio') }}" rows="4" cols="50" class="form-control">{{ user.bio or '' }}</textarea>
+    </div>
+    <div class="mb-3">
+      <label for="locale" class="form-label">{{ _('Locale') }}</label>
+      <select name="locale" id="locale" class="form-select">
+        {% for lang in languages %}
+        <option value="{{ lang }}" {% if user.locale == lang %}selected{% endif %}>{{ lang }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="mb-3">
+      <label for="timezone" class="form-label">{{ _('Timezone') }}</label>
+      <input type="text" id="timezone" name="timezone" class="form-control" value="{{ user.timezone or '' }}">
     </div>
     <div class="mb-3">
       <button type="submit" class="btn btn-primary">{{ _('Update') }}</button>
