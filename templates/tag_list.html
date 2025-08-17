@@ -8,6 +8,20 @@
   .container { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
   #tag-info-content a { text-decoration: none; }
   #tag-info-content h3 a { text-decoration: underline; }
+  .marker-cluster {
+    border-radius: 30px;
+  }
+  .marker-cluster div {
+    width: 50px;
+    height: 50px;
+    margin-left: 5px;
+    margin-top: 5px;
+    border-radius: 25px;
+    font: 16px "Helvetica Neue", Arial, Helvetica, sans-serif;
+  }
+  .marker-cluster span {
+    line-height: 50px;
+  }
 </style>
 <div id="tag-info" class="border position-relative" style="display:none">
   <div id="tag-info-handle" class="bg-light border-bottom" style="cursor:move; height:20px;"></div>
@@ -99,15 +113,15 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 function createIcon(name){
   const ctx = document.createElement('canvas').getContext('2d');
-  ctx.font = '14px sans-serif';
+  ctx.font = '16px sans-serif';
   const textWidth = Math.ceil(ctx.measureText(name).width);
-  const width = textWidth + 20;
+  const width = textWidth + 30;
   const svg = `\
-  <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="40">
-    <rect x="5" y="5" width="${width - 10}" height="30" rx="5" ry="5" fill="#0d6efd" fill-opacity="0.1" stroke-width="0" />
-    <text x="${width / 2}" y="25" font-size="14" text-anchor="middle" fill="#0d6efd">${name}</text>
+  <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="50">
+    <rect x="5" y="5" width="${width - 10}" height="40" fill="#0d6efd" fill-opacity="0.1" stroke-width="0" />
+    <text x="${width / 2}" y="35" font-size="16" font-weight="bold" text-anchor="middle" fill="#0d6efd">${name}</text>
   </svg>`;
-  return L.divIcon({html: svg, className: '', iconSize:[width,40], iconAnchor:[width/2,40]});
+  return L.divIcon({html: svg, className: '', iconSize:[width,50], iconAnchor:[width/2,50]});
 }
 const markers = L.markerClusterGroup({
   spiderLegPolylineOptions: {
@@ -116,7 +130,21 @@ const markers = L.markerClusterGroup({
     opacity: 1
   },
   maxClusterRadius: 120,
-  spiderfyDistanceMultiplier: 2.5
+  spiderfyDistanceMultiplier: 2.5,
+  iconCreateFunction: function(cluster){
+    const count = cluster.getChildCount();
+    let c = ' marker-cluster-small';
+    if(count >= 10 && count < 100){
+      c = ' marker-cluster-medium';
+    } else if(count >= 100){
+      c = ' marker-cluster-large';
+    }
+    return L.divIcon({
+      html: `<div><span>${count}</span></div>`,
+      className: 'marker-cluster' + c,
+      iconSize: L.point(60,60)
+    });
+  }
 });
   tagLocations.forEach(t => {
     const marker = L.marker([t.lat, t.lon], {icon: createIcon(t.name)});
