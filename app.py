@@ -44,6 +44,7 @@ from geopy.distance import distance as geopy_distance
 from langdetect import detect, DetectorFactory, LangDetectException
 import zoneinfo
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+import time
 
 load_dotenv()
 DetectorFactory.seed = 0
@@ -83,6 +84,30 @@ except Exception:
     geocode_cache = None
 
 GEOCODE_CACHE_TTL = int(os.getenv("GEOCODE_CACHE_TTL", 60 * 60 * 24))
+
+
+class SimpleCache:
+    """Naive in-memory cache with TTL support."""
+
+    def __init__(self) -> None:
+        self.store: dict[str, tuple[float, list[dict]]] = {}
+
+    def get(self, key: str) -> list[dict] | None:
+        entry = self.store.get(key)
+        if not entry:
+            return None
+        expires, value = entry
+        if expires < time.time():
+            self.store.pop(key, None)
+            return None
+        return value
+
+    def setex(self, key: str, ttl: int, value: list[dict]) -> None:
+        self.store[key] = (time.time() + ttl, value)
+
+
+citation_cache = SimpleCache()
+CITATION_CACHE_TTL = int(os.getenv("CITATION_CACHE_TTL", 60 * 60))
 
 
 def select_locale():
@@ -267,6 +292,15 @@ def suggest_citations(markdown_text: str) -> dict[str, list[dict]]:
     sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", markdown_text) if s.strip()]
     results: dict[str, list[dict]] = {}
     for sentence in sentences:
+        cached = None
+        if citation_cache:
+            try:
+                cached = citation_cache.get(sentence)
+            except Exception:
+                cached = None
+        if cached:
+            results[sentence] = cached
+            continue
         keywords = extract_keywords(sentence)
         if not keywords:
             continue
@@ -300,6 +334,11 @@ def suggest_citations(markdown_text: str) -> dict[str, list[dict]]:
             candidates.append({"text": bibtex, "part": entry, "doi": doi})
         if candidates:
             results[sentence] = candidates
+            if citation_cache:
+                try:
+                    citation_cache.setex(sentence, CITATION_CACHE_TTL, candidates)
+                except Exception:
+                    pass
     return results
 
 
