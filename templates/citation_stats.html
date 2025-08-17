@@ -20,4 +20,19 @@
   </tr>
   {% endfor %}
 </table>
+<nav>
+  <ul class="pagination">
+    <li class="page-item{% if not pagination.has_prev %} disabled{% endif %}">
+      <a class="page-link" href="{{ url_for('citation_stats', page=pagination.prev_num) }}">&laquo;</a>
+    </li>
+    {% for p in range(1, pagination.pages + 1) %}
+    <li class="page-item{% if p == pagination.page %} active{% endif %}">
+      <a class="page-link" href="{{ url_for('citation_stats', page=p) }}">{{ p }}</a>
+    </li>
+    {% endfor %}
+    <li class="page-item{% if not pagination.has_next %} disabled{% endif %}">
+      <a class="page-link" href="{{ url_for('citation_stats', page=pagination.next_num) }}">&raquo;</a>
+    </li>
+  </ul>
+</nav>
 {% endblock %}
