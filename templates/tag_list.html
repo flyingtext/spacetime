@@ -22,6 +22,9 @@
   .marker-cluster span {
     line-height: 50px;
   }
+  .tag-icon {
+    margin: 10px;
+  }
 </style>
 <div id="tag-info" class="border position-relative" style="display:none">
   <div id="tag-info-handle" class="bg-light border-bottom" style="cursor:move; height:20px;"></div>
@@ -115,15 +118,15 @@ function createIcon(name){
   const ctx = document.createElement('canvas').getContext('2d');
   ctx.font = '16px sans-serif';
   const textWidth = Math.ceil(ctx.measureText(name).width);
-  const padding = 20;
+  const padding = 30;
   const width = textWidth + padding * 2;
   const height = 50;
   const svg = `\
   <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
     <rect x="${padding / 2}" y="5" width="${width - padding}" height="${height - 10}" fill="#001f3f" fill-opacity="0.5" stroke-width="0" />
-    <text x="${width / 2}" y="35" font-size="16" font-weight="bold" text-anchor="middle" fill="#000">${name}</text>
+    <text x="${width / 2}" y="35" font-size="16" font-weight="bold" text-anchor="middle" fill="#fff">${name}</text>
   </svg>`;
-  return L.divIcon({html: svg, className: '', iconSize:[width,height], iconAnchor:[width/2,height]});
+  return L.divIcon({html: svg, className: 'tag-icon', iconSize:[width,height], iconAnchor:[width/2,height]});
 }
 const markers = L.markerClusterGroup({
   spiderLegPolylineOptions: {
