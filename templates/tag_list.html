@@ -47,11 +47,11 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 function createIcon(name){
   const svg = `\
-  <svg xmlns="http://www.w3.org/2000/svg" width="140" height="50">
-    <rect x="10" y="5" width="120" height="40" rx="5" ry="5" fill="#0d6efd" fill-opacity="0.1" stroke-width="0" />
-    <text x="70" y="30" font-size="14" text-anchor="middle" fill="#0d6efd">${name}</text>
+  <svg xmlns="http://www.w3.org/2000/svg" width="110" height="40">
+    <rect x="5" y="5" width="100" height="30" rx="5" ry="5" fill="#0d6efd" fill-opacity="0.1" stroke-width="0" />
+    <text x="55" y="25" font-size="14" text-anchor="middle" fill="#0d6efd">${name}</text>
   </svg>`;
-  return L.divIcon({html: svg, className: '', iconSize:[140,50], iconAnchor:[70,50]});
+  return L.divIcon({html: svg, className: '', iconSize:[110,40], iconAnchor:[55,40]});
 }
 const markers = L.markerClusterGroup({
   spiderLegPolylineOptions: {
