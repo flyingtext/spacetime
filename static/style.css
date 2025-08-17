@@ -195,6 +195,21 @@ pre {
   width: 100%;
 }
 
+.citation-table th:first-child,
+.citation-table td:first-child {
+  width: 45%;
+}
+
+.citation-table th:nth-child(2),
+.citation-table td:nth-child(2) {
+  width: 10%;
+}
+
+.citation-table th:nth-child(3),
+.citation-table td:nth-child(3) {
+  width: 45%;
+}
+
 .citation-table th,
 .citation-table td {
   word-break: break-word;
