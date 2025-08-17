@@ -2,6 +2,7 @@ import difflib
 import json
 import os
 import re
+import asyncio
 import markdown
 import math
 from collections import Counter
@@ -32,6 +33,7 @@ from markdown.inlinepatterns import InlineProcessor
 from markdown.blockprocessors import OListProcessor
 from markupsafe import Markup, escape
 import requests
+import httpx
 from habanero import Crossref
 import bibtexparser
 from types import SimpleNamespace
@@ -229,6 +231,9 @@ STOPWORDS: dict[str, set[str]] = {
 }
 
 
+CROSSREF_CONCURRENCY = 5
+
+
 def extract_keywords(sentence: str, max_words: int = 5) -> list[str]:
     """Return up to ``max_words`` keywords from *sentence*.
 
@@ -253,53 +258,70 @@ def extract_keywords(sentence: str, max_words: int = 5) -> list[str]:
     return [w for w, _ in freq.most_common(max_words)]
 
 
-def suggest_citations(markdown_text: str) -> dict[str, list[dict]]:
+async def suggest_citations(markdown_text: str) -> dict[str, list[dict]]:
     """Split markdown text into sentences and return BibTeX suggestions.
 
-    Each sentence is queried against Crossref sequentially. For every result
-    the BibTeX is fetched and parsed into a dict with ``text`` and ``part``
-    (fields without ID/ENTRYTYPE). Sentences with no suggestions are skipped.
-
-    The query to Crossref is built from high‑frequency words within each
-    sentence rather than the full sentence text.
+    Sentences are queried against Crossref concurrently with a limited number
+    of simultaneous requests. For every result the BibTeX is fetched and parsed
+    into a dict with ``text`` and ``part`` (fields without ID/ENTRYTYPE).
+    Sentences with no suggestions are skipped. The query to Crossref is built
+    from high‑frequency words within each sentence rather than the full
+    sentence text.
     """
 
     sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", markdown_text) if s.strip()]
     results: dict[str, list[dict]] = {}
-    for sentence in sentences:
-        keywords = extract_keywords(sentence)
-        if not keywords:
-            continue
-        query = " ".join(keywords)
-        try:
-            query_res = cr.works(query=query, limit=3)
-        except Exception:
-            continue
-        items = query_res.get("message", {}).get("items", [])
-        candidates: list[dict] = []
-        for item in items:
-            doi = normalize_doi(item.get("DOI"))
-            if not doi:
-                continue
-            url = f"https://api.crossref.org/works/{doi}/transform/application/x-bibtex"
+    semaphore = asyncio.Semaphore(CROSSREF_CONCURRENCY)
+
+    async with httpx.AsyncClient() as client:
+        async def process_sentence(sentence: str) -> tuple[str, list[dict]]:
+            keywords = extract_keywords(sentence)
+            if not keywords:
+                return sentence, []
+            query = " ".join(keywords)
             try:
-                resp = requests.get(url, timeout=10)
+                async with semaphore:
+                    resp = await client.get(
+                        "https://api.crossref.org/works",
+                        params={"query": query, "rows": 3},
+                        timeout=10,
+                    )
             except Exception:
-                continue
+                return sentence, []
             if resp.status_code != 200:
-                continue
-            bibtex = resp.text.strip()
-            try:
-                bib_db = bibtexparser.loads(bibtex)
-                entry = bib_db.entries[0] if bib_db.entries else {}
-            except Exception:
-                entry = {}
-            entry.pop("ID", None)
-            entry.pop("ENTRYTYPE", None)
-            entry['doi'] = doi
-            candidates.append({"text": bibtex, "part": entry, "doi": doi})
-        if candidates:
-            results[sentence] = candidates
+                return sentence, []
+            data = resp.json()
+            items = data.get("message", {}).get("items", [])
+            candidates: list[dict] = []
+            for item in items:
+                doi = normalize_doi(item.get("DOI"))
+                if not doi:
+                    continue
+                url = f"https://api.crossref.org/works/{doi}/transform/application/x-bibtex"
+                try:
+                    async with semaphore:
+                        bib_resp = await client.get(url, timeout=10)
+                except Exception:
+                    continue
+                if bib_resp.status_code != 200:
+                    continue
+                bibtex = bib_resp.text.strip()
+                try:
+                    bib_db = bibtexparser.loads(bibtex)
+                    entry = bib_db.entries[0] if bib_db.entries else {}
+                except Exception:
+                    entry = {}
+                entry.pop("ID", None)
+                entry.pop("ENTRYTYPE", None)
+                entry["doi"] = doi
+                candidates.append({"text": bibtex, "part": entry, "doi": doi})
+            return sentence, candidates
+
+        tasks = [process_sentence(sentence) for sentence in sentences]
+        for sentence, candidates in await asyncio.gather(*tasks):
+            if candidates:
+                results[sentence] = candidates
+
     return results
 
 
@@ -1976,16 +1998,16 @@ def geocode():
 
 
 @app.route('/citation/suggest', methods=['POST'])
-def citation_suggest():
+async def citation_suggest():
     data = request.get_json() or {}
     text = data.get('text', '').strip()
     if not text:
         return {'error': _('Text is required')}, 400
-    return {'results': suggest_citations(text)}
+    return {'results': await suggest_citations(text)}
 
 
 @app.route('/citation/suggest_line', methods=['POST'])
-def citation_suggest_line():
+async def citation_suggest_line():
     """Return citation suggestions for a single line of text.
 
     The client can call this endpoint repeatedly for each line so that
@@ -1996,7 +2018,7 @@ def citation_suggest_line():
     line = data.get('line', '').strip()
     if not line:
         return {'error': _('Text is required')}, 400
-    return {'results': suggest_citations(line)}
+    return {'results': await suggest_citations(line)}
 
 
 @app.route('/citation/fetch', methods=['POST'])
