@@ -1,0 +1,44 @@
+/* Print-specific styles */
+
+/* Basic layout for print */
+body {
+  background: #fff;
+  color: #000;
+  font-size: 12pt;
+  margin: 0;
+}
+
+/* Hide navigation and interactive elements */
+.navbar,
+#spinner-overlay,
+#theme-toggle,
+#reading-breadcrumb,
+.btn,
+.dropdown-menu,
+.offcanvas,
+.pagination {
+  display: none !important;
+}
+
+/* Ensure content tables are full width */
+.metadata-table,
+.citation-table {
+  width: 100%;
+  font-size: 10pt;
+}
+
+/* Map sizing for print */
+#map,
+#map-offcanvas,
+#map-modal {
+  height: 300px;
+  width: 100%;
+}
+
+/* Quote styling */
+blockquote {
+  border-left: 3px solid #ccc;
+  padding-left: 1em;
+  margin-left: 0;
+  font-style: italic;
+}
