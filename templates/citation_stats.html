@@ -8,6 +8,8 @@
     <td>
       {% if item.doi %}
         <a href="https://doi.org/{{ item.doi }}">{{ item.doi }}</a>
+      {% elif item.citation_text.startswith('http://') or item.citation_text.startswith('https://') %}
+        <a href="{{ item.citation_text }}">{{ item.citation_text }}</a>
       {% else %}
         <a href="https://scholar.google.com/scholar?q={{ item.citation_text | urlencode }}">{{ item.citation_text }}</a>
       {% endif %}

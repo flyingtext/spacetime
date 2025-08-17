@@ -52,6 +52,18 @@ def test_citation_links(client):
                 bibtex_fields={'title': 'title2'},
             )
         )
+        db.session.add(
+            PostCitation(
+                post_id=post.id,
+                user_id=user.id,
+                citation_part={'title': 'title3'},
+                citation_text='https://www.nec.go.kr/portal/bbs/view/B000000000000001?nttId=12345',
+                context='',
+                doi=None,
+                bibtex_raw='@article{c}',
+                bibtex_fields={'title': 'title3'},
+            )
+        )
         db.session.commit()
 
     resp = client.get('/citations/stats')
@@ -59,3 +71,4 @@ def test_citation_links(client):
     html = resp.data.decode('utf-8')
     assert 'href="https://doi.org/10.1000/xyz"' in html
     assert 'href="https://scholar.google.com/scholar?q=No%20DOI"' in html
+    assert 'href="https://www.nec.go.kr/portal/bbs/view/B000000000000001?nttId=12345"' in html
