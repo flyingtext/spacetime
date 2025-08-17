@@ -22,19 +22,39 @@ mapDiv.style.top = navHeight + 'px';
 mapDiv.style.left = '0';
 mapDiv.style.right = '0';
 mapDiv.style.bottom = '0';
+
 const infoDiv = document.getElementById('tag-info');
 const infoContent = document.getElementById('tag-info-content');
 const closeBtn = document.getElementById('tag-info-close');
 
-infoDiv.style.position = 'fixed';
-infoDiv.style.top = navHeight + 'px';
-infoDiv.style.left = '0';
-infoDiv.style.right = '0';
-infoDiv.style.background = 'rgba(255,255,255,0.9)';
-infoDiv.style.zIndex = '1000';
-infoDiv.style.maxHeight = '30vh';
-infoDiv.style.overflowY = 'auto';
-infoDiv.style.color = '#000';
+function positionInfoDiv(){
+  infoDiv.style.position = 'fixed';
+  infoDiv.style.top = navHeight + 'px';
+  infoDiv.style.background = 'rgba(255,255,255,0.9)';
+  infoDiv.style.zIndex = '1000';
+  infoDiv.style.overflowY = 'auto';
+  infoDiv.style.color = '#000';
+  if(window.innerWidth >= 768){
+    infoDiv.style.left = 'auto';
+    infoDiv.style.right = '10px';
+    infoDiv.style.width = '400px';
+    infoDiv.style.maxHeight = '50vh';
+    infoDiv.style.border = '1px solid rgba(0,0,0,0.1)';
+    infoDiv.style.borderRadius = '0.5rem';
+    infoDiv.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+  } else {
+    infoDiv.style.left = '0';
+    infoDiv.style.right = '0';
+    infoDiv.style.width = 'auto';
+    infoDiv.style.maxHeight = '30vh';
+    infoDiv.style.border = 'none';
+    infoDiv.style.borderRadius = '0';
+    infoDiv.style.boxShadow = 'none';
+  }
+}
+
+positionInfoDiv();
+window.addEventListener('resize', positionInfoDiv);
 
 closeBtn.addEventListener('click', () => {
   infoDiv.style.display = 'none';
