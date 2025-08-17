@@ -1844,6 +1844,57 @@ def fetch_citation():
     return {'part': entry, 'text': bibtex}
 
 
+@app.route('/api/posts/<int:post_id>/citation', methods=['POST'])
+@login_required
+def api_add_url_citation(post_id: int):
+    post = Post.query.get_or_404(post_id)
+    if not request.is_json:
+        return jsonify({'error': 'invalid JSON'}), 400
+    data = request.get_json() or {}
+    url = (data.get('url') or '').strip()
+    context = (data.get('context') or '').strip()
+    if not url or not is_url(url):
+        return jsonify({'error': 'valid URL required'}), 400
+    existing = PostCitation.query.filter_by(post_id=post.id, citation_text=url).first()
+    if not existing:
+        existing = UserPostCitation.query.filter_by(post_id=post.id, citation_text=url).first()
+    if existing:
+        return jsonify({'error': 'Citation with this URL already exists.'}), 400
+    entry = {'url': url}
+    if current_user.id == post.author_id or current_user.is_admin():
+        citation = PostCitation(
+            post=post,
+            user=current_user,
+            citation_part=entry,
+            citation_text=url,
+            context=context,
+            doi=None,
+            bibtex_raw=url,
+            bibtex_fields=entry,
+        )
+    else:
+        citation = UserPostCitation(
+            post=post,
+            user=current_user,
+            citation_part=entry,
+            citation_text=url,
+            context=context,
+            doi=None,
+            bibtex_raw=url,
+            bibtex_fields=entry,
+        )
+    db.session.add(citation)
+    watcher_ids = {w.user_id for w in PostWatch.query.filter_by(post_id=post.id).all()}
+    watcher_ids.add(post.author_id)
+    link = url_for('post_detail', post_id=post.id)
+    for uid in watcher_ids:
+        if uid != current_user.id:
+            msg = _('Citation added to "%(title)s".', title=post.title)
+            db.session.add(Notification(user_id=uid, message=msg, link=link))
+    db.session.commit()
+    return jsonify({'id': citation.id, 'url': url}), 201
+
+
 @app.route('/post/<int:post_id>/citation/new', methods=['POST'])
 @login_required
 def new_citation(post_id: int):

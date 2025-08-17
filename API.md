@@ -23,6 +23,7 @@ This document lists the HTTP endpoints provided by the Spacetime application.
 | `/post/<int:post_id>/citation/<int:cid>/delete` | `POST` | Delete a citation from a post |
 | `/post/<int:post_id>/citation/<int:cid>/edit` | `GET, POST` | Edit an existing citation |
 | `/post/<int:post_id>/citation/new` | `POST` | Add a new citation to a post |
+| `/api/posts/<int:post_id>/citation` | `POST` | Add a citation to a post via URL |
 | `/post/<int:post_id>/delete` | `POST` | Delete the specified post |
 | `/post/<int:post_id>/diff/<int:rev_id>` | `GET` | Show differences for a revision |
 | `/post/<int:post_id>/edit` | `GET, POST` | Edit an existing post |
@@ -132,6 +133,9 @@ Revert a post to the specified revision.
 
 ### `/post/<int:post_id>/citation/new` (`POST`)
 Add a citation to a post. Requires `citation_text` and optional `citation_context` fields.
+
+### `/api/posts/<int:post_id>/citation` (`POST`)
+Add a citation to a post by providing a URL in JSON. Requires `url` and optional `context` fields.
 
 ### `/post/<int:post_id>/citation/<int:cid>/edit` (`GET, POST`)
 Edit an existing citation. Accepts the same fields as the new citation endpoint.
@@ -358,4 +362,28 @@ Response
   "part": {"title": "The Meaning of Relativity", "doi": "10.1000/rel"},
   "text": "@book{...}"
 }
+```
+
+### `/api/posts/<int:post_id>/citation` (`POST`)
+
+Add a citation to a post using a URL.
+
+**Parameters**
+
+- `url` (string, required) – citation URL
+- `context` (string, optional) – citation context
+
+**Example**
+
+```http
+POST /api/posts/1/citation
+Content-Type: application/json
+
+{"url": "https://example.com", "context": "Intro"}
+```
+
+Response
+
+```json
+{"id": 1, "url": "https://example.com"}
 ```
