@@ -11,6 +11,7 @@ def client():
     app.config['TESTING'] = True
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
     with app.app_context():
+        db.drop_all()
         db.create_all()
         user = User(username='u')
         user.set_password('pw')
@@ -23,11 +24,9 @@ def client():
         )
         db.session.add_all([user, post])
         db.session.flush()
-        db.session.add_all([
-            PostMetadata(post=post, key='k', value='v'),
-            PostMetadata(post=post, key='lat', value='10'),
-            PostMetadata(post=post, key='lon', value='20'),
-        ])
+        post.latitude = 10.0
+        post.longitude = 20.0
+        db.session.add(PostMetadata(post=post, key='k', value='v'))
         db.session.commit()
     with app.test_client() as client:
         yield client
@@ -44,6 +43,10 @@ def test_metadata_table_under_toc(client):
     assert '<table' in nav_html
     assert 'k' in nav_html
     assert 'v' in nav_html
+    assert 'Latitude' in nav_html
+    assert '10.0' in nav_html
+    assert 'Longitude' in nav_html
+    assert '20.0' in nav_html
 
 
 def test_map_and_location_moved_under_toc(client):
