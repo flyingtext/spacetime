@@ -10,7 +10,9 @@ from app import app, db, User, Post, Setting
 def client():
     app.config['TESTING'] = True
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    app.config['LANGUAGES'] = ['en', 'ko']
     with app.app_context():
+        db.drop_all()
         db.create_all()
     with app.test_client() as client:
         yield client
@@ -31,7 +33,29 @@ def test_home_page_redirect(client):
 
     resp = client.get('/')
     assert resp.status_code == 302
-    assert resp.headers['Location'].endswith('/en/home')
+    assert resp.headers['Location'].endswith('/docs/en/home')
+
+
+def test_home_page_redirect_ko_locale(client):
+    with app.app_context():
+        user = User(username='author')
+        user.set_password('pw')
+        db.session.add(user)
+        db.session.commit()
+        post = Post(
+            title='Spacetime',
+            body='Content',
+            path='spacetime',
+            language='ko',
+            author=user,
+        )
+        db.session.add(post)
+        db.session.add(Setting(key='home_page_path', value='spacetime'))
+        db.session.commit()
+
+    resp = client.get('/', headers={'Accept-Language': 'ko'})
+    assert resp.status_code == 302
+    assert resp.headers['Location'].endswith('/docs/ko/spacetime')
 
 
 def test_updating_home_page_path_preserves_site_title(client):
