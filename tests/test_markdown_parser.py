@@ -38,6 +38,15 @@ def test_render_markdown_preserves_list_numbers():
     assert 'value="2"' not in html
 
 
+def test_render_markdown_blank_numbered_item_becomes_unordered():
+    html, _ = render_markdown('1. one\n2. two\n3. ')
+    assert '<ol>' not in html
+    assert '<ul>' in html
+    assert '<li>one</li>' in html
+    assert '<li>two</li>' in html
+    assert '<li></li>' not in html
+
+
 @pytest.fixture
 def client():
     app.config['TESTING'] = True
