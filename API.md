@@ -32,6 +32,7 @@ This document lists the HTTP endpoints provided by the Spacetime application.
 | `/post/<int:post_id>/watch` | `POST` | Watch a post for changes |
 | `/post/<string:language>/<path:doc_path>` | `GET` | View a post by language and path |
 | `/post/new` | `GET, POST` | Create a new post |
+| `/api/posts` | `POST` | Create a new post via JSON |
 | `/post/request` | `GET, POST` | Request that a post be created |
 | `/posts` | `GET` | List all posts |
 | `/posts/requested` | `GET` | List user requested posts |
@@ -93,6 +94,11 @@ List all posts for administrative review.
 Create a new post. POST fields include `title`, `body`, `path`, `language`, `comment`,
 `tags` (comma-separated), optional `metadata` and `user_metadata` JSON strings, and
 optional `lat`/`lon` coordinates.
+
+### `/api/posts` (`POST`)
+Create a new post using a JSON body. Accepts `title` and `body` fields, with optional
+`path`, `language`, and `tags` (comma-separated string or list). Returns basic
+information about the created post.
 
 ### `/post/<int:post_id>` (`GET`)
 View an individual post by ID.
@@ -197,6 +203,34 @@ Response
 
 ```json
 {"html": "<p><a href=\"/es/Page\">Page</a></p>"}
+```
+
+### `/api/posts` (`POST`)
+
+Create a new post with Markdown content.
+
+**Parameters**
+
+- `title` (string, required) – post title
+- `body` (string, required) – Markdown body
+- `path` (string, optional) – desired URL path
+- `language` (string, optional) – language code
+
+**Example**
+
+Request
+
+```http
+POST /api/posts
+Content-Type: application/json
+
+{"title": "API Title", "body": "API Body", "path": "api-path", "language": "en"}
+```
+
+Response
+
+```json
+{"id": 1, "path": "api-path", "language": "en", "title": "API Title"}
 ```
 
 ### `/og` (`GET`)

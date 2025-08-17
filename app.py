@@ -1466,6 +1466,80 @@ def create_post():
     )
 
 
+@app.route('/api/posts', methods=['POST'])
+@login_required
+def api_create_post():
+    if not current_user.can_edit_posts():
+        return jsonify({'error': 'forbidden'}), 403
+    if not request.is_json:
+        return jsonify({'error': 'invalid JSON'}), 400
+    data = request.get_json() or {}
+    title = (data.get('title') or '').strip()
+    body = (data.get('body') or '').strip()
+    path = (data.get('path') or '').strip()
+    language = (data.get('language') or '').strip()
+    if not title or not body:
+        return jsonify({'error': 'title and body required'}), 400
+    if language not in app.config['LANGUAGES']:
+        try:
+            language = detect(body)
+        except LangDetectException:
+            language = app.config['BABEL_DEFAULT_LOCALE']
+        if language not in app.config['LANGUAGES']:
+            language = app.config['BABEL_DEFAULT_LOCALE']
+    if not path or Post.query.filter_by(path=path, language=language).first():
+        path = generate_unique_path(title, language)
+    tags_input = data.get('tags', [])
+    if isinstance(tags_input, str):
+        tag_names = [t.strip() for t in tags_input.split(',') if t.strip()]
+    else:
+        tag_names = [
+            t.strip() for t in tags_input if isinstance(t, str) and t.strip()
+        ]
+    tags = []
+    for name in tag_names:
+        tag = Tag.query.filter_by(name=name).first()
+        if not tag:
+            tag = Tag(name=name)
+            db.session.add(tag)
+        tags.append(tag)
+    post = Post(
+        title=title,
+        body=body,
+        path=path,
+        language=language,
+        author=current_user,
+        tags=tags,
+    )
+    db.session.add(post)
+    db.session.flush()
+    update_post_links(post)
+    comment = (data.get('comment') or '').strip()
+    rev = Revision(
+        post=post,
+        user=current_user,
+        title=title,
+        body=body,
+        path=path,
+        language=language,
+        comment=comment,
+        byte_change=len(body),
+    )
+    db.session.add(rev)
+    db.session.commit()
+    return (
+        jsonify(
+            {
+                'id': post.id,
+                'path': post.path,
+                'language': post.language,
+                'title': post.title,
+            }
+        ),
+        201,
+    )
+
+
 @app.route('/post/<int:post_id>')
 def post_detail(post_id: int):
     post = Post.query.get_or_404(post_id)
