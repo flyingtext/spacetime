@@ -178,6 +178,14 @@ msgstr "Número de usos"
 msgid "Posts"
 msgstr "Publicaciones"
 
+#: templates/admin/stats.html:2 templates/admin/stats.html:4 templates/base.html:27
+msgid "Statistics"
+msgstr "Estadísticas"
+
+#: templates/admin/stats.html:6
+msgid "Users"
+msgstr "Usuarios"
+
 #: templates/diff.html:2
 msgid "Diff"
 msgstr "Diferencia"

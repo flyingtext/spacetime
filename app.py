@@ -2329,6 +2329,20 @@ def admin_posts():
     return render_template('admin/posts.html', pagination=pagination, q=q)
 
 
+@app.route('/admin/stats')
+@login_required
+def admin_stats():
+    if not current_user.is_admin():
+        abort(403)
+    stats = {
+        'users': User.query.count(),
+        'posts': Post.query.count(),
+        'tags': Tag.query.count(),
+        'citations': PostCitation.query.count(),
+    }
+    return render_template('admin/stats.html', stats=stats)
+
+
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
