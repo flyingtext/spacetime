@@ -2562,7 +2562,11 @@ def settings():
 
 @app.route('/tags')
 def tag_list():
-    tags = Tag.query.order_by(Tag.name).all()
+    tags = (
+        Tag.query.filter(~Tag.name.in_(['deleted', '[deleted]']))
+        .order_by(Tag.name)
+        .all()
+    )
     tag_locations = []
     tag_info = []
     tag_posts_data = []
