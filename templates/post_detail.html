@@ -22,14 +22,17 @@
         <h3>{{ _('Common') }}</h3>
         <table class="table table-sm metadata-table">
           <tbody>
-            {% for key, value in metadata.items() %}
-            <tr><th scope="row">{{ key }}</th><td>{{ value|format_metadata }}</td></tr>
-            {% endfor %}
-            {% if lat is not none and lon is not none %}
-            <tr><th scope="row">{{ _('Latitude') }}</th><td>{{ lat }}</td></tr>
-            <tr><th scope="row">{{ _('Longitude') }}</th><td>{{ lon }}</td></tr>
-            {% endif %}
-            {% if locations %}
+                {% for key, value in metadata.items() %}
+                <tr><th scope="row">{{ key }}</th><td>{{ value|format_metadata }}</td></tr>
+                {% endfor %}
+                {% if lat is not none and lon is not none %}
+                {% if address %}
+                <tr><th scope="row">{{ _('Location') }}</th><td>{{ address }} <span class="text-muted">({{ lat }}, {{ lon }})</span></td></tr>
+                {% endif %}
+                <tr><th scope="row">{{ _('Latitude') }}</th><td>{{ lat }}</td></tr>
+                <tr><th scope="row">{{ _('Longitude') }}</th><td>{{ lon }}</td></tr>
+                {% endif %}
+                {% if locations %}
               {% for loc in locations %}
               <tr>
                 <th scope="row">{{ _('Location') }}</th>
@@ -80,6 +83,9 @@
               <tr><th scope="row">{{ key }}</th><td>{{ value|format_metadata }}</td></tr>
               {% endfor %}
               {% if lat is not none and lon is not none %}
+              {% if address %}
+              <tr><th scope="row">{{ _('Location') }}</th><td>{{ address }} <span class="text-muted">({{ lat }}, {{ lon }})</span></td></tr>
+              {% endif %}
               <tr><th scope="row">{{ _('Latitude') }}</th><td>{{ lat }}</td></tr>
               <tr><th scope="row">{{ _('Longitude') }}</th><td>{{ lon }}</td></tr>
               {% endif %}
@@ -142,6 +148,9 @@
       <tr><th scope="row">{{ key }}</th><td>{{ value|format_metadata }}</td></tr>
       {% endfor %}
       {% if lat is not none and lon is not none %}
+      {% if address %}
+      <tr><th scope="row">{{ _('Location') }}</th><td>{{ address }} <span class="text-muted">({{ lat }}, {{ lon }})</span></td></tr>
+      {% endif %}
       <tr><th scope="row">{{ _('Latitude') }}</th><td>{{ lat }}</td></tr>
       <tr><th scope="row">{{ _('Longitude') }}</th><td>{{ lon }}</td></tr>
       {% endif %}
