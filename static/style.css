@@ -132,10 +132,11 @@ textarea::placeholder,
 }
 
 .toc-container {
-  border: 1px solid var(--border-color);
+  border: none;
+  border-right: 1px solid var(--border-color);
   padding: 10px;
   margin-right: 20px;
-  background: var(--toc-bg-color);
+  background: transparent;
   min-width: 280px;
 }
 
@@ -310,6 +311,23 @@ body.map-fullscreen-active {
 
 .tag-card h5 {
   margin: 0 0 0.5rem 0;
+}
+
+.tag-pill {
+  display: inline-block;
+  padding: 0.1rem 0.6rem;
+  margin-right: 0.25rem;
+  background-color: var(--nav-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 50rem;
+  color: var(--text-color);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.tag-pill:hover {
+  background-color: var(--toc-bg-color);
+  text-decoration: none;
 }
 
 footer {
