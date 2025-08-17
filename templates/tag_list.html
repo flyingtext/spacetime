@@ -31,6 +31,7 @@
   <button id="tag-info-close" type="button" class="btn-close" aria-label="Close" style="position:absolute; top:8px; right:8px;"></button>
   <div id="tag-info-content" class="p-3"></div>
 </div>
+<input type="search" id="tag-search" class="form-control" placeholder="{{ _('Search tags...') }}">
 <div id="tag-map"></div>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
@@ -47,6 +48,13 @@ const infoDiv = document.getElementById('tag-info');
 const infoContent = document.getElementById('tag-info-content');
 const closeBtn = document.getElementById('tag-info-close');
 const dragHandle = document.getElementById('tag-info-handle');
+const searchInput = document.getElementById('tag-search');
+
+searchInput.style.position = 'fixed';
+searchInput.style.top = navHeight + 10 + 'px';
+searchInput.style.left = '10px';
+searchInput.style.zIndex = '1000';
+searchInput.style.maxWidth = '250px';
 
 function positionInfoDiv(){
   if(infoDiv.dataset.dragged === 'true') return;
@@ -152,6 +160,7 @@ const markers = L.markerClusterGroup({
     });
   }
 });
+const allMarkers = [];
   tagLocations.forEach(t => {
     const marker = L.marker([t.lat, t.lon], {icon: createIcon(t.name)});
     marker.on('click', () => {
@@ -171,8 +180,25 @@ const markers = L.markerClusterGroup({
         positionInfoDiv();
       }
     });
+    marker.tagName = t.name;
     markers.addLayer(marker);
+    allMarkers.push(marker);
   });
 map.addLayer(markers);
+
+searchInput.addEventListener('keyup', () => {
+  const term = searchInput.value.toLowerCase();
+  markers.clearLayers();
+  const matches = [];
+  allMarkers.forEach(m => {
+    if (m.tagName.toLowerCase().includes(term)) {
+      markers.addLayer(m);
+      matches.push(m);
+    }
+  });
+  if (term && matches.length) {
+    map.setView(matches[0].getLatLng(), 8);
+  }
+});
 </script>
 {% endblock %}
