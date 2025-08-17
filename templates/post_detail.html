@@ -214,25 +214,25 @@
 <section>
   <h2>{{ _('Add Citation') }}</h2>
   <form id="citation-form" action="{{ url_for('new_citation', post_id=post.id) }}" method="post">
-    <div class="mb-3 d-flex gap-2">
-      <input type="text" id="citation-title" placeholder="{{ _('Title') }}" class="form-control" />
-      <button type="button" id="fetch-citation" class="btn btn-secondary">{{ _('Fetch Citation') }}</button>
+    <div class="mb-2 d-flex gap-1">
+      <input type="text" id="citation-title" placeholder="{{ _('Title') }}" class="form-control form-control-sm" />
+      <button type="button" id="fetch-citation" class="btn btn-sm btn-secondary">{{ _('Fetch Citation') }}</button>
     </div>
-    <div class="mb-3">
-      <textarea id="citation-part" name="citation_part" placeholder="{{ _('Citation part (JSON)') }}" rows="4" cols="50" class="form-control"></textarea>
+    <div class="mb-2">
+      <textarea id="citation-part" name="citation_part" placeholder="{{ _('Citation part (JSON)') }}" rows="3" cols="50" class="form-control form-control-sm"></textarea>
     </div>
-    <div class="mb-3">
-      <textarea id="citation-text" name="citation_text" placeholder="{{ _('Citation text') }}" rows="4" cols="50" class="form-control"></textarea>
+    <div class="mb-2">
+      <textarea id="citation-text" name="citation_text" placeholder="{{ _('Citation text') }}" rows="3" cols="50" class="form-control form-control-sm"></textarea>
     </div>
-    <div class="mb-3 d-flex gap-2">
-      <input type="url" id="citation-url" placeholder="{{ _('Citation URL') }}" class="form-control" />
-      <button type="button" id="add-url-citation" class="btn btn-secondary">{{ _('Add URL Citation') }}</button>
+    <div class="mb-2 d-flex gap-1">
+      <input type="url" id="citation-url" placeholder="{{ _('Citation URL') }}" class="form-control form-control-sm" />
+      <button type="button" id="add-url-citation" class="btn btn-sm btn-secondary">{{ _('Add URL Citation') }}</button>
     </div>
-    <div class="mb-3">
-      <input type="text" id="citation-context" name="citation_context" placeholder="{{ _('Citation context') }}" class="form-control" />
+    <div class="mb-2">
+      <input type="text" id="citation-context" name="citation_context" placeholder="{{ _('Citation context') }}" class="form-control form-control-sm" />
     </div>
-    <div class="mb-3">
-      <button type="submit" class="btn btn-primary">{{ _('Add Citation') }}</button>
+    <div class="mb-2">
+      <button type="submit" class="btn btn-sm btn-primary">{{ _('Add Citation') }}</button>
     </div>
   </form>
   <script>

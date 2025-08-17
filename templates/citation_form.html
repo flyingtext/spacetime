@@ -3,17 +3,17 @@
 {% block content %}
 <h1>{{ _('%(action)s Citation for %(title)s', action=action, title=post.display_title) }}</h1>
 <form method="post" onsubmit="return confirm('{{ _('Are you sure?') }}');">
-  <div class="mb-3">
-    <textarea name="citation_part" placeholder="{{ _('Citation part (JSON)') }}" rows="5" cols="50" class="form-control">{{ citation_part if citation_part else '' }}</textarea>
+  <div class="mb-2">
+    <textarea name="citation_part" placeholder="{{ _('Citation part (JSON)') }}" rows="3" cols="50" class="form-control form-control-sm">{{ citation_part if citation_part else '' }}</textarea>
   </div>
-  <div class="mb-3">
-    <textarea name="citation_text" placeholder="{{ _('Citation text') }}" rows="5" cols="50" class="form-control">{{ citation.citation_text if citation else '' }}</textarea>
+  <div class="mb-2">
+    <textarea name="citation_text" placeholder="{{ _('Citation text') }}" rows="3" cols="50" class="form-control form-control-sm">{{ citation.citation_text if citation else '' }}</textarea>
   </div>
-  <div class="mb-3">
-    <input type="text" name="citation_context" placeholder="{{ _('Citation context') }}" value="{{ citation.context if citation else '' }}" class="form-control" />
+  <div class="mb-2">
+    <input type="text" name="citation_context" placeholder="{{ _('Citation context') }}" value="{{ citation.context if citation else '' }}" class="form-control form-control-sm" />
   </div>
-  <div class="mb-3">
-    <button type="submit" class="btn btn-primary">{{ action }}</button>
+  <div class="mb-2">
+    <button type="submit" class="btn btn-sm btn-primary">{{ action }}</button>
   </div>
 </form>
 {% endblock %}
