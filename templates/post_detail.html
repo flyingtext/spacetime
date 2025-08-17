@@ -457,6 +457,11 @@ document.addEventListener('DOMContentLoaded', () => {
       document.body.classList.toggle('map-fullscreen-active');
       setTimeout(() => map.invalidateSize(), 200);
     };
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && el.classList.contains('map-fullscreen')) {
+        toggleFullscreen();
+      }
+    });
     const fullscreenControl = L.control({position: 'topleft'});
     fullscreenControl.onAdd = () => {
       const btn = L.DomUtil.create('button', 'btn btn-sm btn-light');
