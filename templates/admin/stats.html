@@ -8,4 +8,39 @@
   <tr><th>{{ _('Tags') }}</th><td>{{ stats.tags }}</td></tr>
   <tr><th>{{ _('Citations') }}</th><td>{{ stats.citations }}</td></tr>
 </table>
+
+<h2>{{ _('Posts over time') }}</h2>
+<select id="period" class="form-select mb-3" style="width:auto;">
+  <option value="daily">{{ _('Daily') }}</option>
+  <option value="weekly">{{ _('Weekly') }}</option>
+  <option value="monthly">{{ _('Monthly') }}</option>
+  <option value="yearly">{{ _('Yearly') }}</option>
+</select>
+<canvas id="postsChart" width="400" height="150"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+async function fetchData(period) {
+  const resp = await fetch('{{ url_for('admin_stats_posts_over_time') }}');
+  const data = await resp.json();
+  const ctx = document.getElementById('postsChart');
+  const labels = data[period].map(x => x.period);
+  const counts = data[period].map(x => x.count);
+  if (window.postsChart) window.postsChart.destroy();
+  window.postsChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: '{{ _('Posts') }}',
+        data: counts,
+        borderColor: 'rgba(75, 192, 192, 1)',
+        tension: 0.1,
+        fill: false
+      }]
+    }
+  });
+}
+document.getElementById('period').addEventListener('change', e => fetchData(e.target.value));
+fetchData('daily');
+</script>
 {% endblock %}

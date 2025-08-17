@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import datetime, timedelta
 import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -33,6 +34,21 @@ def test_admin_stats_counts(client):
     assert resp.status_code == 200
     assert b'Users</th><td>2' in resp.data
     assert b'Posts</th><td>1' in resp.data
+
+
+def test_admin_stats_time_series_json(client):
+    with app.app_context():
+        user = User.query.filter_by(username='user').first()
+        older = datetime.utcnow() - timedelta(days=1)
+        post2 = Post(title='T2', body='B2', path='p2', language='en', author=user, created_at=older)
+        db.session.add(post2)
+        db.session.commit()
+    resp = client.get('/admin/stats/posts_over_time')
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert 'daily' in data and 'weekly' in data and 'monthly' in data and 'yearly' in data
+    daily_counts = {item['period']: item['count'] for item in data['daily']}
+    assert len(daily_counts) >= 2
 
 
 @pytest.fixture
