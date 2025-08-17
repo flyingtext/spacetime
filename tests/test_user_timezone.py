@@ -58,3 +58,14 @@ def test_profile_timezone_and_locale(client):
     assert '09:00' in data
     assert 'KST' in data
 
+
+def test_profile_timezone_case_insensitive(client):
+    client.post('/user/u', data={'bio': '', 'locale': 'es', 'timezone': 'asia/seoul'})
+    resp = client.get('/user/u')
+    data = resp.get_data(as_text=True)
+    assert 'Timezone' in data
+    assert 'Asia/Seoul' in data
+    with app.app_context():
+        user = User.query.filter_by(username='u').first()
+        assert user.timezone == 'Asia/Seoul'
+

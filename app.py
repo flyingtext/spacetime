@@ -39,6 +39,7 @@ from dotenv import load_dotenv
 from geopy.geocoders import Nominatim
 from geopy.distance import distance as geopy_distance
 from langdetect import detect, DetectorFactory, LangDetectException
+import zoneinfo
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 load_dotenv()
@@ -919,6 +920,23 @@ def get_user_timezone() -> str:
     return get_setting('timezone', 'UTC') or 'UTC'
 
 
+def normalize_timezone(tz: str) -> str | None:
+    """Return a canonical timezone name or ``None`` if invalid.
+
+    Tries a direct lookup first and falls back to a case-insensitive match so
+    that users can enter names like ``asia/seoul``.
+    """
+    tz = tz.strip()
+    try:
+        ZoneInfo(tz)
+        return tz
+    except ZoneInfoNotFoundError:
+        for name in zoneinfo.available_timezones():
+            if name.lower() == tz.lower():
+                return name
+    return None
+
+
 @app.template_filter('format_datetime')
 def format_datetime(value: datetime, fmt: str = '%Y-%m-%d %H:%M') -> str:
     tz_name = get_user_timezone()
@@ -1139,8 +1157,12 @@ def recent_changes():
 def choose_timezone():
     tz = session.get('timezone', get_setting('timezone', 'UTC') or 'UTC')
     if request.method == 'POST':
-        tz = request.form.get('timezone', '').strip() or 'UTC'
-        session['timezone'] = tz
+        tz_input = request.form.get('timezone', '').strip() or 'UTC'
+        tz_norm = normalize_timezone(tz_input)
+        if tz_norm is None:
+            flash(_('Invalid timezone'))
+            return redirect(url_for('choose_timezone'))
+        session['timezone'] = tz_norm
         flash(_('Timezone updated.'))
         return redirect(url_for('choose_timezone'))
     return render_template('timezone.html', timezone=tz)
@@ -1216,12 +1238,11 @@ def profile(username: str):
         locale = request.form.get('locale', '').strip()
         user.locale = locale if locale in app.config['LANGUAGES'] else None
         tz = request.form.get('timezone', '').strip() or 'UTC'
-        try:
-            ZoneInfo(tz)
-            user.timezone = tz
-        except ZoneInfoNotFoundError:
+        tz_norm = normalize_timezone(tz)
+        if tz_norm is None:
             flash(_('Invalid timezone'))
             return redirect(url_for('profile', username=user.username))
+        user.timezone = tz_norm
         db.session.commit()
         flash(_('Profile updated'))
         return redirect(url_for('profile', username=user.username))
@@ -2136,7 +2157,12 @@ def settings():
 
         title = request.form.get('site_title', title).strip()
         home_page = request.form.get('home_page_path', home_page).strip()
-        timezone_value = request.form.get('timezone', timezone_value).strip() or 'UTC'
+        tz_input = request.form.get('timezone', timezone_value).strip() or 'UTC'
+        tz_norm = normalize_timezone(tz_input)
+        if tz_norm is None:
+            flash(_('Invalid timezone'))
+            return redirect(url_for('settings'))
+        timezone_value = tz_norm
         rss_enabled_val = 'rss_enabled' in request.form
         rss_limit = request.form.get('rss_limit', rss_limit).strip() or '20'
         head_tags_input = request.form.get('head_tags', head_tags)
@@ -2166,7 +2192,6 @@ def settings():
                 db.session.add(Setting(key='home_page_path', value=home_page))
 
         if 'timezone' in request.form:
-            timezone_value = request.form.get('timezone', '').strip() or 'UTC'
             tz_setting = Setting.query.filter_by(key='timezone').first()
             if tz_setting:
                 tz_setting.value = timezone_value
