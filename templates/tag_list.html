@@ -150,8 +150,8 @@ function createIcon(name){
   const height = 50;
   const svg = `\
   <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-    <rect x="${padding / 2}" y="5" width="${width - padding}" height="${height - 10}" fill="#001f3f" fill-opacity="0.5" stroke-width="0" />
-    <text x="${width / 2}" y="35" font-size="16" font-weight="bold" text-anchor="middle" fill="#fff">${name}</text>
+    <rect x="${padding / 2}" y="5" width="${width - padding}" height="${height - 10}" fill="var(--nav-bg-color)" fill-opacity="0.5" stroke-width="0" />
+    <text x="${width / 2}" y="35" font-size="16" font-weight="bold" text-anchor="middle" fill="var(--text-color)">${name}</text>
   </svg>`;
   return L.divIcon({html: svg, className: 'tag-icon', iconSize:[width,height], iconAnchor:[width/2,height]});
 }
