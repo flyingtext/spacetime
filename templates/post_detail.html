@@ -455,17 +455,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function initMap(el) {
     const map = L.map(el).setView([0, 0], 2);
-    const tiles = L.tileLayer(isDark() ? darkUrl : lightUrl, {
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
-    const updateTiles = () => {
-        tiles.setUrl(isDark() ? darkUrl : lightUrl);
-    };
-    const themeToggle = document.getElementById('theme-toggle');
-    if (themeToggle) {
-        themeToggle.addEventListener('click', () => setTimeout(updateTiles, 0));
-    }
     const layer = L.geoJSON(data).addTo(map);
     try {
       map.fitBounds(layer.getBounds());
