@@ -127,12 +127,16 @@ textarea::placeholder,
   opacity: 0.7;
 }
 
+.content-container {
+  max-width: 1500px;
+}
+
 .toc-container {
   border: 1px solid var(--border-color);
   padding: 10px;
   margin-right: 20px;
   background: var(--toc-bg-color);
-  min-width: 200px;
+  min-width: 280px;
 }
 
 .toc-container.sticky-top {
