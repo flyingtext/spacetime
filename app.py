@@ -1397,6 +1397,19 @@ def create_post():
         if lat and lon:
             meta_dict['lat'] = lat
             meta_dict['lon'] = lon
+            locs = meta_dict.get('locations')
+            if isinstance(locs, list):
+                if locs:
+                    locs[0]['lat'] = lat
+                    locs[0]['lon'] = lon
+                else:
+                    meta_dict['locations'] = [{'lat': lat, 'lon': lon}]
+            else:
+                meta_dict['locations'] = [{'lat': lat, 'lon': lon}]
+        else:
+            meta_dict.pop('lat', None)
+            meta_dict.pop('lon', None)
+            meta_dict.pop('locations', None)
 
         lat_val = meta_dict.get('lat')
         lon_val = meta_dict.get('lon')
@@ -2139,6 +2152,19 @@ def edit_post(post_id: int):
         if lat and lon:
             meta_dict['lat'] = lat
             meta_dict['lon'] = lon
+            locs = meta_dict.get('locations')
+            if isinstance(locs, list):
+                if locs:
+                    locs[0]['lat'] = lat
+                    locs[0]['lon'] = lon
+                else:
+                    meta_dict['locations'] = [{'lat': lat, 'lon': lon}]
+            else:
+                meta_dict['locations'] = [{'lat': lat, 'lon': lon}]
+        else:
+            meta_dict.pop('lat', None)
+            meta_dict.pop('lon', None)
+            meta_dict.pop('locations', None)
 
         lat_val = meta_dict.get('lat')
         lon_val = meta_dict.get('lon')
