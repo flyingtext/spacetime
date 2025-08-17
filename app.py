@@ -2767,4 +2767,11 @@ if __name__ == '__main__':
         db.create_all()
     host = os.getenv("HOST", "127.0.0.1")
     port = int(os.getenv("PORT", 5000))
-    socketio.run(app, host=host, port=port, debug=True)
+    ssl_cert = os.getenv("SSL_CERT_FILE")
+    ssl_key = os.getenv("SSL_KEY_FILE")
+    ssl_context = None
+    if ssl_cert and ssl_key:
+        ssl_context = (ssl_cert, ssl_key)
+    elif ssl_cert:
+        ssl_context = ssl_cert
+    socketio.run(app, host=host, port=port, debug=True, ssl_context=ssl_context)

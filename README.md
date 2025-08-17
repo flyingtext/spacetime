@@ -30,6 +30,8 @@ following variables are supported:
 - `BABEL_TRANSLATION_DIRECTORIES` – path to translation files.
 - `HOST` – hostname or IP address for the server.
 - `PORT` – port for the server.
+- `SSL_CERT_FILE` – path to a PEM-formatted certificate file to enable HTTPS.
+- `SSL_KEY_FILE` – path to the private key file if not included in the certificate.
 
 Example `.env`:
 
@@ -41,15 +43,17 @@ LANGUAGES=en,es
 BABEL_TRANSLATION_DIRECTORIES=translations
 HOST=127.0.0.1
 PORT=5000
+SSL_CERT_FILE=cert.pem
+SSL_KEY_FILE=key.pem
 ```
 
 ## Usage
 ```bash
-HOST=127.0.0.1 PORT=5000 python app.py
+HOST=127.0.0.1 PORT=5000 SSL_CERT_FILE=cert.pem SSL_KEY_FILE=key.pem python app.py
 ```
 The application creates `wiki.db` SQLite database on first run.
 
-Open browser at `http://${HOST}:${PORT}/`.
+Open browser at `http://${HOST}:${PORT}/` or `https://${HOST}:${PORT}/` when SSL is configured.
 
 ## API
 
