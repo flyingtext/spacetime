@@ -115,13 +115,15 @@ function createIcon(name){
   const ctx = document.createElement('canvas').getContext('2d');
   ctx.font = '16px sans-serif';
   const textWidth = Math.ceil(ctx.measureText(name).width);
-  const width = textWidth + 30;
+  const padding = 20;
+  const width = textWidth + padding * 2;
+  const height = 50;
   const svg = `\
-  <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="50">
-    <rect x="5" y="5" width="${width - 10}" height="40" fill="#0d6efd" fill-opacity="0.1" stroke-width="0" />
-    <text x="${width / 2}" y="35" font-size="16" font-weight="bold" text-anchor="middle" fill="#0d6efd">${name}</text>
+  <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+    <rect x="${padding / 2}" y="5" width="${width - padding}" height="${height - 10}" fill="#001f3f" fill-opacity="0.5" stroke-width="0" />
+    <text x="${width / 2}" y="35" font-size="16" font-weight="bold" text-anchor="middle" fill="#000">${name}</text>
   </svg>`;
-  return L.divIcon({html: svg, className: '', iconSize:[width,50], iconAnchor:[width/2,50]});
+  return L.divIcon({html: svg, className: '', iconSize:[width,height], iconAnchor:[width/2,height]});
 }
 const markers = L.markerClusterGroup({
   spiderLegPolylineOptions: {
