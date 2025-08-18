@@ -4,7 +4,7 @@ import sys
 import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from app import app, render_markdown
+from app import app, render_markdown, db, Tag, Post, User
 
 
 def test_render_markdown_and_wikilink():
@@ -67,3 +67,27 @@ def test_markdown_preview_language(client):
 def test_markdown_preview_renders_html(client):
     resp = client.post('/markdown/preview', json={'text': '<b>bold</b>'})
     assert resp.get_json()['html'] == '<p><b>bold</b></p>'
+
+
+@pytest.fixture
+def app_ctx():
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    with app.app_context():
+        db.create_all()
+        yield
+        db.drop_all()
+
+
+def test_render_markdown_auto_links_tag(app_ctx):
+    with app.app_context():
+        user = User(username='u', role='editor')
+        user.set_password('pw')
+        tag = Tag(name='python')
+        post = Post(title='T', body='First line\nSecond', path='t', language='en', author=user)
+        post.tags.append(tag)
+        db.session.add_all([user, tag, post])
+        db.session.commit()
+        html, _ = render_markdown('Learning Python every day')
+        assert 'href="/tag/python"' in html
+        assert 'class="tag-link"' in html
+        assert 'First line' in html

@@ -678,6 +678,49 @@ class WikiLinkExtension(Extension):
         )
 
 
+class TagLinkInlineProcessor(InlineProcessor):
+    """Inline processor to automatically link tag names."""
+
+    def __init__(self, pattern: str, tag_map: dict[str, dict[str, str]]):
+        super().__init__(pattern)
+        # tag_map maps lowercase tag name to dict with url and tooltip JSON
+        self.tag_map = tag_map
+
+    def handleMatch(self, m, data):
+        word = m.group(0)
+        info = self.tag_map.get(word.lower())
+        if not info:
+            return None, m.start(0), m.end(0)
+        el = Element(
+            'a',
+            {
+                'href': info['url'],
+                'class': 'tag-link',
+                'data-tooltip': info['tooltip'],
+            },
+        )
+        el.text = word
+        return el, m.start(0), m.end(0)
+
+
+class TagLinkExtension(Extension):
+    """Markdown extension that auto-links tag names with tooltips."""
+
+    def __init__(self, tag_map: dict[str, dict[str, str]], **kwargs):
+        self.tag_map = tag_map
+        super().__init__(**kwargs)
+
+    def extendMarkdown(self, md):
+        if not self.tag_map:
+            return
+        pattern = r'(?i)\b(' + '|'.join(re.escape(t) for t in self.tag_map) + r')\b'
+        md.inlinePatterns.register(
+            TagLinkInlineProcessor(pattern, self.tag_map),
+            'taglink',
+            74,
+        )
+
+
 class PreserveOListProcessor(OListProcessor):
     """Ordered list processor that preserves explicit numbering."""
 
@@ -772,6 +815,26 @@ def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> t
         WikiLinkExtension(base_url=base_url),
         PreserveOrderedListExtension(),
     ]
+    # Attempt to add automatic tag linking if tags are available
+    try:
+        tag_map: dict[str, dict[str, str]] = {}
+        for tag in Tag.query.all():
+            posts = [
+                {
+                    'title': p.display_title,
+                    'url': f"/{p.language}/{p.path}",
+                    'snippet': (p.body.splitlines()[0] if p.body else ''),
+                }
+                for p in tag.posts
+            ]
+            tag_map[tag.name.lower()] = {
+                'url': f"/tag/{quote(tag.name)}",
+                'tooltip': json.dumps(posts),
+            }
+        if tag_map:
+            extensions.append(TagLinkExtension(tag_map))
+    except Exception:
+        pass
     if with_toc:
         md = markdown.Markdown(extensions=extensions + ['toc'])
         html = md.convert(text or '')
