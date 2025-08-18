@@ -85,6 +85,10 @@ app.config['BABEL_TRANSLATION_DIRECTORIES'] = os.getenv(
     'BABEL_TRANSLATION_DIRECTORIES', 'translations'
 )
 
+# Allow posts with very large bodies by disabling request size limits
+app.config['MAX_CONTENT_LENGTH'] = None
+app.config['MAX_FORM_MEMORY_SIZE'] = None
+
 db.init_app(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
