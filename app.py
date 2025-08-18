@@ -2776,18 +2776,39 @@ def search():
                 else Post.query.filter(False)
             )
     elif key and value_raw:
-        try:
-            value = json.loads(value_raw)
-        except ValueError:
-            value = value_raw
-        if key == 'title':
-            posts_query = Post.query.filter(Post.title.ilike(f'%{value}%'))
-        elif key == 'path':
-            posts_query = Post.query.filter(Post.path.ilike(f'%{value}%'))
-        else:
-            posts_query = Post.query.join(PostMetadata).filter(
-                PostMetadata.key == key, PostMetadata.value == value
-            )
+        posts_query = None
+        if key not in {'title', 'path'}:
+            index_url = os.getenv('INDEX_SERVER_URL')
+            if index_url:
+                try:
+                    resp = requests.get(
+                        f"{index_url}/search",
+                        params={f'metadata.{key}': value_raw},
+                    )
+                    resp.raise_for_status()
+                    data = resp.json()
+                    ids = data.get('ids') if isinstance(data, dict) else data
+                    posts_query = (
+                        Post.query.filter(Post.id.in_(ids))
+                        if ids
+                        else Post.query.filter(False)
+                    )
+                except requests.RequestException as exc:
+                    current_app.logger.warning('Index server search failed: %s', exc)
+                    flash(_('Search service unavailable. Showing local results.'), 'warning')
+        if posts_query is None:
+            try:
+                value = json.loads(value_raw)
+            except ValueError:
+                value = value_raw
+            if key == 'title':
+                posts_query = Post.query.filter(Post.title.ilike(f'%{value}%'))
+            elif key == 'path':
+                posts_query = Post.query.filter(Post.path.ilike(f'%{value}%'))
+            else:
+                posts_query = Post.query.join(PostMetadata).filter(
+                    PostMetadata.key == key, PostMetadata.value == value
+                )
     elif lat is not None and lon is not None and radius is not None:
         posts_query = Post.query
     else:
