@@ -2746,11 +2746,16 @@ def search():
 
     posts_query = None
     examples = None
+    delegated_location = False
+    index_url = os.getenv('INDEX_SERVER_URL')
     if q:
-        index_url = os.getenv('INDEX_SERVER_URL')
+        params = {'q': q}
+        if index_url and lat is not None and lon is not None and radius is not None:
+            params.update({'lat': lat, 'lon': lon, 'radius': radius})
+            delegated_location = True
         if index_url:
             try:
-                resp = requests.get(f"{index_url}/search", params={'q': q})
+                resp = requests.get(f"{index_url}/search", params=params)
                 resp.raise_for_status()
                 data = resp.json()
                 ids = data.get('ids') if isinstance(data, dict) else data
@@ -2762,6 +2767,7 @@ def search():
             except requests.RequestException as exc:
                 current_app.logger.warning('Index server search failed: %s', exc)
                 flash(_('Search service unavailable. Showing local results.'), 'warning')
+                delegated_location = False
         if posts_query is None:
             ids = [
                 row[0]
@@ -2778,13 +2784,13 @@ def search():
     elif key and value_raw:
         posts_query = None
         if key not in {'title', 'path'}:
-            index_url = os.getenv('INDEX_SERVER_URL')
+            params = {f'metadata.{key}': value_raw}
+            if index_url and lat is not None and lon is not None and radius is not None:
+                params.update({'lat': lat, 'lon': lon, 'radius': radius})
+                delegated_location = True
             if index_url:
                 try:
-                    resp = requests.get(
-                        f"{index_url}/search",
-                        params={f'metadata.{key}': value_raw},
-                    )
+                    resp = requests.get(f"{index_url}/search", params=params)
                     resp.raise_for_status()
                     data = resp.json()
                     ids = data.get('ids') if isinstance(data, dict) else data
@@ -2796,6 +2802,7 @@ def search():
                 except requests.RequestException as exc:
                     current_app.logger.warning('Index server search failed: %s', exc)
                     flash(_('Search service unavailable. Showing local results.'), 'warning')
+                    delegated_location = False
         if posts_query is None:
             try:
                 value = json.loads(value_raw)
@@ -2810,7 +2817,27 @@ def search():
                     PostMetadata.key == key, PostMetadata.value == value
                 )
     elif lat is not None and lon is not None and radius is not None:
-        posts_query = Post.query
+        if index_url:
+            try:
+                resp = requests.get(
+                    f"{index_url}/search",
+                    params={'lat': lat, 'lon': lon, 'radius': radius},
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                ids = data.get('ids') if isinstance(data, dict) else data
+                posts_query = (
+                    Post.query.filter(Post.id.in_(ids))
+                    if ids
+                    else Post.query.filter(False)
+                )
+                delegated_location = True
+            except requests.RequestException as exc:
+                current_app.logger.warning('Index server search failed: %s', exc)
+                flash(_('Search service unavailable. Showing local results.'), 'warning')
+                posts_query = Post.query
+        else:
+            posts_query = Post.query
     else:
         # Provide example posts to illustrate expected input format
         examples = Post.query.limit(5).all()
@@ -2820,7 +2847,7 @@ def search():
         for name in tag_names:
             posts_query = posts_query.filter(Post.tags.any(Tag.name == name))
 
-        if lat is not None and lon is not None and radius is not None:
+        if lat is not None and lon is not None and radius is not None and not delegated_location:
             all_posts = posts_query.all()
             filtered_posts = [
                 p

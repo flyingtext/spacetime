@@ -14,7 +14,13 @@ def send_to_index(post: "Post") -> None:
     try:
         resp = requests.post(
             f"{index_url}/index",
-            json={"id": post.id, "title": post.title, "body": post.body},
+            json={
+                "id": post.id,
+                "title": post.title,
+                "body": post.body,
+                "lat": post.latitude,
+                "lon": post.longitude,
+            },
         )
         resp.raise_for_status()
     except requests.RequestException:

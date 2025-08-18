@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import sqlite3
 import threading
 import json
+import math
 
 app = Flask(__name__)
 
@@ -20,6 +21,13 @@ def get_db():
         app.db.conn.execute(
             'CREATE TABLE IF NOT EXISTS tags (doc_id TEXT, tag TEXT)'
         )
+        app.db.conn.execute(
+            'CREATE TABLE IF NOT EXISTS locations (id INTEGER PRIMARY KEY, lat REAL, lon REAL)'
+        )
+        app.db.conn.execute(
+            'CREATE VIRTUAL TABLE IF NOT EXISTS locations_rtree '
+            'USING rtree(id, min_lat, max_lat, min_lon, max_lon)'
+        )
     return app.db.conn
 
 @app.route('/index', methods=['POST'])
@@ -30,20 +38,35 @@ def index_document():
     body = data.get('body', '')
     metadata = data.get('metadata', {})
     tags = data.get('tags', [])
+    lat = data.get('lat')
+    lon = data.get('lon')
     if doc_id is None:
         return jsonify({'error': 'id is required'}), 400
+
+    doc_id_int = int(doc_id)
     conn = get_db()
     with conn:
-        conn.execute('DELETE FROM documents WHERE id = ?', (doc_id,))
-        conn.execute('DELETE FROM tags WHERE doc_id = ?', (doc_id,))
+        conn.execute('DELETE FROM documents WHERE id = ?', (doc_id_int,))
+        conn.execute('DELETE FROM tags WHERE doc_id = ?', (doc_id_int,))
+        conn.execute('DELETE FROM locations WHERE id = ?', (doc_id_int,))
+        conn.execute('DELETE FROM locations_rtree WHERE id = ?', (doc_id_int,))
         conn.execute(
             'INSERT INTO documents (id, title, body, metadata) VALUES (?, ?, ?, ?)',
-            (doc_id, title, body, json.dumps(metadata))
+            (doc_id_int, title, body, json.dumps(metadata))
         )
         for tag in tags:
             conn.execute(
                 'INSERT INTO tags (doc_id, tag) VALUES (?, ?)',
-                (doc_id, tag)
+                (doc_id_int, tag)
+            )
+        if lat is not None and lon is not None:
+            conn.execute(
+                'INSERT INTO locations (id, lat, lon) VALUES (?, ?, ?)',
+                (doc_id_int, lat, lon)
+            )
+            conn.execute(
+                'INSERT INTO locations_rtree (id, min_lat, max_lat, min_lon, max_lon) VALUES (?, ?, ?, ?, ?)',
+                (doc_id_int, lat, lat, lon, lon)
             )
     return jsonify({'status': 'indexed'})
 
@@ -52,11 +75,17 @@ def delete_document(doc_id):
     conn = get_db()
     with conn:
         conn.execute('DELETE FROM documents WHERE id = ?', (doc_id,))
+        conn.execute('DELETE FROM tags WHERE doc_id = ?', (doc_id,))
+        conn.execute('DELETE FROM locations WHERE id = ?', (doc_id,))
+        conn.execute('DELETE FROM locations_rtree WHERE id = ?', (doc_id,))
     return jsonify({'status': 'deleted'})
 
 @app.route('/search')
 def search():
     query = request.args.get('q')
+    lat = request.args.get('lat', type=float)
+    lon = request.args.get('lon', type=float)
+    radius = request.args.get('radius', type=float)
     conn = get_db()
 
     # Extract metadata filters from query parameters of the form
@@ -85,9 +114,23 @@ def search():
             except json.JSONDecodeError:
                 meta = {}
             if all(str(meta.get(k)) == v for k, v in meta_filters.items()):
-                results.append(doc_id)
+                results.append(str(doc_id))
     else:
-        results = [row[0] for row in rows]
+        results = [str(row[0]) for row in rows]
+
+    if lat is not None and lon is not None and radius is not None:
+        lat_deg = radius / 111.0
+        lon_deg = radius / (111.0 * max(math.cos(math.radians(lat)), 1e-8))
+        min_lat = lat - lat_deg
+        max_lat = lat + lat_deg
+        min_lon = lon - lon_deg
+        max_lon = lon + lon_deg
+        cur = conn.execute(
+            'SELECT id FROM locations_rtree WHERE min_lat >= ? AND max_lat <= ? AND min_lon >= ? AND max_lon <= ?',
+            (min_lat, max_lat, min_lon, max_lon),
+        )
+        loc_ids = {str(row[0]) for row in cur.fetchall()}
+        results = [doc_id for doc_id in results if doc_id in loc_ids]
 
     return jsonify(results)
 
