@@ -256,7 +256,8 @@ def suggest_citations(markdown_text: str) -> dict[str, list[dict]]:
         for post in posts:
             url = f"/{post.language}/{post.path}"
             entry = {'title': post.title, 'url': url}
-            bibtex = f"@misc{{,\n  title={{ {post.title} }},\n  url={{ {url} }}\n}}"
+            key = post.id
+            bibtex = f"@misc{{{key},\n  title={{ {post.title} }},\n  url={{ {url} }}\n}}"
             candidates.append({'text': bibtex, 'part': entry})
         if candidates:
             results[sentence] = candidates
