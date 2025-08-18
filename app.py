@@ -43,6 +43,7 @@ from geopy.distance import distance as geopy_distance
 from langdetect import detect, DetectorFactory, LangDetectException
 import zoneinfo
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+from search_index import send_to_index, remove_from_index
 
 load_dotenv()
 DetectorFactory.seed = 0
@@ -824,6 +825,21 @@ def create_post_fts(target, connection, **kw):
             'END;'
         )
     )
+
+
+@event.listens_for(Post, "after_insert")
+def _index_after_insert(mapper, connection, target):
+    send_to_index(target)
+
+
+@event.listens_for(Post, "after_update")
+def _index_after_update(mapper, connection, target):
+    send_to_index(target)
+
+
+@event.listens_for(Post, "after_delete")
+def _index_after_delete(mapper, connection, target):
+    remove_from_index(target.id)
 
 
 class Tag(db.Model):
