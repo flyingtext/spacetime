@@ -2,6 +2,13 @@
 
 This document lists the HTTP endpoints provided by the Spacetime application.
 
+## Configuration
+
+The application reads the following setting from environment variables or
+configuration files:
+
+- `INDEX_SERVER_URL` – base URL for an optional external index server (default: none).
+
 | Path | Methods | Description |
 |------|---------|-------------|
 | `/` | `GET` | Home page listing posts or redirect to configured start page |
