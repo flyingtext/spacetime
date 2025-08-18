@@ -47,6 +47,11 @@ def test_render_markdown_blank_numbered_item_becomes_unordered():
     assert '<li></li>' not in html
 
 
+def test_render_markdown_preserves_mathjax_delimiters():
+    html, _ = render_markdown('Euler formula $e^{i\\pi}+1=0$')
+    assert '$e^{i\\pi}+1=0$' in html
+
+
 @pytest.fixture
 def client():
     app.config['TESTING'] = True

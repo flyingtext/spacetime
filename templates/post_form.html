@@ -146,6 +146,9 @@ function updatePreview() {
     noSpinner: true
   }).then(r => r.json()).then(data => {
     previewEl.innerHTML = data.html || '';
+    if (window.MathJax && window.MathJax.typesetPromise) {
+      MathJax.typesetPromise([previewEl]);
+    }
   });
 }
 if (easyMDE && easyMDE.codemirror) {
