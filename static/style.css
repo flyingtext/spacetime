@@ -191,6 +191,15 @@ textarea::placeholder,
   overflow-wrap: anywhere;
 }
 
+.post-body table {
+  border-collapse: collapse;
+}
+
+.post-body th,
+.post-body td {
+  border: 1px solid var(--border-color);
+}
+
 pre {
   background-color: var(--nav-bg-color);
   color: var(--text-color);
