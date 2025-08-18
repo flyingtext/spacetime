@@ -6,7 +6,7 @@ import markdown
 import math
 from datetime import datetime, timezone
 from xml.etree.ElementTree import Element, SubElement, tostring
-from urllib.parse import urlparse, quote
+from urllib.parse import urlparse, quote, urljoin
 
 from flask import (
     Flask,
@@ -518,13 +518,21 @@ def format_citation_mla(part: dict, doi: str | None = None) -> Markup:
     if pages:
         pieces.append(f"pp. {escape(str(pages).rstrip('.'))}")
     if not pieces and part.get('url'):
-        url = escape(str(part['url']))
+        raw_url = str(part['url'])
+        parsed = urlparse(raw_url)
+        if not parsed.scheme:
+            raw_url = urljoin(request.url_root, raw_url)
+        url = escape(raw_url)
         return Markup(f'<a href="{url}">{url}</a>')
     citation = '. '.join(pieces)
     if doi:
         citation += f". <a href=\"https://doi.org/{doi}\">https://doi.org/{doi}</a>"
     elif part.get('url'):
-        url = escape(str(part['url']))
+        raw_url = str(part['url'])
+        parsed = urlparse(raw_url)
+        if not parsed.scheme:
+            raw_url = urljoin(request.url_root, raw_url)
+        url = escape(raw_url)
         citation += f". <a href=\"{url}\">{url}</a>"
     return Markup(citation)
 
