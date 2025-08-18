@@ -230,9 +230,6 @@
 {% endif %}
 {% if current_user.is_authenticated %}
 <section class="d-print-none">
-  <h2>{{ _('Suggest Citation') }}</h2>
-</section>
-<section class="d-print-none">
   <h2>{{ _('Add Citation') }}</h2>
   <form id="citation-form" action="{{ url_for('new_citation', post_id=post.id) }}" method="post">
     <div class="mb-2 d-flex gap-1">
