@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Database Status') }}{% endblock %}
+{% block content %}
+<h1>{{ _('Database Status') }}</h1>
+<p><strong>{{ _('Database URL') }}:</strong> {{ db_url }}</p>
+<table class="table table-striped">
+  <thead><tr><th>{{ _('Table') }}</th><th>{{ _('Rows') }}</th></tr></thead>
+  <tbody>
+    {% for t in tables %}
+    <tr><td>{{ t.name }}</td><td>{{ t.count }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
