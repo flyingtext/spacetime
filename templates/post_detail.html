@@ -327,18 +327,20 @@
           if (data.results) {
               for (const [sentence, cands] of Object.entries(data.results)) {
                   const section = document.createElement('div');
+                  section.className = 'mb-3 p-2 border rounded';
                   const ps = document.createElement('p');
                   ps.textContent = sentence;
+                  ps.className = 'mb-2 fw-bold';
                   section.appendChild(ps);
                   cands.forEach(c => {
                       const container = document.createElement('div');
                       container.className = 'd-flex align-items-start gap-2 mb-2';
                       const pre = document.createElement('pre');
                       pre.textContent = c.text;
-                      pre.className = 'mb-0';
+                      pre.className = 'mb-0 flex-grow-1 bg-light p-2 rounded';
                       const saveBtn = document.createElement('button');
                       saveBtn.textContent = '{{ _('Save') }}';
-                      saveBtn.className = 'btn btn-sm btn-secondary';
+                      saveBtn.className = 'btn btn-sm btn-secondary align-self-start';
                       saveBtn.addEventListener('click', () => {
                           const fd = new FormData();
                           fd.append('citation_text', c.text);
