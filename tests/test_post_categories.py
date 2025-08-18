@@ -50,6 +50,30 @@ def test_posts_category_filter(client):
     assert b'Tech Post' not in resp.data
     assert b'Misc Post' not in resp.data
 
+    # Case-insensitive tag lookup
+    resp = client.get('/posts', query_string={'tag': 'News'})
+    assert b'News Post' in resp.data
+    assert b'Tech Post' not in resp.data
+
+    # Lookup by translated label
+    resp = client.get('/posts', query_string={'tag': 'noticias'})
+    assert b'News Post' in resp.data
+    assert b'Tech Post' not in resp.data
+
+    # Lookup by translated label with different casing
+    resp = client.get('/posts', query_string={'tag': 'Noticias'})
+    assert b'News Post' in resp.data
+    assert b'Tech Post' not in resp.data
+
+    # Tag page should also resolve translated names
+    resp = client.get('/tag/noticias')
+    assert b'News Post' in resp.data
+    assert b'Tech Post' not in resp.data
+
+    resp = client.get('/tag/Noticias')
+    assert b'News Post' in resp.data
+    assert b'Tech Post' not in resp.data
+
     with app.app_context():
         assert ('news', 'noticias') in get_category_tags('es')
 
