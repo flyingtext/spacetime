@@ -19,6 +19,10 @@ pip install -r requirements.txt
 The application uses the Crossref API through the `habanero` library, so network
 access is required when querying Crossref.
 
+## Dependencies
+
+A summary of third-party libraries used in Spacetime is available in [docs/LIBRARIES.md](docs/LIBRARIES.md).
+
 ## Configuration
 Create a `.env` file in the project root to configure runtime settings. The
 following variables are supported:
