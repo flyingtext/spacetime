@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   tooltip.className = 'tag-tooltip-card';
   tooltip.style.display = 'none';
   document.body.appendChild(tooltip);
+  let hideTimeout;
 
   function showTooltip() {
     const data = this.dataset.tooltip;
@@ -17,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     tooltip.innerHTML = docs
       .map(d => `<div class="tag-doc"><a href="${d.url}">${d.title}</a><p>${d.snippet}</p></div>`)
       .join('');
+    clearTimeout(hideTimeout);
     tooltip.style.display = 'block';
     const rect = this.getBoundingClientRect();
     tooltip.style.left = `${rect.left + window.scrollX}px`;
@@ -27,9 +29,13 @@ document.addEventListener('DOMContentLoaded', () => {
     tooltip.style.display = 'none';
   }
 
+  function scheduleHide() {
+    hideTimeout = setTimeout(hideTooltip, 100);
+  }
+
   function maybeHideTooltip(e) {
     if (!tooltip.contains(e.relatedTarget)) {
-      hideTooltip();
+      scheduleHide();
     }
   }
 
@@ -38,5 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
     el.addEventListener('mouseout', maybeHideTooltip);
   });
 
-  tooltip.addEventListener('mouseleave', hideTooltip);
+  tooltip.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
+  tooltip.addEventListener('mouseleave', scheduleHide);
 });
