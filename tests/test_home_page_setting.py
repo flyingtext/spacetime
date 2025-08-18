@@ -33,7 +33,7 @@ def test_home_page_redirect(client):
 
     resp = client.get('/')
     assert resp.status_code == 302
-    assert resp.headers['Location'].endswith('/docs/en/home')
+    assert resp.headers['Location'].endswith('/en/home')
 
 
 def test_home_page_redirect_ko_locale(client):
@@ -55,7 +55,29 @@ def test_home_page_redirect_ko_locale(client):
 
     resp = client.get('/', headers={'Accept-Language': 'ko'})
     assert resp.status_code == 302
-    assert resp.headers['Location'].endswith('/docs/ko/spacetime')
+    assert resp.headers['Location'].endswith('/ko/spacetime')
+
+
+def test_home_page_with_language_in_setting(client):
+    with app.app_context():
+        user = User(username='author')
+        user.set_password('pw')
+        db.session.add(user)
+        db.session.commit()
+        post = Post(
+            title='Spacetime',
+            body='Content',
+            path='spacetime',
+            language='ko',
+            author=user,
+        )
+        db.session.add(post)
+        db.session.add(Setting(key='home_page_path', value='ko/spacetime'))
+        db.session.commit()
+
+    resp = client.get('/', headers={'Accept-Language': 'en'})
+    assert resp.status_code == 302
+    assert resp.headers['Location'].endswith('/ko/spacetime')
 
 
 def test_updating_home_page_path_preserves_site_title(client):
