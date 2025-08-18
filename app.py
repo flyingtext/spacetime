@@ -2730,11 +2730,15 @@ def search():
 
     posts_query = None
     examples = None
+    index_server_used = False
     if q:
         index_url = os.getenv('INDEX_SERVER_URL')
         if index_url:
+            params = {'q': q}
+            if lat is not None and lon is not None and radius is not None:
+                params.update({'lat': lat, 'lon': lon, 'radius': radius})
             try:
-                resp = requests.get(f"{index_url}/search", params={'q': q})
+                resp = requests.get(f"{index_url}/search", params=params)
                 resp.raise_for_status()
                 data = resp.json()
                 ids = data.get('ids') if isinstance(data, dict) else data
@@ -2743,6 +2747,7 @@ def search():
                     if ids
                     else Post.query.filter(False)
                 )
+                index_server_used = True
             except requests.RequestException as exc:
                 current_app.logger.warning('Index server search failed: %s', exc)
                 flash(_('Search service unavailable. Showing local results.'), 'warning')
@@ -2773,7 +2778,27 @@ def search():
                 PostMetadata.key == key, PostMetadata.value == value
             )
     elif lat is not None and lon is not None and radius is not None:
-        posts_query = Post.query
+        index_url = os.getenv('INDEX_SERVER_URL')
+        if index_url:
+            try:
+                resp = requests.get(
+                    f"{index_url}/search",
+                    params={'lat': lat, 'lon': lon, 'radius': radius},
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                ids = data.get('ids') if isinstance(data, dict) else data
+                posts_query = (
+                    Post.query.filter(Post.id.in_(ids))
+                    if ids
+                    else Post.query.filter(False)
+                )
+                index_server_used = True
+            except requests.RequestException as exc:
+                current_app.logger.warning('Index server search failed: %s', exc)
+                flash(_('Search service unavailable. Showing local results.'), 'warning')
+        if posts_query is None:
+            posts_query = Post.query
     else:
         # Provide example posts to illustrate expected input format
         examples = Post.query.limit(5).all()
@@ -2783,7 +2808,7 @@ def search():
         for name in tag_names:
             posts_query = posts_query.filter(Post.tags.any(Tag.name == name))
 
-        if lat is not None and lon is not None and radius is not None:
+        if lat is not None and lon is not None and radius is not None and not index_server_used:
             all_posts = posts_query.all()
             filtered_posts = [
                 p
