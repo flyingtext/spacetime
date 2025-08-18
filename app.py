@@ -1739,6 +1739,13 @@ def post_detail(post_id: int):
         )
     base = url_for('document', language=post.language, doc_path='')
     html_body, toc = render_markdown(post.body, base, with_toc=True)
+    canonical_url = url_for('document', language=post.language, doc_path=post.path, _external=True)
+    year = created_at.year if created_at else datetime.utcnow().year
+    key = re.sub(r'\W+', '', f"{post.author.username}{year}{post.id}")
+    bibtex = (
+        f"@misc{{{key}, title={{ {post.title} }}, author={{ {post.author.username} }}, "
+        f"year={{ {year} }}, url={{ {canonical_url} }} }}"
+    )
     return render_template(
         'post_detail.html',
         post=post,
@@ -1755,6 +1762,8 @@ def post_detail(post_id: int):
         views=views,
         created_at=created_at,
         address=address,
+        bibtex=bibtex,
+        canonical_url=canonical_url,
     )
 
 

@@ -1,5 +1,13 @@
 {% extends "base.html" %}
 {% block title %}{{ post.display_title }}{% endblock %}
+{% block extra_head %}
+<meta name="citation_title" content="{{ post.title }}">
+<meta name="citation_author" content="{{ post.author.username }}">
+{% if created_at %}<meta name="citation_publication_date" content="{{ created_at.strftime('%Y/%m/%d') }}">{% endif %}
+<meta name="citation_language" content="{{ post.language }}">
+<meta name="citation_fulltext_html_url" content="{{ canonical_url }}">
+<meta name="citation_bibtex" content="{{ bibtex|e }}">
+{% endblock %}
 {% block content %}
 <nav id="reading-breadcrumb" aria-label="breadcrumb" class="mb-2" style="display:none;">
   <ol class="breadcrumb mb-0"></ol>
