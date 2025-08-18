@@ -61,6 +61,7 @@ app.config['LANGUAGES'] = [
 app.config['BABEL_TRANSLATION_DIRECTORIES'] = os.getenv(
     'BABEL_TRANSLATION_DIRECTORIES', 'translations'
 )
+app.config['INDEX_SERVER_URL'] = os.getenv('INDEX_SERVER_URL', None)
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
