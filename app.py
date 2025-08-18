@@ -826,11 +826,13 @@ def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> t
                     'snippet': (p.body.splitlines()[0] if p.body else ''),
                 }
                 for p in tag.posts
+                if p.title and p.body
             ]
-            tag_map[tag.name.lower()] = {
-                'url': f"/tag/{quote(tag.name)}",
-                'tooltip': json.dumps(posts),
-            }
+            if posts:
+                tag_map[tag.name.lower()] = {
+                    'url': f"/tag/{quote(tag.name)}",
+                    'tooltip': json.dumps(posts),
+                }
         if tag_map:
             extensions.append(TagLinkExtension(tag_map))
     except Exception:
