@@ -2443,7 +2443,6 @@ def tag_list():
         .all()
     )
     tag_locations = []
-    tag_info = []
     tag_posts_data = []
     location_counts = {}
     for tag in tags:
@@ -2486,7 +2485,6 @@ def tag_list():
             key=lambda x: x[1],
             reverse=True,
         )[:3]
-        tag_info.append({'tag': tag, 'top_posts': top_posts})
         posts_data = []
         for p, _ in top_posts:
             snippet = (p.body[:100] + '...') if len(p.body) > 100 else p.body
@@ -2504,7 +2502,6 @@ def tag_list():
     tag_posts_json = json.dumps(tag_posts_data)
     return render_template(
         'tag_list.html',
-        tag_info=tag_info,
         tag_locations_json=tag_locations_json,
         tag_posts_json=tag_posts_json,
         tag_modal_new_tab=(
