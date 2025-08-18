@@ -21,11 +21,14 @@ from flask import (
     session,
     current_app,
 )
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import (LoginManager, login_user, login_required,
-                         logout_user, current_user, UserMixin)
+from flask_login import (
+    LoginManager,
+    login_user,
+    login_required,
+    logout_user,
+    current_user,
+)
 from flask_socketio import SocketIO
-from werkzeug.security import generate_password_hash, check_password_hash
 from markdown.extensions import Extension
 from markdown.inlinepatterns import InlineProcessor
 from markdown.blockprocessors import OListProcessor
@@ -43,6 +46,26 @@ from geopy.distance import distance as geopy_distance
 from langdetect import detect, DetectorFactory, LangDetectException
 import zoneinfo
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+from models import (
+    db,
+    POST_EDITOR_ROLES,
+    User,
+    Post,
+    Tag,
+    PostTag,
+    PostLink,
+    PostWatch,
+    PostMetadata,
+    UserPostMetadata,
+    Notification,
+    RequestedPost,
+    Redirect,
+    Setting,
+    PostCitation,
+    UserPostCitation,
+    Revision,
+)
 
 load_dotenv()
 DetectorFactory.seed = 0
@@ -62,12 +85,16 @@ app.config['BABEL_TRANSLATION_DIRECTORIES'] = os.getenv(
     'BABEL_TRANSLATION_DIRECTORIES', 'translations'
 )
 
-db = SQLAlchemy(app)
+db.init_app(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
 socketio = SocketIO(app)
 cr = Crossref()
+
+from api import api_bp
+
+app.register_blueprint(api_bp)
 
 # Basic stopword list used to filter out common grammatical words when
 # constructing citation queries. This helps the "suggest citations" feature
@@ -755,205 +782,6 @@ def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> t
     return html, ''
 
 
-# Roles allowed to create or edit posts
-POST_EDITOR_ROLES = {'editor', 'admin'}
-
-
-class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=False)
-    role = db.Column(db.String(20), default='user')
-    bio = db.Column(db.Text)
-    locale = db.Column(db.String(8))
-    timezone = db.Column(db.String(50), default='UTC')
-
-    def set_password(self, password: str) -> None:
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password: str) -> bool:
-        return check_password_hash(self.password_hash, password)
-
-    def is_admin(self) -> bool:
-        return self.role == 'admin'
-
-    def can_edit_posts(self) -> bool:
-        return self.role in POST_EDITOR_ROLES
-
-
-class Post(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    body = db.Column(db.Text, nullable=False)
-    path = db.Column(db.String(200), nullable=False)
-    language = db.Column(db.String(8), nullable=False, default='en')
-    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    author = db.relationship('User', backref='posts')
-    tags = db.relationship('Tag', secondary='post_tag', backref='posts')
-    latitude = db.Column(db.Float)
-    longitude = db.Column(db.Float)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    __table_args__ = (db.UniqueConstraint('path', 'language', name='uix_path_language'),)
-
-    @property
-    def display_title(self) -> str:
-        """Return title or a placeholder if the post was deleted."""
-        return self.title or _('[deleted]')
-
-
-@event.listens_for(Post.__table__, 'after_create')
-def create_post_fts(target, connection, **kw):
-    """Create FTS5 table and triggers for Post.body."""
-    connection.execute(
-        text(
-            'CREATE VIRTUAL TABLE IF NOT EXISTS post_fts '
-            'USING fts5(body, content="post", content_rowid="id")'
-        )
-    )
-    connection.execute(
-        text(
-            'CREATE TRIGGER post_fts_ai AFTER INSERT ON post BEGIN '
-            'INSERT INTO post_fts(rowid, body) VALUES (new.id, new.body); '
-            'END;'
-        )
-    )
-    connection.execute(
-        text(
-            'CREATE TRIGGER post_fts_ad AFTER DELETE ON post BEGIN '
-            "INSERT INTO post_fts(post_fts, rowid, body) VALUES('delete', old.id, old.body); "
-            'END;'
-        )
-    )
-    connection.execute(
-        text(
-            'CREATE TRIGGER post_fts_au AFTER UPDATE ON post BEGIN '
-            "INSERT INTO post_fts(post_fts, rowid, body) VALUES('delete', old.id, old.body); "
-            'INSERT INTO post_fts(rowid, body) VALUES (new.id, new.body); '
-            'END;'
-        )
-    )
-
-
-class Tag(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), unique=True, nullable=False)
-
-
-class PostTag(db.Model):
-    __tablename__ = 'post_tag'
-    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), primary_key=True)
-    tag_id = db.Column(db.Integer, db.ForeignKey('tag.id'), primary_key=True)
-
-
-class PostLink(db.Model):
-    __tablename__ = 'post_link'
-    source_id = db.Column(db.Integer, db.ForeignKey('post.id'), primary_key=True)
-    target_id = db.Column(db.Integer, db.ForeignKey('post.id'), primary_key=True)
-
-    source = db.relationship(
-        'Post', foreign_keys=[source_id], backref='outgoing_links'
-    )
-    target = db.relationship(
-        'Post', foreign_keys=[target_id], backref='incoming_links'
-    )
-
-
-class PostWatch(db.Model):
-    __tablename__ = 'post_watch'
-    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
-
-    post = db.relationship(
-        'Post', backref=db.backref('watchers', cascade='all, delete-orphan')
-    )
-    user = db.relationship('User', backref='watched_posts')
-
-
-class PostMetadata(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
-    key = db.Column(db.String(50), nullable=False)
-    value = db.Column(db.JSON, nullable=False)
-
-    __table_args__ = (
-        db.UniqueConstraint('post_id', 'key', name='uix_post_metadata_key'),
-    )
-
-    post = db.relationship(
-        'Post', backref=db.backref('metadata', cascade='all, delete-orphan')
-    )
-
-
-class UserPostMetadata(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    key = db.Column(db.String(50), nullable=False)
-    value = db.Column(db.JSON, nullable=False)
-
-    __table_args__ = (
-        db.UniqueConstraint('post_id', 'user_id', 'key', name='uix_post_user_metadata_key'),
-    )
-
-    post = db.relationship('Post', backref='user_metadata')
-    user = db.relationship('User')
-
-
-def get_view_count(post: Post) -> int:
-    """Return total view count for a post."""
-    meta = next((m for m in post.metadata if m.key == 'views'), None)
-    return int(meta.value) if meta else 0
-
-
-def increment_view_count(post: Post) -> int:
-    """Increment and return the view count for a post."""
-    meta = PostMetadata.query.filter_by(post_id=post.id, key='views').first()
-    if meta:
-        meta.value = int(meta.value) + 1
-    else:
-        meta = PostMetadata(post=post, key='views', value=1)
-        db.session.add(meta)
-    db.session.commit()
-    return int(meta.value)
-
-
-class Notification(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    message = db.Column(db.String(200), nullable=False)
-    link = db.Column(db.String(200), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    read_at = db.Column(db.DateTime, nullable=True)
-
-    user = db.relationship('User', backref='notifications')
-
-
-class RequestedPost(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    requester_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    admin_comment = db.Column(db.String(200), default='')
-
-    requester = db.relationship('User', backref='requested_posts')
-
-
-class Redirect(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    old_path = db.Column(db.String(200), nullable=False)
-    new_path = db.Column(db.String(200), nullable=False)
-    language = db.Column(db.String(8), nullable=False)
-
-    __table_args__ = (
-        db.UniqueConstraint('old_path', 'language', name='uix_redirect_oldpath_language'),
-    )
-
-
-class Setting(db.Model):
-    key = db.Column(db.String(50), primary_key=True)
-    value = db.Column(db.Text, nullable=True)
-
 def get_setting(key: str, default: str = '') -> str:
     try:
         setting = Setting.query.filter_by(key=key).first()
@@ -970,8 +798,7 @@ def get_category_tags(language: str | None = None) -> list[tuple[str, str]]:
     "noticias"}}``.  This helper returns a list of ``(slug, label)`` tuples for
     the requested language. If no label exists for the language, the canonical
     slug is used as the label. Older comma separated lists are also supported
-    and will return ``(tag, tag)`` tuples.
-    """
+    and will return ``(tag, tag)`` tuples."""
 
     lang = language or str(get_locale())
     raw = get_setting('post_categories', '')
@@ -998,8 +825,7 @@ def resolve_tag(name: str) -> Tag | None:
 
     Performs a case-insensitive lookup against both stored tag names and any
     category labels defined in the ``post_categories`` setting. Returns ``None``
-    if no matching tag is found.
-    """
+    if no matching tag is found."""
 
     # Direct lookup against existing tag names
     tag = Tag.query.filter(func.lower(Tag.name) == name.lower()).first()
@@ -1078,98 +904,23 @@ def format_datetime(value: datetime, fmt: str = '%Y-%m-%d %H:%M %Z') -> str:
 def inject_settings():
     return {'get_setting': get_setting}
 
-@event.listens_for(Post, 'after_insert')
-def emit_new_post(mapper, connection, target):
-    username = connection.execute(
-        select(User.username).where(User.id == target.author_id)
-    ).scalar_one_or_none()
-    socketio.emit(
-        'new_post',
-        {
-            'id': target.id,
-            'title': target.title,
-            'language': target.language,
-            'path': target.path,
-            'author': username,
-        },
-    )
+
+def get_view_count(post: Post) -> int:
+    """Return total view count for a post."""
+    meta = next((m for m in post.metadata if m.key == 'views'), None)
+    return int(meta.value) if meta else 0
 
 
-@event.listens_for(Notification, 'after_insert')
-def emit_new_notification(mapper, connection, target):
-    socketio.emit(
-        'new_notification', {'user_id': target.user_id, 'message': target.message}
-    )
-
-
-class PostCitation(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    citation_part = db.Column(db.JSON, nullable=False)
-    citation_text = db.Column(db.Text, nullable=False)
-    context = db.Column(db.Text)
-    doi = db.Column(db.String, nullable=True)
-    bibtex_raw = db.Column(db.Text, nullable=False)
-    bibtex_fields = db.Column(db.JSON, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    post = db.relationship(
-        'Post', backref=db.backref('citations', cascade='all, delete-orphan')
-    )
-    user = db.relationship('User')
-
-
-class UserPostCitation(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    citation_part = db.Column(db.JSON, nullable=False)
-    citation_text = db.Column(db.Text, nullable=False)
-    context = db.Column(db.Text)
-    doi = db.Column(db.String, nullable=True)
-    bibtex_raw = db.Column(db.Text, nullable=False)
-    bibtex_fields = db.Column(db.JSON, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    post = db.relationship('Post', backref='user_citations')
-    user = db.relationship('User')
-
-
-db.Index('ix_post_metadata_key_post', PostMetadata.key, PostMetadata.post_id)
-db.Index('ix_user_post_metadata_key_post_user',
-          UserPostMetadata.key,
-          UserPostMetadata.post_id,
-          UserPostMetadata.user_id)
-db.Index('ix_post_citation_post_id', PostCitation.post_id)
-db.Index('ix_post_citation_user_id', PostCitation.user_id)
-db.Index('ix_user_post_citation_post_id', UserPostCitation.post_id)
-db.Index('ix_user_post_citation_user_id', UserPostCitation.user_id)
-db.Index('uq_post_citation_doi', PostCitation.post_id, PostCitation.doi,
-         unique=True, sqlite_where=db.text('doi IS NOT NULL'))
-db.Index('uq_post_citation_text', PostCitation.post_id, PostCitation.citation_text,
-         unique=True, sqlite_where=db.text('doi IS NULL'))
-db.Index('uq_user_post_citation_doi', UserPostCitation.post_id, UserPostCitation.doi,
-         unique=True, sqlite_where=db.text('doi IS NOT NULL'))
-db.Index('uq_user_post_citation_text', UserPostCitation.post_id,
-         UserPostCitation.citation_text,
-         unique=True, sqlite_where=db.text('doi IS NULL'))
-
-
-class Revision(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    title = db.Column(db.String(200), nullable=False)
-    body = db.Column(db.Text, nullable=False)
-    path = db.Column(db.String(200), nullable=False)
-    language = db.Column(db.String(8), nullable=False, default='en')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    comment = db.Column(db.String(200), default='')
-    byte_change = db.Column(db.Integer, default=0)
-
-    user = db.relationship('User')
-    post = db.relationship('Post', backref='revisions')
+def increment_view_count(post: Post) -> int:
+    """Increment and return the view count for a post."""
+    meta = PostMetadata.query.filter_by(post_id=post.id, key='views').first()
+    if meta:
+        meta.value = int(meta.value) + 1
+    else:
+        meta = PostMetadata(post=post, key='views', value=1)
+        db.session.add(meta)
+    db.session.commit()
+    return int(meta.value)
 
 
 @login_manager.user_loader
@@ -1616,102 +1367,6 @@ def create_post():
     )
 
 
-@app.route('/api/posts', methods=['POST'])
-@login_required
-def api_create_post():
-    if not current_user.can_edit_posts():
-        return jsonify({'error': 'forbidden'}), 403
-    if not request.is_json:
-        return jsonify({'error': 'invalid JSON'}), 400
-    data = request.get_json() or {}
-    title = (data.get('title') or '').strip()
-    body = (data.get('body') or '').strip()
-    path = (data.get('path') or '').strip()
-    language = (data.get('language') or '').strip()
-    address = (data.get('address') or '').strip()
-    lat_val = data.get('lat')
-    lon_val = data.get('lon')
-    lat = lon = None
-    if address and lat_val is None and lon_val is None:
-        coords = geocode_address(address)
-        if not coords:
-            return jsonify({'error': 'invalid address'}), 400
-        lat_val, lon_val = coords
-    if lat_val is not None and lon_val is not None:
-        try:
-            lat = float(lat_val)
-            lon = float(lon_val)
-        except (TypeError, ValueError):
-            return jsonify({'error': 'invalid coordinates'}), 400
-    elif lat_val is not None or lon_val is not None:
-        return jsonify({'error': 'lat and lon required'}), 400
-    if not title or not body:
-        return jsonify({'error': 'title and body required'}), 400
-    if language not in app.config['LANGUAGES']:
-        try:
-            language = detect(body)
-        except LangDetectException:
-            language = app.config['BABEL_DEFAULT_LOCALE']
-        if language not in app.config['LANGUAGES']:
-            language = app.config['BABEL_DEFAULT_LOCALE']
-    if not path or Post.query.filter_by(path=path, language=language).first():
-        path = generate_unique_path(title, language)
-    tags_input = data.get('tags', [])
-    if isinstance(tags_input, str):
-        tag_names = [t.strip() for t in tags_input.split(',') if t.strip()]
-    else:
-        tag_names = [
-            t.strip() for t in tags_input if isinstance(t, str) and t.strip()
-        ]
-    tags = []
-    for name in dict.fromkeys(tag_names):
-        tag = Tag.query.filter_by(name=name).first()
-        if not tag:
-            tag = Tag(name=name)
-            db.session.add(tag)
-        tags.append(tag)
-    post = Post(
-        title=title,
-        body=body,
-        path=path,
-        language=language,
-        author=current_user,
-        tags=tags,
-    )
-    db.session.add(post)
-    if lat is not None and lon is not None:
-        post.latitude = lat
-        post.longitude = lon
-        db.session.add(PostMetadata(post=post, key='lat', value=str(lat)))
-        db.session.add(PostMetadata(post=post, key='lon', value=str(lon)))
-    db.session.flush()
-    update_post_links(post)
-    comment = (data.get('comment') or '').strip()
-    rev = Revision(
-        post=post,
-        user=current_user,
-        title=title,
-        body=body,
-        path=path,
-        language=language,
-        comment=comment,
-        byte_change=len(body),
-    )
-    db.session.add(rev)
-    db.session.commit()
-    return (
-        jsonify(
-            {
-                'id': post.id,
-                'path': post.path,
-                'language': post.language,
-                'title': post.title,
-            }
-        ),
-        201,
-    )
-
-
 @app.route('/post/<int:post_id>')
 def post_detail(post_id: int):
     post = Post.query.get_or_404(post_id)
@@ -2060,57 +1715,6 @@ def fetch_citation():
     if doi:
         entry['doi'] = doi
     return {'part': entry, 'text': bibtex}
-
-
-@app.route('/api/posts/<int:post_id>/citation', methods=['POST'])
-@login_required
-def api_add_url_citation(post_id: int):
-    post = Post.query.get_or_404(post_id)
-    if not request.is_json:
-        return jsonify({'error': 'invalid JSON'}), 400
-    data = request.get_json() or {}
-    url = (data.get('url') or '').strip()
-    context = (data.get('context') or '').strip()
-    if not url or not is_url(url):
-        return jsonify({'error': 'valid URL required'}), 400
-    existing = PostCitation.query.filter_by(post_id=post.id, citation_text=url).first()
-    if not existing:
-        existing = UserPostCitation.query.filter_by(post_id=post.id, citation_text=url).first()
-    if existing:
-        return jsonify({'error': 'Citation with this URL already exists.'}), 400
-    entry = {'url': url}
-    if current_user.id == post.author_id or current_user.is_admin():
-        citation = PostCitation(
-            post=post,
-            user=current_user,
-            citation_part=entry,
-            citation_text=url,
-            context=context,
-            doi=None,
-            bibtex_raw=url,
-            bibtex_fields=entry,
-        )
-    else:
-        citation = UserPostCitation(
-            post=post,
-            user=current_user,
-            citation_part=entry,
-            citation_text=url,
-            context=context,
-            doi=None,
-            bibtex_raw=url,
-            bibtex_fields=entry,
-        )
-    db.session.add(citation)
-    watcher_ids = {w.user_id for w in PostWatch.query.filter_by(post_id=post.id).all()}
-    watcher_ids.add(post.author_id)
-    link = url_for('post_detail', post_id=post.id)
-    for uid in watcher_ids:
-        if uid != current_user.id:
-            msg = _('Citation added to "%(title)s".', title=post.title)
-            db.session.add(Notification(user_id=uid, message=msg, link=link))
-    db.session.commit()
-    return jsonify({'id': citation.id, 'url': url}), 201
 
 
 @app.route('/post/<int:post_id>/citation/new', methods=['POST'])
