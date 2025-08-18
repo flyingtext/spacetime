@@ -8,6 +8,10 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='print.css') }}" media="print">
+  {% if meta_description %}
+  <meta name="description" content="{{ meta_description }}">
+  {% endif %}
+  <link rel="canonical" href="{{ canonical_url|default(request.url, true) }}">
   {% block extra_head %}{% endblock %}
   {{ get_setting('head_tags')|safe }}
   <script>
