@@ -62,6 +62,13 @@ def test_render_markdown_single_space_indented_list():
     assert outer[0].find('ul') is not None
 
 
+def test_render_markdown_tables():
+    html, _ = render_markdown('| a | b |\n| - | - |\n| 1 | 2 |')
+    assert '<table>' in html
+    assert '<td>1</td>' in html
+    assert '<td>2</td>' in html
+
+
 @pytest.fixture
 def client():
     app.config['TESTING'] = True
