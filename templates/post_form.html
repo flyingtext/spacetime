@@ -222,10 +222,10 @@ if (initialLocations.length) {
   const first = initialLocations[0];
   latField.value = first.lat;
   lonField.value = first.lon;
-  map.setView([first.lat, first.lon], 13);
+  map.setView([first.lat, first.lon], 10);
 } else if (!isNaN(initLat) && !isNaN(initLon)) {
   L.marker([initLat, initLon]).addTo(drawnItems);
-  map.setView([initLat, initLon], 13);
+  map.setView([initLat, initLon], 10);
 }
 
 map.on(L.Draw.Event.CREATED, function (e) {
@@ -247,7 +247,7 @@ document.getElementById('find-coordinates').addEventListener('click', function (
         latField.value = data.lat;
         lonField.value = data.lon;
         drawnItems.addLayer(L.marker([data.lat, data.lon]));
-        map.setView([data.lat, data.lon], 13);
+        map.setView([data.lat, data.lon], 10);
         updateLocations();
       }
     })

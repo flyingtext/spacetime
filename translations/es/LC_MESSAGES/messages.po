@@ -354,3 +354,8 @@ msgstr "Título del sitio"
 msgid "Home page path"
 msgstr "Ruta de la página principal"
 
+#: templates/post_detail.html:40 templates/post_detail.html:104 templates/post_detail.html:169
+#: templates/post_detail.html:43 templates/post_detail.html:108 templates/post_detail.html:173
+msgid "Google Maps"
+msgstr "Google Maps"
+
