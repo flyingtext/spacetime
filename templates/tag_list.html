@@ -55,6 +55,27 @@ searchInput.style.left = '10px';
 searchInput.style.zIndex = '1000';
 searchInput.style.maxWidth = '250px';
 
+function ensureInfoInViewport(){
+  const margin = 10;
+  const rect = infoDiv.getBoundingClientRect();
+  let left = rect.left;
+  let top = rect.top;
+  if(rect.right > window.innerWidth - margin){
+    left = window.innerWidth - rect.width - margin;
+  }
+  if(left < margin){
+    left = margin;
+  }
+  if(rect.bottom > window.innerHeight - margin){
+    top = window.innerHeight - rect.height - margin;
+  }
+  if(top < navHeight){
+    top = navHeight;
+  }
+  infoDiv.style.left = left + 'px';
+  infoDiv.style.top = top + 'px';
+}
+
 function positionInfoDiv(){
   if(infoDiv.dataset.dragged === 'true') return;
   infoDiv.style.position = 'fixed';
@@ -82,6 +103,7 @@ function positionInfoDiv(){
     infoDiv.style.borderRadius = '0';
     infoDiv.style.boxShadow = 'none';
   }
+  ensureInfoInViewport();
 }
 
 positionInfoDiv();
@@ -107,6 +129,7 @@ dragHandle.addEventListener('mousedown', (e) => {
 document.addEventListener('mouseup', () => {
   isDragging = false;
   document.removeEventListener('mousemove', onMouseMove);
+  ensureInfoInViewport();
 });
 
 function onMouseMove(e){
@@ -177,6 +200,7 @@ const allMarkers = [];
         infoDiv.style.display = 'block';
         infoDiv.dataset.dragged = 'false';
         positionInfoDiv();
+        ensureInfoInViewport();
       }
     });
     marker.tagName = t.name;
