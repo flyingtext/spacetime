@@ -773,12 +773,12 @@ def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> t
         PreserveOrderedListExtension(),
     ]
     if with_toc:
-        md = markdown.Markdown(extensions=extensions + ['toc'])
+        md = markdown.Markdown(extensions=extensions + ['toc'], tab_length=1)
         html = md.convert(text or '')
         if not getattr(md, 'toc_tokens', None):
             return html, ''
         return html, md.toc
-    html = markdown.markdown(text or '', extensions=extensions)
+    html = markdown.markdown(text or '', extensions=extensions, tab_length=1)
     return html, ''
 
 

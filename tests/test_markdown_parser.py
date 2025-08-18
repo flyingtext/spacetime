@@ -2,6 +2,7 @@ import os
 import sys
 
 import pytest
+import xml.etree.ElementTree as ET
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app import app, render_markdown
@@ -50,6 +51,15 @@ def test_render_markdown_blank_numbered_item_becomes_unordered():
 def test_render_markdown_preserves_mathjax_delimiters():
     html, _ = render_markdown('Euler formula $e^{i\\pi}+1=0$')
     assert '$e^{i\\pi}+1=0$' in html
+
+
+def test_render_markdown_single_space_indented_list():
+    """A single leading space should create a nested list."""
+    html, _ = render_markdown('- a\n - b\n- c')
+    root = ET.fromstring(f'<root>{html}</root>')
+    outer = root.find('ul')
+    assert len(list(outer)) == 2
+    assert outer[0].find('ul') is not None
 
 
 @pytest.fixture
