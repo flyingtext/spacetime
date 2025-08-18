@@ -38,6 +38,9 @@ import requests
 from habanero import Crossref
 import bibtexparser
 from types import SimpleNamespace
+from functools import lru_cache
+import nltk
+from nltk.corpus import wordnet as wn
 from sqlalchemy import func, event, or_, text, inspect, select
 from sqlalchemy.exc import NoSuchTableError
 from flask_babel import Babel, _, get_locale
@@ -855,10 +858,12 @@ def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> t
                 if p.title and p.body
             ]
             if posts:
-                tag_map[tag.name.lower()] = {
+                info = {
                     'url': f"/tag/{quote(tag.name)}",
                     'tooltip': json.dumps(posts),
                 }
+                for syn in get_tag_synonyms(tag.name):
+                    tag_map.setdefault(syn, info)
         if tag_map:
             extensions.append(TagLinkExtension(tag_map))
     except Exception:
@@ -914,6 +919,21 @@ def get_category_tags(language: str | None = None) -> list[tuple[str, str]]:
     return categories
 
 
+@lru_cache(maxsize=None)
+def get_tag_synonyms(name: str) -> set[str]:
+    """Return a set of lowercase synonyms for a tag name, including itself."""
+    try:
+        synsets = wn.synsets(name)
+    except LookupError:
+        nltk.download('wordnet', quiet=True)
+        synsets = wn.synsets(name)
+    synonyms = {name.lower()}
+    for syn in synsets:
+        for lemma in syn.lemmas():
+            synonyms.add(lemma.name().replace('_', ' ').lower())
+    return synonyms
+
+
 def resolve_tag(name: str) -> Tag | None:
     """Return tag object by canonical name or translated label.
 
@@ -921,8 +941,12 @@ def resolve_tag(name: str) -> Tag | None:
     category labels defined in the ``post_categories`` setting. Returns ``None``
     if no matching tag is found."""
 
-    # Direct lookup against existing tag names
+    # Direct lookup against existing tag names or synonyms
     tag = Tag.query.filter(func.lower(Tag.name) == name.lower()).first()
+    if tag:
+        return tag
+    syns = get_tag_synonyms(name)
+    tag = Tag.query.filter(func.lower(Tag.name).in_(syns)).first()
     if tag:
         return tag
 
@@ -1033,7 +1057,8 @@ def all_posts():
         tag = resolve_tag(tag_name)
         if not tag:
             abort(404)
-        query = query.join(Post.tags).filter(Tag.id == tag.id)
+        syns = get_tag_synonyms(tag.name)
+        query = query.join(Post.tags).filter(func.lower(Tag.name).in_(syns))
 
     pagination = (
         query.order_by(Post.id.desc()).paginate(page=page, per_page=20, error_out=False)
@@ -2461,9 +2486,10 @@ def tag_filter(name: str):
         abort(404)
     page = request.args.get('page', 1, type=int)
     categories = get_category_tags()
+    syns = get_tag_synonyms(tag.name)
     query = (
         Post.query.join(Post.tags)
-        .filter(Tag.id == tag.id, Post.title != '', Post.body != '')
+        .filter(func.lower(Tag.name).in_(syns), Post.title != '', Post.body != '')
     )
     pagination = query.order_by(Post.id.desc()).paginate(
         page=page, per_page=20, error_out=False
@@ -2524,7 +2550,10 @@ def search():
     pagination = None
     if posts_query is not None:
         for name in tag_names:
-            posts_query = posts_query.filter(Post.tags.any(Tag.name == name))
+            syns = get_tag_synonyms(name)
+            posts_query = posts_query.filter(
+                Post.tags.any(func.lower(Tag.name).in_(syns))
+            )
 
         if lat is not None and lon is not None and radius is not None:
             all_posts = posts_query.all()
