@@ -57,7 +57,7 @@
 </ul>
 {% if pagination and pagination.pages > 1 %}
 <nav>
-  <ul class="pagination">
+  <ul class="pagination justify-content-center mt-4">
     <li class="page-item{% if not pagination.has_prev %} disabled{% endif %}">
       <a class="page-link" href="{{ url_for('search', page=pagination.prev_num, q=q, tags=tags, key=key, value=value, lat=lat, lon=lon, radius=radius) }}">&laquo;</a>
     </li>
