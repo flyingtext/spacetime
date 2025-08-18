@@ -35,7 +35,12 @@
                 {% endfor %}
                 {% if lat is not none and lon is not none %}
                 {% if address %}
-                <tr><th scope="row">{{ _('Location') }}</th><td>{{ address }} <span class="text-muted">({{ lat }}, {{ lon }})</span></td></tr>
+                <tr>
+                  <th scope="row">{{ _('Location') }}</th>
+                  <td>{{ address }} <span class="text-muted">({{ lat }}, {{ lon }})</span>
+                    <a href="https://maps.google.com/?q={{ lat }},{{ lon }}" class="btn btn-sm btn-outline-secondary ms-2" target="_blank" rel="noopener">{{ _('Google Maps') }}</a>
+                  </td>
+                </tr>
                 {% endif %}
                 <tr><th scope="row">{{ _('Latitude') }}</th><td>{{ lat }}</td></tr>
                 <tr><th scope="row">{{ _('Longitude') }}</th><td>{{ lon }}</td></tr>
@@ -47,6 +52,7 @@
                 <td>
                   {% if loc.name %}{{ loc.name }} {% endif %}
                   <span class="text-muted">({{ loc.lat }}, {{ loc.lon }})</span>
+                  <a href="https://maps.google.com/?q={{ loc.lat }},{{ loc.lon }}" class="btn btn-sm btn-outline-secondary ms-2" target="_blank" rel="noopener">{{ _('Google Maps') }}</a>
                 </td>
               </tr>
               {% endfor %}
@@ -92,7 +98,12 @@
               {% endfor %}
               {% if lat is not none and lon is not none %}
               {% if address %}
-              <tr><th scope="row">{{ _('Location') }}</th><td>{{ address }} <span class="text-muted">({{ lat }}, {{ lon }})</span></td></tr>
+              <tr>
+                <th scope="row">{{ _('Location') }}</th>
+                <td>{{ address }} <span class="text-muted">({{ lat }}, {{ lon }})</span>
+                  <a href="https://maps.google.com/?q={{ lat }},{{ lon }}" class="btn btn-sm btn-outline-secondary ms-2" target="_blank" rel="noopener">{{ _('Google Maps') }}</a>
+                </td>
+              </tr>
               {% endif %}
               <tr><th scope="row">{{ _('Latitude') }}</th><td>{{ lat }}</td></tr>
               <tr><th scope="row">{{ _('Longitude') }}</th><td>{{ lon }}</td></tr>
@@ -104,6 +115,7 @@
                   <td>
                     {% if loc.name %}{{ loc.name }} {% endif %}
                     <span class="text-muted">({{ loc.lat }}, {{ loc.lon }})</span>
+                    <a href="https://maps.google.com/?q={{ loc.lat }},{{ loc.lon }}" class="btn btn-sm btn-outline-secondary ms-2" target="_blank" rel="noopener">{{ _('Google Maps') }}</a>
                   </td>
                 </tr>
               {% endfor %}
@@ -157,7 +169,12 @@
       {% endfor %}
       {% if lat is not none and lon is not none %}
       {% if address %}
-      <tr><th scope="row">{{ _('Location') }}</th><td>{{ address }} <span class="text-muted">({{ lat }}, {{ lon }})</span></td></tr>
+      <tr>
+        <th scope="row">{{ _('Location') }}</th>
+        <td>{{ address }} <span class="text-muted">({{ lat }}, {{ lon }})</span>
+          <a href="https://maps.google.com/?q={{ lat }},{{ lon }}" class="btn btn-sm btn-outline-secondary ms-2" target="_blank" rel="noopener">{{ _('Google Maps') }}</a>
+        </td>
+      </tr>
       {% endif %}
       <tr><th scope="row">{{ _('Latitude') }}</th><td>{{ lat }}</td></tr>
       <tr><th scope="row">{{ _('Longitude') }}</th><td>{{ lon }}</td></tr>
@@ -169,6 +186,7 @@
           <td>
             {% if loc.name %}{{ loc.name }} {% endif %}
             <span class="text-muted">({{ loc.lat }}, {{ loc.lon }})</span>
+            <a href="https://maps.google.com/?q={{ loc.lat }},{{ loc.lon }}" class="btn btn-sm btn-outline-secondary ms-2" target="_blank" rel="noopener">{{ _('Google Maps') }}</a>
           </td>
         </tr>
         {% endfor %}
@@ -468,11 +486,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }).addTo(map);
     const layer = L.geoJSON(data).addTo(map);
     try {
-      map.fitBounds(layer.getBounds());
+      map.fitBounds(layer.getBounds(), {maxZoom: 10});
     } catch (e) {
       if (data.features.length > 0) {
         const c = data.features[0].geometry.coordinates;
-        map.setView([c[1], c[0]], 13);
+        map.setView([c[1], c[0]], 10);
       }
     }
     return map;
