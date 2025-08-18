@@ -2445,6 +2445,7 @@ def tag_list():
     tag_locations = []
     tag_info = []
     tag_posts_data = []
+    location_counts = {}
     for tag in tags:
         coords = None
         for p in tag.posts:
@@ -2463,11 +2464,20 @@ def tag_list():
                 except ValueError:
                     continue
         if coords is not None:
+            lat, lon = coords
+            key = (round(lat, 4), round(lon, 4))
+            count = location_counts.get(key, 0)
+            if count:
+                angle = (count - 1) * (2 * math.pi / 6)
+                radius = 0.02 * ((count - 1) // 6 + 1)
+                lat += radius * math.cos(angle)
+                lon += radius * math.sin(angle) / max(math.cos(math.radians(lat)), 0.01)
+            location_counts[key] = count + 1
             tag_locations.append(
                 {
                     'name': tag.name,
-                    'lat': coords[0],
-                    'lon': coords[1],
+                    'lat': lat,
+                    'lon': lon,
                     'url': url_for('tag_filter', name=tag.name),
                 }
             )
