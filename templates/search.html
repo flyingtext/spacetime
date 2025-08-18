@@ -3,41 +3,43 @@
 {% block content %}
 <h1>{{ _('Search Posts') }}</h1>
 <form method="get">
-  <div class="mb-3">
-    <label for="q">{{ _('Query') }}</label>
-    <input type="text" name="q" id="q" value="{{ q }}" class="form-control">
-  </div>
-  <div class="mb-3">
-    <label for="tags">{{ _('Tags (comma separated)') }}</label>
-    <input type="text" name="tags" id="tags" value="{{ tags }}" class="form-control">
-  </div>
-  <div class="mb-3">
-    <label for="key">{{ _('Key') }}</label>
-    <select name="key" id="key" class="form-select">
-      <option value="">--</option>
-      {% for k in keys %}
-        <option value="{{ k }}" {% if k == key %}selected{% endif %}>{{ k }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="mb-3">
-    <label for="value">{{ _('Value') }}</label>
-    <input type="text" name="value" id="value" value="{{ value }}" class="form-control">
-  </div>
-  <div class="mb-3">
-    <label for="lat">{{ _('Latitude') }}</label>
-    <input type="text" name="lat" id="lat" value="{{ lat if lat is not none else '' }}" class="form-control">
-  </div>
-  <div class="mb-3">
-    <label for="lon">{{ _('Longitude') }}</label>
-    <input type="text" name="lon" id="lon" value="{{ lon if lon is not none else '' }}" class="form-control">
-  </div>
-  <div class="mb-3">
-    <label for="radius">{{ _('Radius (km)') }}</label>
-    <input type="text" name="radius" id="radius" value="{{ radius if radius is not none else '' }}" class="form-control">
-  </div>
-  <div class="mb-3">
-    <button type="submit" class="btn btn-primary">{{ _('Search') }}</button>
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label for="q" class="form-label">{{ _('Query') }}</label>
+      <input type="text" name="q" id="q" value="{{ q }}" class="form-control">
+    </div>
+    <div class="col-md-6">
+      <label for="tags" class="form-label">{{ _('Tags (comma separated)') }}</label>
+      <input type="text" name="tags" id="tags" value="{{ tags }}" class="form-control">
+    </div>
+    <div class="col-md-4">
+      <label for="key" class="form-label">{{ _('Key') }}</label>
+      <select name="key" id="key" class="form-select">
+        <option value="">--</option>
+        {% for k in keys %}
+          <option value="{{ k }}" {% if k == key %}selected{% endif %}>{{ k }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-8">
+      <label for="value" class="form-label">{{ _('Value') }}</label>
+      <input type="text" name="value" id="value" value="{{ value }}" class="form-control">
+    </div>
+    <div class="col-md-4">
+      <label for="lat" class="form-label">{{ _('Latitude') }}</label>
+      <input type="text" name="lat" id="lat" value="{{ lat if lat is not none else '' }}" class="form-control">
+    </div>
+    <div class="col-md-4">
+      <label for="lon" class="form-label">{{ _('Longitude') }}</label>
+      <input type="text" name="lon" id="lon" value="{{ lon if lon is not none else '' }}" class="form-control">
+    </div>
+    <div class="col-md-4">
+      <label for="radius" class="form-label">{{ _('Radius (km)') }}</label>
+      <input type="text" name="radius" id="radius" value="{{ radius if radius is not none else '' }}" class="form-control">
+    </div>
+    <div class="col-12">
+      <button type="submit" class="btn btn-primary">{{ _('Search') }}</button>
+    </div>
   </div>
 </form>
 {% if all_tags %}
