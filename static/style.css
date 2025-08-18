@@ -185,7 +185,8 @@ textarea::placeholder,
 }
 
 #ogTitle,
-#ogDescription {
+#ogDescription,
+.post-body {
   word-break: break-word;
   overflow-wrap: anywhere;
 }
