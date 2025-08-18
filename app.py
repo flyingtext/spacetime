@@ -2575,6 +2575,7 @@ def settings():
     if not current_user.is_admin():
         abort(403)
     title = get_setting('site_title', '')
+    title_style = get_setting('site_title_style', '')
     home_page = get_setting('home_page_path', '')
     timezone_value = get_setting('timezone', 'UTC')
     rss_enabled_val = get_setting('rss_enabled', 'false')
@@ -2585,6 +2586,7 @@ def settings():
     if request.method == 'POST':
 
         title = request.form.get('site_title', title).strip()
+        title_style = request.form.get('site_title_style', title_style).strip()
         home_page = request.form.get('home_page_path', home_page).strip()
         tz_input = request.form.get('timezone', timezone_value).strip() or 'UTC'
         tz_norm = normalize_timezone(tz_input)
@@ -2612,6 +2614,12 @@ def settings():
         else:
             title_setting = Setting(key='site_title', value=title)
             db.session.add(title_setting)
+
+        style_setting = Setting.query.filter_by(key='site_title_style').first()
+        if style_setting:
+            style_setting.value = title_style
+        else:
+            db.session.add(Setting(key='site_title_style', value=title_style))
 
         if 'home_page_path' in request.form:
             home_page = request.form['home_page_path'].strip()
@@ -2662,6 +2670,7 @@ def settings():
     return render_template(
         'settings.html',
         site_title=title,
+        site_title_style=title_style,
         home_page_path=home_page,
         timezone=timezone_value,
         rss_enabled=rss_enabled_val.lower() in ['true', '1', 'yes', 'on'],

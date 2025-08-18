@@ -14,7 +14,8 @@
 <body>
 <nav class="navbar navbar-expand-lg">
   <div class="container-fluid">
-    <a class="navbar-brand" href="{{ url_for('index') }}">{{ get_setting('site_title', _('Spacetime')) }}</a>
+    {% set site_title_style = get_setting('site_title_style', '') %}
+    <a class="navbar-brand" href="{{ url_for('index') }}"{% if site_title_style %} style="{{ site_title_style }}"{% endif %}>{{ get_setting('site_title', _('Spacetime')) }}</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>

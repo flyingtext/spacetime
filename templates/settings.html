@@ -8,6 +8,11 @@
       <input type="text" id="site_title" name="site_title" class="form-control" value="{{ site_title }}">
     </div>
     <div class="mb-3">
+      <label for="site_title_style" class="form-label">{{ _('Site title CSS') }}</label>
+      <input type="text" id="site_title_style" name="site_title_style" class="form-control" value="{{ site_title_style }}">
+      <div class="form-text">{{ _('Inline CSS for site title in navigation bar') }}</div>
+    </div>
+    <div class="mb-3">
       <label for="home_page_path" class="form-label">{{ _('Home page path') }}</label>
       <input type="text" id="home_page_path" name="home_page_path" class="form-control" value="{{ home_page_path }}">
     </div>
