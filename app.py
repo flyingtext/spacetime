@@ -984,6 +984,40 @@ def get_category_tags(language: str | None = None) -> list[tuple[str, str]]:
     return categories
 
 
+def resolve_tag(name: str) -> Tag | None:
+    """Return tag object by canonical name or translated label.
+
+    Performs a case-insensitive lookup against both stored tag names and any
+    category labels defined in the ``post_categories`` setting. Returns ``None``
+    if no matching tag is found.
+    """
+
+    # Direct lookup against existing tag names
+    tag = Tag.query.filter(func.lower(Tag.name) == name.lower()).first()
+    if tag:
+        return tag
+
+    # Fallback to category translations defined in settings
+    raw = get_setting('post_categories', '')
+    if not raw:
+        return None
+    try:
+        mapping = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+
+    if isinstance(mapping, dict):
+        lower_name = name.lower()
+        for slug, translations in mapping.items():
+            if slug.lower() == lower_name:
+                return Tag.query.filter(func.lower(Tag.name) == slug.lower()).first()
+            if isinstance(translations, dict):
+                for label in translations.values():
+                    if label.lower() == lower_name:
+                        return Tag.query.filter(func.lower(Tag.name) == slug.lower()).first()
+    return None
+
+
 def get_user_timezone() -> str:
     if current_user.is_authenticated and current_user.timezone:
         return current_user.timezone
@@ -1142,7 +1176,9 @@ def all_posts():
 
     query = Post.query.filter(Post.title != '', Post.body != '')
     if tag_name:
-        tag = Tag.query.filter_by(name=tag_name).first_or_404()
+        tag = resolve_tag(tag_name)
+        if not tag:
+            abort(404)
         query = query.join(Post.tags).filter(Tag.id == tag.id)
 
     pagination = (
@@ -2694,7 +2730,9 @@ def tag_list():
 
 @app.route('/tag/<string:name>')
 def tag_filter(name: str):
-    tag = Tag.query.filter_by(name=name).first_or_404()
+    tag = resolve_tag(name)
+    if not tag:
+        abort(404)
     page = request.args.get('page', 1, type=int)
     categories = get_category_tags()
     query = (
