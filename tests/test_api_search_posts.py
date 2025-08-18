@@ -48,3 +48,17 @@ def test_api_search_pagination(client):
     resp = client.get('/api/posts', query_string={'q': 'apple', 'limit': 0})
     data = resp.get_json()
     assert len(data['posts']) == 3
+
+
+def test_api_search_synonyms(client):
+    with app.app_context():
+        user = User.query.first()
+        p = Post(title='Quick Post', body='quick runner', path='psyn', language='en', author_id=user.id)
+        db.session.add(p)
+        db.session.commit()
+
+    resp = client.get('/api/posts', query_string={'q': 'fast'})
+    assert resp.status_code == 200
+    data = resp.get_json()
+    titles = [p['title'] for p in data['posts']]
+    assert 'Quick Post' in titles
