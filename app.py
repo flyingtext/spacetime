@@ -2783,6 +2783,31 @@ def citation_stats():
     return render_template('citation_stats.html', stats=stats, pagination=pagination)
 
 
+@app.route('/citations/delete', methods=['POST'])
+def delete_citation_everywhere():
+    if not current_user.is_admin():
+        flash(_('Permission denied.'))
+        return redirect(url_for('citation_stats'))
+
+    doi = request.form.get('doi')
+    citation_text = request.form.get('citation_text')
+
+    query = PostCitation.query.filter_by(citation_text=citation_text)
+    user_query = UserPostCitation.query.filter_by(citation_text=citation_text)
+    if doi:
+        query = query.filter_by(doi=doi)
+        user_query = user_query.filter_by(doi=doi)
+    else:
+        query = query.filter(PostCitation.doi.is_(None))
+        user_query = user_query.filter(UserPostCitation.doi.is_(None))
+
+    query.delete(synchronize_session=False)
+    user_query.delete(synchronize_session=False)
+    db.session.commit()
+
+    return redirect(url_for('citation_stats'))
+
+
 if __name__ == '__main__':
     with app.app_context():
         PostWatch.__table__.create(bind=db.engine, checkfirst=True)
