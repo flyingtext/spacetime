@@ -2533,20 +2533,51 @@ def tag_list():
                     'url': url_for('tag_filter', name=tag.name),
                 }
             )
-        top_posts = sorted(
-            [(p, get_view_count(p)) for p in tag.posts if p.title and p.body],
-            key=lambda x: x[1],
-            reverse=True,
-        )[:3]
+        def haversine(lat1, lon1, lat2, lon2):
+            r = 6371
+            p1 = math.radians(lat1)
+            p2 = math.radians(lat2)
+            dphi = math.radians(lat2 - lat1)
+            dlambda = math.radians(lon2 - lon1)
+            a = (
+                math.sin(dphi / 2) ** 2
+                + math.cos(p1) * math.cos(p2) * math.sin(dlambda / 2) ** 2
+            )
+            return 2 * r * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+        scored_posts = []
+        for p in tag.posts:
+            if not p.title or not p.body:
+                continue
+            views = get_view_count(p)
+            plat, plon = p.latitude, p.longitude
+            if plat is None or plon is None:
+                meta = {m.key: m.value for m in p.metadata}
+                plat = meta.get('lat') or meta.get('latitude')
+                plon = meta.get('lon') or meta.get('longitude')
+                if plat is not None and plon is not None:
+                    try:
+                        plat = float(plat)
+                        plon = float(plon)
+                    except ValueError:
+                        plat = plon = None
+            distance = (
+                haversine(lat, lon, plat, plon)
+                if coords is not None and plat is not None and plon is not None
+                else float('inf')
+            )
+            snippet = (p.body[:150] + '...') if len(p.body) > 150 else p.body
+            scored_posts.append((distance, views, p, snippet))
+
+        scored_posts.sort(key=lambda x: (0 if x[0] <= 100 else 1, -x[1], x[0]))
         posts_data = []
-        for p, _ in top_posts:
-            snippet = (p.body[:100] + '...') if len(p.body) > 100 else p.body
+        for distance, views, p, snippet in scored_posts[:5]:
             posts_data.append(
                 {
                     'title': p.display_title,
                     'url': url_for('document', language=p.language, doc_path=p.path),
                     'snippet': snippet,
-                    'views': get_view_count(p),
+                    'views': views,
                     'author': p.author.username,
                 }
             )

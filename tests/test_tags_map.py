@@ -159,3 +159,67 @@ def test_duplicate_tag_locations_are_spaced(client):
     assert len(coords) == 2
     assert coords[0] != coords[1]
 
+
+def test_tag_preview_prioritizes_nearby_high_views(client):
+    with app.app_context():
+        user = User.query.filter_by(username='u').first()
+        tag = Tag(name='t3')
+        db.session.add(tag)
+        db.session.commit()
+        base = Post(
+            title='Base',
+            body='b',
+            path='base',
+            language='en',
+            author_id=user.id,
+            latitude=10.0,
+            longitude=20.0,
+            tags=[tag],
+        )
+        near_high = Post(
+            title='NearHigh',
+            body='b',
+            path='nh',
+            language='en',
+            author_id=user.id,
+            latitude=10.0,
+            longitude=20.0,
+            tags=[tag],
+        )
+        near_low = Post(
+            title='NearLow',
+            body='b',
+            path='nl',
+            language='en',
+            author_id=user.id,
+            latitude=10.1,
+            longitude=20.1,
+            tags=[tag],
+        )
+        far_high = Post(
+            title='FarHigh',
+            body='b',
+            path='fh',
+            language='en',
+            author_id=user.id,
+            latitude=50.0,
+            longitude=60.0,
+            tags=[tag],
+        )
+        db.session.add_all([base, near_high, near_low, far_high])
+        db.session.flush()
+        db.session.add_all([
+            PostMetadata(post=near_high, key='views', value='50'),
+            PostMetadata(post=near_low, key='views', value='10'),
+            PostMetadata(post=far_high, key='views', value='100'),
+        ])
+        db.session.commit()
+    resp = client.get('/tags')
+    data = resp.get_data(as_text=True)
+    start = data.index('const tagPosts = ') + len('const tagPosts = ')
+    end = data.index(';', start)
+    posts = json.loads(data[start:end])
+    t3 = next(tp for tp in posts if tp['tag'] == 't3')
+    titles = [p['title'] for p in t3['posts']]
+    assert titles == ['NearHigh', 'NearLow', 'Base', 'FarHigh']
+
