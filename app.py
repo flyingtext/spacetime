@@ -1046,14 +1046,16 @@ def all_posts():
 
 @app.route('/')
 def index():
-    home_path = get_setting('home_page_path', '').strip()
+    home_path = get_setting('home_page_path', '').strip().lstrip('/')
     if home_path:
-        language = select_locale() or app.config['BABEL_DEFAULT_LOCALE']
-        post = Post.query.filter_by(language=language, path=home_path).first()
+        if '/' in home_path:
+            language, doc_path = home_path.split('/', 1)
+        else:
+            language = select_locale() or app.config['BABEL_DEFAULT_LOCALE']
+            doc_path = home_path
+        post = Post.query.filter_by(language=language, path=doc_path).first()
         if post:
-            return redirect(
-                url_for('document_docs', language=language, doc_path=home_path)
-            )
+            return redirect(url_for('document', language=language, doc_path=doc_path))
     return all_posts()
 
 
