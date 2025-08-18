@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 
@@ -114,3 +115,31 @@ def test_tags_page_skips_deleted_posts(client):
     data = resp.get_data(as_text=True)
     assert '/en/pg' not in data
     assert '[deleted]' not in data
+
+
+def test_duplicate_tag_locations_are_spaced(client):
+    with app.app_context():
+        user = User.query.filter_by(username='u').first()
+        tag = Tag(name='t2')
+        db.session.add(tag)
+        db.session.commit()
+        post = Post(
+            title='Post2',
+            body='body',
+            path='p2',
+            language='en',
+            author_id=user.id,
+            latitude=10.0,
+            longitude=20.0,
+            tags=[tag],
+        )
+        db.session.add(post)
+        db.session.commit()
+    resp = client.get('/tags')
+    data = resp.get_data(as_text=True)
+    start = data.index('const tagLocations = ') + len('const tagLocations = ')
+    end = data.index(';', start)
+    locations = json.loads(data[start:end])
+    coords = [(loc['lat'], loc['lon']) for loc in locations if loc['name'] in ['t1', 't2']]
+    assert len(coords) == 2
+    assert coords[0] != coords[1]
