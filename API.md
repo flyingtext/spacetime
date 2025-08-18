@@ -307,7 +307,7 @@ Response
 {
   "results": {
     "Albert Einstein was born in Ulm.": [
-      {"text": "@misc{,\n  title={Einstein},\n  url={/en/einstein}\n}", "part": {"title": "Einstein", "url": "/en/einstein"}}
+      {"text": "@misc{1,\n  title={Einstein},\n  url={/en/einstein}\n}", "part": {"title": "Einstein", "url": "/en/einstein"}}
     ]
   }
 }
@@ -337,7 +337,7 @@ Response
 {
   "results": {
     "Quantum mechanics revolutionised physics.": [
-      {"text": "@misc{,\n  title={Quantum mechanics},\n  url={/en/quantum}\n}", "part": {"title": "Quantum mechanics", "url": "/en/quantum"}}
+      {"text": "@misc{2,\n  title={Quantum mechanics},\n  url={/en/quantum}\n}", "part": {"title": "Quantum mechanics", "url": "/en/quantum"}}
     ]
   }
 }
