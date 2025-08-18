@@ -27,8 +27,16 @@ document.addEventListener('DOMContentLoaded', () => {
     tooltip.style.display = 'none';
   }
 
+  function maybeHideTooltip(e) {
+    if (!tooltip.contains(e.relatedTarget)) {
+      hideTooltip();
+    }
+  }
+
   document.querySelectorAll('a.tag-link').forEach(el => {
     el.addEventListener('mouseenter', showTooltip);
-    el.addEventListener('mouseleave', hideTooltip);
+    el.addEventListener('mouseout', maybeHideTooltip);
   });
+
+  tooltip.addEventListener('mouseleave', hideTooltip);
 });
