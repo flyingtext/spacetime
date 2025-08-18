@@ -1151,6 +1151,16 @@ def rss_feed():
     return Response(xml, mimetype='application/rss+xml')
 
 
+@app.route('/robots.txt')
+def robots_txt():
+    lines = [
+        'User-agent: *',
+        'Disallow:',
+        f"Sitemap: {url_for('sitemap', _external=True)}",
+    ]
+    return Response("\n".join(lines), mimetype='text/plain')
+
+
 @app.route('/sitemap.xml')
 def sitemap():
     """Generate a basic XML sitemap of all posts."""
@@ -1581,6 +1591,8 @@ def post_detail(post_id: int):
     base = url_for('document', language=post.language, doc_path='')
     html_body, toc = render_markdown(post.body, base, with_toc=True)
     canonical_url = url_for('document', language=post.language, doc_path=post.path, _external=True)
+    plain = re.sub('<[^<]+?>', '', html_body)
+    meta_description = ' '.join(plain.split())[:160]
     year = created_at.year if created_at else datetime.utcnow().year
     key = re.sub(r'\W+', '', f"{post.author.username}{year}{post.id}")
     bibtex = (
@@ -1605,6 +1617,7 @@ def post_detail(post_id: int):
         address=address,
         bibtex=bibtex,
         canonical_url=canonical_url,
+        meta_description=meta_description,
     )
 
 
