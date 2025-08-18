@@ -106,6 +106,10 @@
       <label for="timezone" class="form-label">{{ _('Timezone') }}</label>
       <input type="text" id="timezone" name="timezone" class="form-control" value="{{ user.timezone or '' }}">
     </div>
+    <div class="form-check mb-3">
+      <input class="form-check-input" type="checkbox" id="tag_modal_new_tab" name="tag_modal_new_tab" {% if user.tag_modal_new_tab %}checked{% endif %}>
+      <label class="form-check-label" for="tag_modal_new_tab">{{ _('Open tag links in new tab') }}</label>
+    </div>
     <div class="mb-3">
       <button type="submit" class="btn btn-primary">{{ _('Update') }}</button>
     </div>
