@@ -88,8 +88,7 @@ function positionInfoDiv(){
   if(window.innerWidth >= 768){
     const width = 400;
     infoDiv.style.width = width + 'px';
-    const mapRect = mapDiv.getBoundingClientRect();
-    infoDiv.style.left = (mapRect.right - width - 10) + 'px';
+    infoDiv.style.left = (window.innerWidth - width - 10) + 'px';
     infoDiv.style.right = 'auto';
     infoDiv.style.maxHeight = '50vh';
     infoDiv.style.border = '1px solid rgba(0,0,0,0.1)';
