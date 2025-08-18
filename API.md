@@ -284,10 +284,9 @@ Response
 
 ### `/citation/suggest` (`POST`)
 
-Suggest citations for multiple sentences of text. A random selection of two or
-three words from each sentence is used when querying external services.
-Language detection uses the full sentence and currently supports Korean,
-English, Japanese, French, German and Chinese.
+Suggest citations for multiple sentences of text using existing wiki pages.
+The longest unique words from each sentence query the internal full-text
+search index. Language detection is used to match posts in the same language.
 
 **Parameters**
 
@@ -308,7 +307,7 @@ Response
 {
   "results": {
     "Albert Einstein was born in Ulm.": [
-      {"text": "@article{...}", "part": {"title": "...", "doi": "10.1000/xyz"}}
+      {"text": "@misc{,\n  title={Einstein},\n  url={/en/einstein}\n}", "part": {"title": "Einstein", "url": "/en/einstein"}}
     ]
   }
 }
@@ -316,8 +315,8 @@ Response
 
 ### `/citation/suggest_line` (`POST`)
 
-Like `/citation/suggest` but processes one line at a time, selecting two or
-three random words from that line to build the search query.
+Like `/citation/suggest` but processes one line at a time, using the longest
+words from that line to build the search query.
 
 **Parameters**
 
@@ -338,7 +337,7 @@ Response
 {
   "results": {
     "Quantum mechanics revolutionised physics.": [
-      {"text": "@article{...}", "part": {"title": "...", "doi": "10.1000/abc"}}
+      {"text": "@misc{,\n  title={Quantum mechanics},\n  url={/en/quantum}\n}", "part": {"title": "Quantum mechanics", "url": "/en/quantum"}}
     ]
   }
 }
