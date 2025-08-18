@@ -5,7 +5,7 @@ import re
 import markdown
 import math
 from datetime import datetime, timezone
-from xml.etree.ElementTree import Element, SubElement, tostring
+from xml.etree.ElementTree import Element, SubElement, tostring, fromstring
 from urllib.parse import urlparse, quote, urljoin
 
 from flask import (
@@ -31,6 +31,7 @@ from flask_login import (
 from flask_socketio import SocketIO
 from markdown.extensions import Extension
 from markdown.inlinepatterns import InlineProcessor
+from markdown.util import AtomicString
 from markdown.blockprocessors import OListProcessor
 from markupsafe import Markup, escape
 import requests
@@ -703,7 +704,7 @@ class TagLinkInlineProcessor(InlineProcessor):
                 'data-tooltip': info['tooltip'],
             },
         )
-        el.text = word
+        el.text = AtomicString(word)
         return el, m.start(0), m.end(0)
 
 
@@ -812,6 +813,26 @@ class PreserveOrderedListExtension(Extension):
         )
 
 
+# Utility to strip nested tag links inside regular hyperlinks
+def sanitize_tag_links(html: str) -> str:
+    try:
+        root = fromstring(f'<root>{html}</root>')
+    except Exception:
+        return html
+    for outer in root.iter('a'):
+        for inner in list(outer):
+            if inner.tag == 'a' and 'tag-link' in inner.get('class', '').split():
+                idx = list(outer).index(inner)
+                text = (inner.text or '') + (inner.tail or '')
+                if idx == 0:
+                    outer.text = (outer.text or '') + text
+                else:
+                    prev = list(outer)[idx - 1]
+                    prev.tail = (prev.tail or '') + text
+                outer.remove(inner)
+    return ''.join(tostring(child, encoding='unicode') for child in root)
+
+
 # Markup rendering helpers
 def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> tuple[str, str]:
     """Return HTML and optional TOC from Markdown text with wiki links."""
@@ -846,10 +867,12 @@ def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> t
     if with_toc:
         md = markdown.Markdown(extensions=extensions + ['toc'], tab_length=1)
         html = md.convert(normalized)
+        html = sanitize_tag_links(html)
         if not getattr(md, 'toc_tokens', None):
             return html, ''
         return html, md.toc
     html = markdown.markdown(normalized, extensions=extensions, tab_length=1)
+    html = sanitize_tag_links(html)
     return html, ''
 
 

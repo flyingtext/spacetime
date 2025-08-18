@@ -110,3 +110,16 @@ def test_render_markdown_auto_links_tag(app_ctx):
         assert 'href="/tag/python"' in html
         assert 'class="tag-link"' in html
         assert 'First line' in html
+
+
+def test_render_markdown_tag_inside_link(app_ctx):
+    with app.app_context():
+        user = User(username='u', role='editor')
+        user.set_password('pw')
+        tag = Tag(name='python')
+        post = Post(title='T', body='body', path='t', language='en', author=user)
+        post.tags.append(tag)
+        db.session.add_all([user, tag, post])
+        db.session.commit()
+        html, _ = render_markdown('[Python](http://example.com)')
+        assert html == '<p><a href="http://example.com">Python</a></p>'
