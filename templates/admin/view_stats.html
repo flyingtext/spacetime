@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ _('View Statistics') }}{% endblock %}
+{% block content %}
+<h1>{{ _('View Statistics') }}</h1>
+<table class="table table-striped">
+  <tr><th>{{ _('Total Visitors') }}</th><td>{{ total_visitors }}</td></tr>
+  <tr><th>{{ _('Total Views') }}</th><td>{{ total_views }}</td></tr>
+</table>
+
+<h2>{{ _('Top Posts') }}</h2>
+<select id="period" class="form-select mb-3" style="width:auto;">
+  <option value="daily">{{ _('Daily') }}</option>
+  <option value="weekly">{{ _('Weekly') }}</option>
+  <option value="monthly">{{ _('Monthly') }}</option>
+  <option value="yearly">{{ _('Yearly') }}</option>
+</select>
+
+<table class="table table-striped" id="topPostsTable">
+  <thead><tr><th>{{ _('Title') }}</th><th>{{ _('Views') }}</th></tr></thead>
+  <tbody></tbody>
+</table>
+
+<canvas id="topPostsChart" width="400" height="150"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+async function fetchTop(period) {
+  const resp = await fetch('{{ url_for('admin_view_stats_top_posts') }}');
+  const data = await resp.json();
+  const list = data[period];
+  const tbody = document.querySelector('#topPostsTable tbody');
+  tbody.innerHTML = '';
+  const labels = [];
+  const counts = [];
+  for (const item of list) {
+    labels.push(item.title);
+    counts.push(item.views);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${item.title}</td><td>${item.views}</td>`;
+    tbody.appendChild(tr);
+  }
+  const ctx = document.getElementById('topPostsChart');
+  if (window.topPostsChart) window.topPostsChart.destroy();
+  window.topPostsChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: '{{ _('Views') }}',
+        data: counts,
+        backgroundColor: 'rgba(54, 162, 235, 0.5)'
+      }]
+    }
+  });
+}
+document.getElementById('period').addEventListener('change', e => fetchTop(e.target.value));
+fetchTop('daily');
+</script>
+{% endblock %}

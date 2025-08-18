@@ -4,7 +4,7 @@ import os
 import re
 import markdown
 import math
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from xml.etree.ElementTree import Element, SubElement, tostring, fromstring
 from urllib.parse import urlparse, quote, urljoin
 
@@ -61,6 +61,7 @@ from models import (
     PostTag,
     PostLink,
     PostWatch,
+    PostView,
     PostMetadata,
     UserPostMetadata,
     Notification,
@@ -1050,13 +1051,14 @@ def get_view_count(post: Post) -> int:
 
 
 def increment_view_count(post: Post) -> int:
-    """Increment and return the view count for a post."""
+    """Increment and return the view count for a post and record the view."""
     meta = PostMetadata.query.filter_by(post_id=post.id, key='views').first()
     if meta:
         meta.value = int(meta.value) + 1
     else:
         meta = PostMetadata(post=post, key='views', value=1)
         db.session.add(meta)
+    db.session.add(PostView(post=post, ip_address=request.remote_addr))
     db.session.commit()
     return int(meta.value)
 
@@ -2332,6 +2334,44 @@ def admin_stats_posts_over_time():
         'weekly': [{'period': w, 'count': c} for w, c in weekly],
         'monthly': [{'period': m, 'count': c} for m, c in monthly],
         'yearly': [{'period': y, 'count': c} for y, c in yearly],
+    }
+    return jsonify(result)
+
+
+@app.route('/admin/view-stats')
+@login_required
+def admin_view_stats():
+    if not current_user.is_admin():
+        abort(403)
+    total_views = PostView.query.count()
+    total_visitors = db.session.query(func.count(func.distinct(PostView.ip_address))).scalar() or 0
+    return render_template('admin/view_stats.html', total_views=total_views, total_visitors=total_visitors)
+
+
+@app.route('/admin/view-stats/top_posts')
+@login_required
+def admin_view_stats_top_posts():
+    if not current_user.is_admin():
+        abort(403)
+    now = datetime.utcnow()
+    def top_since(delta):
+        start = now - delta
+        data = (
+            db.session.query(Post.title, func.count(PostView.id).label('views'))
+            .select_from(PostView)
+            .join(Post)
+            .filter(PostView.viewed_at >= start)
+            .group_by(Post.id)
+            .order_by(func.count(PostView.id).desc())
+            .limit(5)
+            .all()
+        )
+        return [{'title': title, 'views': views} for title, views in data]
+    result = {
+        'daily': top_since(timedelta(days=1)),
+        'weekly': top_since(timedelta(days=7)),
+        'monthly': top_since(timedelta(days=30)),
+        'yearly': top_since(timedelta(days=365)),
     }
     return jsonify(result)
 

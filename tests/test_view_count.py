@@ -4,7 +4,7 @@ import sys
 import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from app import app, db, User, Post, PostMetadata
+from app import app, db, User, Post, PostMetadata, PostView
 
 
 @pytest.fixture
@@ -31,10 +31,12 @@ def test_view_count_increment(client):
         meta = PostMetadata.query.filter_by(key='views').first()
         assert meta is not None
         assert meta.value == 1
+        assert PostView.query.count() == 1
     client.get('/docs/en/p')
     with app.app_context():
         meta = PostMetadata.query.filter_by(key='views').first()
         assert meta.value == 2
+        assert PostView.query.count() == 2
 
 
 def test_view_count_not_editable_via_metadata(client):

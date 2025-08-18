@@ -137,6 +137,15 @@ class PostWatch(db.Model):
     user = db.relationship("User", backref="watched_posts")
 
 
+class PostView(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey("post.id"), nullable=False)
+    ip_address = db.Column(db.String(45))
+    viewed_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    post = db.relationship("Post", backref="views")
+
+
 class PostMetadata(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     post_id = db.Column(db.Integer, db.ForeignKey("post.id"), nullable=False)
