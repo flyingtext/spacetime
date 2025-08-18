@@ -107,6 +107,11 @@ nav a {
   border-color: var(--border-color) !important;
 }
 
+.bg-light {
+  background-color: var(--nav-bg-color) !important;
+  color: var(--text-color) !important;
+}
+
 a {
   color: var(--link-color);
   text-decoration-color: var(--link-color);
