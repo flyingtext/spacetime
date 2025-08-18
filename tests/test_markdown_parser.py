@@ -62,6 +62,16 @@ def test_render_markdown_single_space_indented_list():
     assert outer[0].find('ul') is not None
 
 
+def test_render_markdown_three_space_indented_list():
+    """Three leading spaces should also create a nested list."""
+    html, _ = render_markdown('- a\n   - b\n- c')
+    assert '<code>' not in html
+    root = ET.fromstring(f'<root>{html}</root>')
+    outer = root.find('ul')
+    assert len(list(outer)) == 2
+    assert outer[0].find('ul') is not None
+
+
 @pytest.fixture
 def client():
     app.config['TESTING'] = True

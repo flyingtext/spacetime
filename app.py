@@ -835,13 +835,14 @@ def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> t
             extensions.append(TagLinkExtension(tag_map))
     except Exception:
         pass
+    normalized = re.sub(r'(?m)^\s{3}([*+-]|\d+\.)', r' \1', text or '')
     if with_toc:
         md = markdown.Markdown(extensions=extensions + ['toc'], tab_length=1)
-        html = md.convert(text or '')
+        html = md.convert(normalized)
         if not getattr(md, 'toc_tokens', None):
             return html, ''
         return html, md.toc
-    html = markdown.markdown(text or '', extensions=extensions, tab_length=1)
+    html = markdown.markdown(normalized, extensions=extensions, tab_length=1)
     return html, ''
 
 
