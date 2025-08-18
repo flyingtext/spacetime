@@ -2300,6 +2300,23 @@ def admin_stats():
     return render_template('admin/stats.html', stats=stats)
 
 
+@app.route('/admin/db-status')
+@login_required
+def admin_db_status():
+    if not current_user.is_admin():
+        abort(403)
+    inspector = inspect(db.engine)
+    tables = []
+    with db.engine.connect() as conn:
+        for name in inspector.get_table_names():
+            try:
+                count = conn.execute(text(f'SELECT COUNT(*) FROM {name}')).scalar() or 0
+            except Exception:
+                count = 0
+            tables.append({'name': name, 'count': count})
+    db_url = str(db.engine.url)
+    return render_template('admin/db_status.html', tables=tables, db_url=db_url)
+
 @app.route('/admin/stats/posts_over_time')
 @login_required
 def admin_stats_posts_over_time():
