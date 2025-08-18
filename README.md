@@ -90,6 +90,9 @@ gunicorn -w 4 -b 0.0.0.0:8000 index_server:app
 Use a load balancer such as Nginx or HAProxy to distribute requests across
 instances running on different ports or hosts.
 
+For a detailed overview of the index server's architecture and API, see
+[docs/INDEX_SERVER.md](docs/INDEX_SERVER.md).
+
 ## Testing
 
 Run the test suite with [pytest](https://docs.pytest.org/):
