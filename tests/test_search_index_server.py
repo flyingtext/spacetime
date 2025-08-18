@@ -5,6 +5,7 @@ import pytest
 import requests
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from index_server import app as index_app
 from app import app, db, User, Post, Tag
 from sqlalchemy import text
 
@@ -62,3 +63,45 @@ def test_remote_search_failure_fallback(client, monkeypatch):
     text_resp = resp.get_data(as_text=True)
     assert 'Apple' in text_resp
     assert 'Search service unavailable' in text_resp
+
+
+def test_index_server_metadata_search(tmp_path):
+    db_path = 'search.db'
+    if os.path.exists(db_path):
+        os.remove(db_path)
+    with index_app.test_client() as c:
+        r = c.post('/index', json={'id': '1', 'title': 'One', 'body': 'foo', 'metadata': {'author': 'alice'}, 'tags': ['t1']})
+        assert r.status_code == 200
+        r = c.post('/index', json={'id': '2', 'title': 'Two', 'body': 'bar', 'metadata': {'author': 'bob'}, 'tags': []})
+        assert r.status_code == 200
+        rv = c.get('/search', query_string={'metadata.author': 'alice'})
+        assert rv.get_json() == ['1']
+        rv = c.get('/search', query_string={'q': 'bar', 'metadata.author': 'bob'})
+        assert rv.get_json() == ['2']
+
+
+def test_remote_metadata_search_success(client, monkeypatch):
+    with app.app_context():
+        banana = Post.query.filter_by(title='Banana').first()
+
+    class FakeResponse:
+        status_code = 200
+
+        def json(self):
+            return {'ids': [banana.id]}
+
+        def raise_for_status(self):
+            pass
+
+    captured = {}
+
+    def fake_get(url, params):
+        captured.update(params)
+        return FakeResponse()
+
+    monkeypatch.setenv('INDEX_SERVER_URL', 'http://index')
+    monkeypatch.setattr(requests, 'get', fake_get)
+    resp = client.get('/search', query_string={'key': 'author', 'value': 'Alice'})
+    text_resp = resp.get_data(as_text=True)
+    assert 'Banana' in text_resp
+    assert captured == {'metadata.author': 'Alice'}
