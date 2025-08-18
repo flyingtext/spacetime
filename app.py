@@ -1460,7 +1460,7 @@ def create_post():
             return redirect(url_for('create_post'))
         tag_names = [t.strip() for t in request.form['tags'].split(',') if t.strip()]
         tags = []
-        for name in tag_names:
+        for name in dict.fromkeys(tag_names):
             tag = Tag.query.filter_by(name=name).first()
             if not tag:
                 tag = Tag(name=name)
@@ -1619,7 +1619,7 @@ def api_create_post():
             t.strip() for t in tags_input if isinstance(t, str) and t.strip()
         ]
     tags = []
-    for name in tag_names:
+    for name in dict.fromkeys(tag_names):
         tag = Tag.query.filter_by(name=name).first()
         if not tag:
             tag = Tag(name=name)
@@ -2280,7 +2280,7 @@ def edit_post(post_id: int):
             )
         tag_names = [t.strip() for t in request.form['tags'].split(',') if t.strip()]
         post.tags = []
-        for name in tag_names:
+        for name in dict.fromkeys(tag_names):
             tag = Tag.query.filter_by(name=name).first()
             if not tag:
                 tag = Tag(name=name)
