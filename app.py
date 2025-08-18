@@ -71,7 +71,7 @@ cr = Crossref()
 
 # Basic stopword list used to filter out common grammatical words when
 # constructing citation queries. This helps the "suggest citations" feature
-# produce more meaningful search terms for services like Crossref.
+# produce more meaningful search terms for internal wiki search.
 STOPWORDS = {
     'the', 'and', 'for', 'with', 'from', 'that', 'this', 'have', 'has', 'are',
     'was', 'were', 'be', 'to', 'of', 'in', 'on', 'at', 'a', 'an', 'is', 'it',
@@ -214,14 +214,12 @@ def fetch_bibtex_by_title(title: str) -> str | None:
 
 
 def suggest_citations(markdown_text: str) -> dict[str, list[dict]]:
-    """Split *markdown_text* into sentences and return BibTeX suggestions.
+    """Split *markdown_text* into sentences and return wiki-based suggestions.
 
-    Each sentence is queried against Crossref sequentially using up to three
-    of the longest unique words from the sentence. If the language of a
-    sentence can be detected, it is provided to Crossref via ``query_language``
-    to improve ranking. For every result the BibTeX is fetched and parsed into
-    a dict with ``text`` and ``part`` (fields without ID/ENTRYTYPE). Sentences
-    with no suggestions are skipped.
+    For each sentence the longest unique words are used to query the internal
+    full-text search index. Matching posts are returned as simple ``@misc``
+    BibTeX entries containing the post title and URL so they can be stored as
+    standard citations.
     """
 
     sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", markdown_text) if s.strip()]
@@ -233,61 +231,33 @@ def suggest_citations(markdown_text: str) -> dict[str, list[dict]]:
         except LangDetectException:
             lang = None
 
-        # Try querying Crossref with the full sentence first so that pasting a
-        # complete citation title yields suggestions.
-        params = {"query_bibliographic": sentence, "limit": 3}
+        words = re.findall(r"\w+", sentence.lower())
+        words = [w for w in words if w not in STOPWORDS]
+        if not words:
+            continue
+        unique_words = list(dict.fromkeys(words))
+        unique_words.sort(key=len, reverse=True)
+        sample_words = unique_words[:3]
+        query = " OR ".join(sample_words)
+
+        ids = [
+            row[0]
+            for row in db.session.execute(
+                text('SELECT rowid FROM post_fts WHERE post_fts MATCH :q'),
+                {'q': query},
+            )
+        ]
+        posts_query = Post.query.filter(Post.id.in_(ids)) if ids else Post.query.filter(False)
         if lang:
-            params["query_language"] = lang
-        try:
-            query_res = cr.works(**params)
-            items = query_res.get("message", {}).get("items", [])
-        except Exception:
-            items = []
+            posts_query = posts_query.filter(Post.language == lang)
+        posts = posts_query.limit(3).all()
 
-        # Fall back to using a subset of the longest unique words if the full
-        # sentence yields no results. Stopwords and short grammatical tokens
-        # are removed before selecting the longest terms so that the query is
-        # more likely to yield meaningful suggestions.
-        if not items:
-            words = re.findall(r"\w+", sentence.lower())
-            words = [w for w in words if w not in STOPWORDS]
-            if not words:
-                continue
-            unique_words = list(dict.fromkeys(words))
-            unique_words.sort(key=len, reverse=True)
-            sample_words = unique_words[:3]
-            query = " ".join(sample_words)
-
-            params = {"query_bibliographic": query, "limit": 3}
-            if lang:
-                params["query_language"] = lang
-            try:
-                query_res = cr.works(**params)
-            except Exception:
-                continue
-            items = query_res.get("message", {}).get("items", [])
         candidates: list[dict] = []
-        for item in items:
-            doi = normalize_doi(item.get("DOI"))
-            if not doi:
-                continue
-            url = f"https://api.crossref.org/works/{doi}/transform/application/x-bibtex"
-            try:
-                resp = requests.get(url, timeout=10)
-            except Exception:
-                continue
-            if resp.status_code != 200:
-                continue
-            bibtex = resp.text.strip()
-            try:
-                bib_db = bibtexparser.loads(bibtex)
-                entry = bib_db.entries[0] if bib_db.entries else {}
-            except Exception:
-                entry = {}
-            entry.pop("ID", None)
-            entry.pop("ENTRYTYPE", None)
-            entry['doi'] = doi
-            candidates.append({"text": bibtex, "part": entry, "doi": doi})
+        for post in posts:
+            url = f"/{post.language}/{post.path}"
+            entry = {'title': post.title, 'url': url}
+            bibtex = f"@misc{{,\n  title={{ {post.title} }},\n  url={{ {url} }}\n}}"
+            candidates.append({'text': bibtex, 'part': entry})
         if candidates:
             results[sentence] = candidates
     return results
