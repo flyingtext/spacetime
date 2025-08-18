@@ -33,7 +33,10 @@ This document lists the HTTP endpoints provided by the Spacetime application.
 | `/post/<int:post_id>/watch` | `POST` | Watch a post for changes |
 | `/post/<string:language>/<path:doc_path>` | `GET` | View a post by language and path |
 | `/post/new` | `GET, POST` | Create a new post |
+| `/api/posts` | `GET` | Search posts with optional pagination |
 | `/api/posts` | `POST` | Create a new post via JSON (supports location) |
+| `/api/posts/<int:post_id>` | `GET` | Read post content and metadata |
+| `/api/posts/<int:post_id>` | `PUT` | Update post content and metadata |
 | `/post/request` | `GET, POST` | Request that a post be created |
 | `/posts` | `GET` | List all posts |
 | `/posts/requested` | `GET` | List user requested posts |
@@ -96,10 +99,28 @@ Create a new post. POST fields include `title`, `body`, `path`, `language`, `com
 `tags` (comma-separated), optional `metadata` and `user_metadata` JSON strings, and
 optional `lat`/`lon` coordinates.
 
+### `/api/posts` (`GET`)
+Search posts and return matching entries in JSON. Supports query parameters:
+
+- `q` – full-text search string (optional)
+- `limit` – number of results to return (0 for all, default 20)
+- `offset` – starting index of results (default 0)
+
+Returns an object with `total` result count and a `posts` array containing each
+post's `id`, `path`, `language`, and `title`.
+
 ### `/api/posts` (`POST`)
 Create a new post using a JSON body. Accepts `title` and `body` fields, with optional
 `path`, `language`, `address`, `lat`/`lon`, and `tags` (comma-separated string or list).
 Returns basic information about the created post.
+
+### `/api/posts/<int:post_id>` (`GET`)
+Return the specified post's `title`, `body`, and associated metadata.
+
+### `/api/posts/<int:post_id>` (`PUT`)
+Update an existing post. Requires authentication and accepts `title`, `body`, optional
+`path`, `language`, and a `metadata` object for key/value pairs such as `lat`/`lon`.
+Returns basic information about the updated post.
 
 ### `/post/<int:post_id>` (`GET`)
 View an individual post by ID.
@@ -244,6 +265,63 @@ Response
 
 ```json
 {"id": 1, "path": "api-path", "language": "en", "title": "API Title"}
+```
+
+### `/api/posts` (`GET`)
+
+Search for posts and return paginated results.
+
+**Example**
+
+Request
+
+```http
+GET /api/posts?q=apple&limit=2&offset=1
+```
+
+Response
+
+```json
+{"total": 3, "posts": [{"id": 2, "path": "p1", "language": "en", "title": "Apple 1"}, {"id": 1, "path": "p0", "language": "en", "title": "Apple 0"}]}
+```
+
+### `/api/posts/<int:post_id>` (`GET`)
+
+Retrieve the full content and metadata for a post.
+
+**Example**
+
+Request
+
+```http
+GET /api/posts/1
+```
+
+Response
+
+```json
+{"id": 1, "path": "p0", "language": "en", "title": "Apple 0", "body": "apple", "metadata": {"foo": "bar"}}
+```
+
+### `/api/posts/<int:post_id>` (`PUT`)
+
+Update an existing post's content or metadata.
+
+**Example**
+
+Request
+
+```http
+PUT /api/posts/1
+Content-Type: application/json
+
+{"title": "New", "body": "Updated", "metadata": {"foo": "baz"}}
+```
+
+Response
+
+```json
+{"id": 1, "path": "p0", "language": "en", "title": "New"}
 ```
 
 ### `/og` (`GET`)
