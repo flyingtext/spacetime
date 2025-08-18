@@ -814,6 +814,7 @@ def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> t
     extensions: list[Extension | str] = [
         WikiLinkExtension(base_url=base_url),
         PreserveOrderedListExtension(),
+        'tables',
     ]
     # Attempt to add automatic tag linking if tags are available
     try:

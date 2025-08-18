@@ -70,8 +70,7 @@ def test_render_markdown_three_space_indented_list():
     outer = root.find('ul')
     assert len(list(outer)) == 2
     assert outer[0].find('ul') is not None
-
-
+    
 @pytest.fixture
 def client():
     app.config['TESTING'] = True
