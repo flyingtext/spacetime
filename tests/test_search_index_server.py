@@ -62,3 +62,53 @@ def test_remote_search_failure_fallback(client, monkeypatch):
     text_resp = resp.get_data(as_text=True)
     assert 'Apple' in text_resp
     assert 'Search service unavailable' in text_resp
+
+
+def test_index_server_called_on_save(client, monkeypatch):
+    calls: list[tuple[str, dict]] = []
+
+    class FakeResp:
+        def raise_for_status(self):
+            pass
+
+    def fake_post(url, json):
+        calls.append((url, json))
+        return FakeResp()
+
+    monkeypatch.setenv('INDEX_SERVER_URL', 'http://index')
+    monkeypatch.setattr(requests, 'post', fake_post)
+
+    with app.app_context():
+        user = User.query.filter_by(username='u').first()
+        post = Post(title='Dog', body='dog', path='dog', language='en', author_id=user.id)
+        db.session.add(post)
+        db.session.commit()
+        post.title = 'Doggo'
+        db.session.commit()
+
+    assert calls[0][0] == 'http://index/index'
+    assert calls[0][1]['title'] == 'Dog'
+    assert calls[1][1]['title'] == 'Doggo'
+
+
+def test_index_server_called_on_delete(client, monkeypatch):
+    deleted: list[str] = []
+
+    class FakeResp:
+        def raise_for_status(self):
+            pass
+
+    def fake_delete(url):
+        deleted.append(url)
+        return FakeResp()
+
+    monkeypatch.setenv('INDEX_SERVER_URL', 'http://index')
+    monkeypatch.setattr(requests, 'delete', fake_delete)
+
+    with app.app_context():
+        post = Post.query.filter_by(title='Apple').first()
+        pid = post.id
+        db.session.delete(post)
+        db.session.commit()
+
+    assert deleted == [f'http://index/index/{pid}']
