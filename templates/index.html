@@ -26,7 +26,7 @@
   {% endfor %}
 </ul>
 <nav>
-  <ul class="pagination">
+  <ul class="pagination justify-content-center mt-4">
     <li class="page-item{% if not pagination.has_prev %} disabled{% endif %}">
       <a class="page-link" href="{{ url_for('all_posts', page=pagination.prev_num, tag=tag.name if tag else None) }}">&laquo;</a>
     </li>
