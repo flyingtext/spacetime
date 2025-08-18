@@ -26,7 +26,7 @@
   {% endfor %}
   </table>
 <nav>
-  <ul class="pagination">
+  <ul class="pagination justify-content-center mt-4">
     <li class="page-item{% if not pagination.has_prev %} disabled{% endif %}">
       <a class="page-link" href="{{ url_for('citation_stats', page=pagination.prev_num) }}">&laquo;</a>
     </li>
