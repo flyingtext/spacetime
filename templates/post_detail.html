@@ -348,6 +348,7 @@
                       saveBtn.addEventListener('click', () => {
                           const fd = new FormData();
                           fd.append('citation_text', c.text);
+                          fd.append('citation_context', sentence);
                           fetch('{{ url_for('new_citation', post_id=post.id) }}', {
                               method: 'POST',
                               body: fd

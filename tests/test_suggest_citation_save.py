@@ -42,12 +42,14 @@ def test_save_suggested_citation(client):
     with app.app_context():
         post_id = Post.query.filter_by(path='main').first().id
         bibtex = "@misc{123,\n  title={Reference},\n  url={/en/ref}\n}"
+    sentence = 'Reference is cited here.'
     resp = client.post(
         f'/post/{post_id}/citation/new',
-        data={'citation_text': bibtex},
+        data={'citation_text': bibtex, 'citation_context': sentence},
     )
     assert resp.status_code == 302
     with app.app_context():
         cit = PostCitation.query.filter_by(post_id=post_id).first()
         assert cit.citation_part['title'] == 'Reference'
         assert cit.citation_part['url'] == '/en/ref'
+        assert cit.context == sentence
