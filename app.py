@@ -204,6 +204,25 @@ def ensure_user_locale_timezone_columns() -> None:
 ensure_user_locale_timezone_columns()
 
 
+def ensure_user_tag_modal_new_tab_column() -> None:
+    with app.app_context():
+        inspector = inspect(db.engine)
+        try:
+            cols = [c["name"] for c in inspector.get_columns("user")]
+        except NoSuchTableError:
+            return
+        if "tag_modal_new_tab" not in cols:
+            with db.engine.begin() as conn:
+                conn.execute(
+                    text(
+                        "ALTER TABLE user ADD COLUMN tag_modal_new_tab BOOLEAN DEFAULT 0"
+                    )
+                )
+
+
+ensure_user_tag_modal_new_tab_column()
+
+
 def ensure_post_created_at_column() -> None:
     with app.app_context():
         inspector = inspect(db.engine)
@@ -1255,6 +1274,7 @@ def profile(username: str):
             flash(_('Invalid timezone'))
             return redirect(url_for('profile', username=user.username))
         user.timezone = tz_norm
+        user.tag_modal_new_tab = request.form.get('tag_modal_new_tab') == 'on'
         db.session.commit()
         flash(_('Profile updated'))
         return redirect(url_for('profile', username=user.username))
@@ -2477,6 +2497,9 @@ def tag_list():
         tag_info=tag_info,
         tag_locations_json=tag_locations_json,
         tag_posts_json=tag_posts_json,
+        tag_modal_new_tab=(
+            current_user.is_authenticated and current_user.tag_modal_new_tab
+        ),
     )
 
 

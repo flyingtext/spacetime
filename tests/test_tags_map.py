@@ -114,3 +114,18 @@ def test_tags_page_skips_deleted_posts(client):
     data = resp.get_data(as_text=True)
     assert '/en/pg' not in data
     assert '[deleted]' not in data
+
+
+def test_tag_modal_link_target_setting(client):
+    client.post('/login', data={'username': 'u', 'password': 'pw'})
+    client.post(
+        '/user/u',
+        data={'bio': '', 'locale': '', 'timezone': 'UTC', 'tag_modal_new_tab': 'on'},
+    )
+    resp = client.get('/tags')
+    data = resp.get_data(as_text=True)
+    assert 'target="_blank"' in data
+    client.post('/user/u', data={'bio': '', 'locale': '', 'timezone': 'UTC'})
+    resp = client.get('/tags')
+    data = resp.get_data(as_text=True)
+    assert 'target="_blank"' not in data
