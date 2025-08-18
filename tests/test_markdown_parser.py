@@ -57,3 +57,8 @@ def client():
 def test_markdown_preview_language(client):
     resp = client.post('/markdown/preview', json={'text': '[[Page]]', 'language': 'es'})
     assert resp.get_json()['html'] == '<p><a href="/es/Page">Page</a></p>'
+
+
+def test_markdown_preview_renders_html(client):
+    resp = client.post('/markdown/preview', json={'text': '<b>bold</b>'})
+    assert resp.get_json()['html'] == '<p><b>bold</b></p>'

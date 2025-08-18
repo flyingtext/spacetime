@@ -1988,8 +1988,7 @@ def markdown_preview():
     text = data.get('text', '')
     language = data.get('language', 'en')
     base = url_for('document', language=language, doc_path='')
-    escaped = escape(text)
-    html, _ = render_markdown(str(escaped), base)
+    html, _ = render_markdown(text, base)
     return {'html': str(Markup(html))}
 
 
