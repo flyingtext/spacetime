@@ -59,6 +59,35 @@ Open browser at `http://${HOST}:${PORT}/` or `https://${HOST}:${PORT}/` when SSL
 
 See [API.md](API.md) for a list of HTTP endpoints.
 
+## Search Index Service
+
+A lightweight full-text search service is provided in `index_server.py`. It
+uses SQLite FTS5 and exposes several HTTP endpoints:
+
+- `POST /index` – index or update a document using JSON payload
+  `{id, title, body}`.
+- `DELETE /index/<id>` – remove a document from the index.
+- `GET /search?q=…` – return a JSON array of matching document identifiers.
+- `GET /health` – basic health check endpoint.
+
+Run the service directly with:
+
+```bash
+python index_server.py
+```
+
+For production, multiple instances can be launched behind a load balancer.
+Because the service is stateless aside from the SQLite database file, each
+instance can point to the same database on shared storage. Example using
+`gunicorn` with four workers:
+
+```bash
+gunicorn -w 4 -b 0.0.0.0:8000 index_server:app
+```
+
+Use a load balancer such as Nginx or HAProxy to distribute requests across
+instances running on different ports or hosts.
+
 ## Testing
 
 Run the test suite with [pytest](https://docs.pytest.org/):
