@@ -2731,14 +2731,34 @@ def search():
     posts_query = None
     examples = None
     if q:
-        ids = [
-            row[0]
-            for row in db.session.execute(
-                text('SELECT rowid FROM post_fts WHERE post_fts MATCH :q'),
-                {'q': q},
+        index_url = os.getenv('INDEX_SERVER_URL')
+        if index_url:
+            try:
+                resp = requests.get(f"{index_url}/search", params={'q': q})
+                resp.raise_for_status()
+                data = resp.json()
+                ids = data.get('ids') if isinstance(data, dict) else data
+                posts_query = (
+                    Post.query.filter(Post.id.in_(ids))
+                    if ids
+                    else Post.query.filter(False)
+                )
+            except requests.RequestException as exc:
+                current_app.logger.warning('Index server search failed: %s', exc)
+                flash(_('Search service unavailable. Showing local results.'), 'warning')
+        if posts_query is None:
+            ids = [
+                row[0]
+                for row in db.session.execute(
+                    text('SELECT rowid FROM post_fts WHERE post_fts MATCH :q'),
+                    {'q': q},
+                )
+            ]
+            posts_query = (
+                Post.query.filter(Post.id.in_(ids))
+                if ids
+                else Post.query.filter(False)
             )
-        ]
-        posts_query = Post.query.filter(Post.id.in_(ids)) if ids else Post.query.filter(False)
     elif key and value_raw:
         try:
             value = json.loads(value_raw)
