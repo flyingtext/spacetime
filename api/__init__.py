@@ -10,6 +10,7 @@ from flask import Blueprint, jsonify, request, current_app, url_for
 from flask_login import current_user, login_required
 from flask_babel import _
 from langdetect import detect, LangDetectException
+from search_utils import expand_with_synonyms
 
 from models import (
     db,
@@ -38,11 +39,12 @@ def search_posts():
 
     query = Post.query
     if q:
+        expanded_q = expand_with_synonyms(q)
         ids = [
             row[0]
             for row in db.session.execute(
                 text("SELECT rowid FROM post_fts WHERE post_fts MATCH :q"),
-                {"q": q},
+                {"q": expanded_q},
             )
         ]
         query = query.filter(Post.id.in_(ids)) if ids else query.filter(False)

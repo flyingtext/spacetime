@@ -47,6 +47,7 @@ from geopy.distance import distance as geopy_distance
 from langdetect import detect, DetectorFactory, LangDetectException
 import zoneinfo
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+from search_utils import expand_with_synonyms
 
 from models import (
     db,
@@ -2494,11 +2495,12 @@ def search():
     posts_query = None
     examples = None
     if q:
+        expanded_q = expand_with_synonyms(q)
         ids = [
             row[0]
             for row in db.session.execute(
                 text('SELECT rowid FROM post_fts WHERE post_fts MATCH :q'),
-                {'q': q},
+                {'q': expanded_q},
             )
         ]
         posts_query = Post.query.filter(Post.id.in_(ids)) if ids else Post.query.filter(False)

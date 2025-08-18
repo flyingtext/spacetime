@@ -26,7 +26,8 @@ def client():
         p1.tags.append(t1)
         p2 = Post(title='Banana', body='banana carrot', path='p2', language='en', author_id=user.id)
         p2.tags.append(t2)
-        db.session.add_all([p1, p2])
+        p3 = Post(title='Speed', body='quick movement', path='p3', language='en', author_id=user.id)
+        db.session.add_all([p1, p2, p3])
         db.session.commit()
     with app.test_client() as client:
         yield client
@@ -47,3 +48,9 @@ def test_tag_filter(client):
     text = resp.get_data(as_text=True)
     assert 'Apple' in text
     assert 'Banana' not in text
+
+
+def test_fulltext_synonym_search(client):
+    resp = client.get('/search', query_string={'q': 'fast'})
+    text = resp.get_data(as_text=True)
+    assert 'Speed' in text
