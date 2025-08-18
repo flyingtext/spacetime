@@ -1,4 +1,4 @@
-from app import format_citation_mla, normalize_doi
+from app import format_citation_mla, normalize_doi, app as flask_app
 
 def test_normalize_doi():
     assert normalize_doi('https://doi.org/10.1000/XYZ') == '10.1000/xyz'
@@ -27,3 +27,10 @@ def test_format_citation_mla_url_only():
     part = {'url': 'https://example.com'}
     result = format_citation_mla(part, None)
     assert str(result) == '<a href="https://example.com">https://example.com</a>'
+
+
+def test_format_citation_mla_relative_url():
+    part = {'url': '/foo'}
+    with flask_app.test_request_context('/'):
+        result = format_citation_mla(part, None)
+    assert str(result) == '<a href="http://localhost/foo">http://localhost/foo</a>'
