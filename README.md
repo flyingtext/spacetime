@@ -28,6 +28,7 @@ following variables are supported:
 - `BABEL_DEFAULT_LOCALE` – default locale for translations.
 - `LANGUAGES` – comma-separated list of supported languages.
 - `BABEL_TRANSLATION_DIRECTORIES` – path to translation files.
+- `INDEX_SERVER_URL` – base URL for an optional external index server (default: none).
 - `HOST` – hostname or IP address for the server.
 - `PORT` – port for the server.
 - `SSL_CERT_FILE` – path to a PEM-formatted certificate file to enable HTTPS.
@@ -41,6 +42,7 @@ SQLALCHEMY_DATABASE_URI=sqlite:///wiki.db
 BABEL_DEFAULT_LOCALE=en
 LANGUAGES=en,es
 BABEL_TRANSLATION_DIRECTORIES=translations
+INDEX_SERVER_URL=https://index.example.com
 HOST=127.0.0.1
 PORT=5000
 SSL_CERT_FILE=cert.pem
