@@ -867,6 +867,16 @@ def unwrap_math_blocks(html: str) -> str:
     return re.sub(r'<p>\s*(\$\$[\s\S]*?\$\$)\s*</p>', r'\1', html)
 
 
+def detect_latex_parens(text: str) -> str:
+    """Convert parenthesized LaTeX expressions to ``$$`` blocks.
+
+    Finds occurrences like ``(\min\max_a)`` and replaces the surrounding
+    parentheses with ``$$`` so that MathJax treats them as math blocks.
+    """
+    pattern = re.compile(r'\((\\[^()\n]+)\)')
+    return pattern.sub(lambda m: f'$$' + m.group(1) + '$$', text)
+
+
 # Markup rendering helpers
 def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> tuple[str, str]:
     """Return HTML and optional TOC from Markdown text with wiki links."""
@@ -924,6 +934,7 @@ def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> t
     except Exception:
         pass
     normalized = re.sub(r'(?m)^\s{3}([*+-]|\d+\.)', r' \1', text or '')
+    normalized = detect_latex_parens(normalized)
     if with_toc:
         md = markdown.Markdown(extensions=extensions + ['toc'], tab_length=1)
         html = md.convert(normalized)
