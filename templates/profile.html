@@ -5,6 +5,7 @@
 <p>{{ user.bio }}</p>
 {% if user.locale %}<p>{{ _('Locale') }}: {{ user.locale }}</p>{% endif %}
 {% if user.timezone %}<p>{{ _('Timezone') }}: {{ user.timezone }}</p>{% endif %}
+{% if user.distance_unit %}<p>{{ _('Distance Unit') }}: {{ user.distance_unit }}</p>{% endif %}
 <section>
   <h2>{{ _('Contribution Metrics') }}</h2>
   <div class="row row-cols-1 row-cols-sm-2 g-4">
@@ -102,14 +103,21 @@
         {% endfor %}
       </select>
     </div>
-    <div class="mb-3">
-      <label for="timezone" class="form-label">{{ _('Timezone') }}</label>
-      <input type="text" id="timezone" name="timezone" class="form-control" value="{{ user.timezone or '' }}">
-    </div>
-    <div class="form-check mb-3">
-      <input class="form-check-input" type="checkbox" id="tag_modal_new_tab" name="tag_modal_new_tab" {% if user.tag_modal_new_tab %}checked{% endif %}>
-      <label class="form-check-label" for="tag_modal_new_tab">{{ _('Open tag links in new tab') }}</label>
-    </div>
+      <div class="mb-3">
+        <label for="timezone" class="form-label">{{ _('Timezone') }}</label>
+        <input type="text" id="timezone" name="timezone" class="form-control" value="{{ user.timezone or '' }}">
+      </div>
+      <div class="mb-3">
+        <label for="distance_unit" class="form-label">{{ _('Distance Unit') }}</label>
+        <select id="distance_unit" name="distance_unit" class="form-select">
+          <option value="km" {% if user.distance_unit != 'mi' %}selected{% endif %}>{{ _('Kilometers') }}</option>
+          <option value="mi" {% if user.distance_unit == 'mi' %}selected{% endif %}>{{ _('Miles') }}</option>
+        </select>
+      </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="tag_modal_new_tab" name="tag_modal_new_tab" {% if user.tag_modal_new_tab %}checked{% endif %}>
+        <label class="form-check-label" for="tag_modal_new_tab">{{ _('Open tag links in new tab') }}</label>
+      </div>
     <div class="mb-3">
       <button type="submit" class="btn btn-primary">{{ _('Update') }}</button>
     </div>

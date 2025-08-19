@@ -258,8 +258,13 @@
       const url = window.location.href;
       window.prompt('{{ _("Copy permalink") }}', url);
     });
-    heading.appendChild(btn);
+  heading.appendChild(btn);
   });
+</script>
+<script>
+  const currentLat = {{ lat|default(none)|tojson }};
+  const currentLon = {{ lon|default(none)|tojson }};
+  const distanceUnit = {{ (current_user.distance_unit if current_user.is_authenticated and current_user.distance_unit else 'km')|tojson }};
 </script>
 <script src="{{ url_for('static', filename='tag-tooltip.js') }}"></script>
 </body>
