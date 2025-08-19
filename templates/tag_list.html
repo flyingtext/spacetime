@@ -36,6 +36,7 @@
 <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 <script>
 const navHeight = document.querySelector('nav').offsetHeight;
+document.body.style.overflow = 'hidden';
 const mapDiv = document.getElementById('tag-map');
 mapDiv.style.position = 'fixed';
 mapDiv.style.top = navHeight + 'px';
@@ -238,6 +239,12 @@ searchInput.addEventListener('keyup', () => {
   });
   if (term && matches.length) {
     map.setView(matches[0].getLatLng(), 8);
+  }
+});
+
+map.on('move', () => {
+  if (lastMarker) {
+    positionInfoDivNearMarker(lastMarker);
   }
 });
 </script>
