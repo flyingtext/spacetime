@@ -45,6 +45,7 @@
         <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_view_stats') }}" aria-label="{{ _('View Stats') }}" title="{{ _('View Stats') }}"><i class="bi bi-eye" aria-hidden="true"></i><span class="visually-hidden">{{ _('View Stats') }}</span><span class="d-lg-none ms-1">{{ _('View Stats') }}</span></a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_posts') }}" aria-label="{{ _('Manage Posts') }}" title="{{ _('Manage Posts') }}"><i class="bi bi-tools" aria-hidden="true"></i><span class="visually-hidden">{{ _('Manage Posts') }}</span><span class="d-lg-none ms-1">{{ _('Manage Posts') }}</span></a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_requested_posts') }}" aria-label="{{ _('Manage Requests') }}" title="{{ _('Manage Requests') }}"><i class="bi bi-inbox" aria-hidden="true"></i><span class="visually-hidden">{{ _('Manage Requests') }}</span><span class="d-lg-none ms-1">{{ _('Manage Requests') }}</span></a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_delete_citation_url') }}" aria-label="{{ _('Delete Citations by URL') }}" title="{{ _('Delete Citations by URL') }}"><i class="bi bi-eraser" aria-hidden="true"></i><span class="visually-hidden">{{ _('Delete Citations by URL') }}</span><span class="d-lg-none ms-1">{{ _('Delete Citations by URL') }}</span></a></li>
         {% endif %}
       </ul>
       <form class="d-flex me-3" role="search" action="{{ url_for('search') }}" method="get">
