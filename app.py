@@ -886,9 +886,42 @@ def detect_latex_parens(text: str) -> str:
 
     Finds occurrences like ``(\min\max_a)`` and replaces the surrounding
     parentheses with ``$$`` so that MathJax treats them as math blocks.
+
+    This detection is intentionally permissive – any parenthesized segment
+    without newlines that contains common LaTeX markers such as ``\``, ``_``
+    or ``^`` will be treated as LaTeX. Nested parentheses are supported so
+    expressions like ``(U(x_{1},x_{2})=a x_{1}+b x_{2})`` are also converted.
     """
-    pattern = re.compile(r'\((\\[^()\n]+)\)')
-    return pattern.sub(lambda m: f'$$' + m.group(1) + '$$', text)
+    out: list[str] = []
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if ch == '(':
+            j = i + 1
+            depth = 1
+            has_newline = False
+            is_latex = False
+            while j < len(text) and depth > 0:
+                c = text[j]
+                if c == '\n':
+                    has_newline = True
+                    break
+                if c == '(':
+                    depth += 1
+                elif c == ')':
+                    depth -= 1
+                    if depth == 0:
+                        break
+                if c in '\\_^{}':
+                    is_latex = True
+                j += 1
+            if depth == 0 and not has_newline and is_latex:
+                out.append('$$' + text[i + 1:j] + '$$')
+                i = j + 1
+                continue
+        out.append(ch)
+        i += 1
+    return ''.join(out)
 
 
 # Markup rendering helpers
