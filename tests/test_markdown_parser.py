@@ -50,24 +50,26 @@ def test_render_markdown_blank_numbered_item_becomes_unordered():
 
 def test_render_markdown_preserves_mathjax_delimiters():
     html, _ = render_markdown('Euler formula $e^{i\\pi}+1=0$')
-    assert '$e^{i\\pi}+1=0$' in html
+    assert '<span class="arithmatex">\\(e^{i\\pi}+1=0\\)</span>' in html
 
 
 def test_render_markdown_preserves_multiline_mathjax():
     html, _ = render_markdown('$$\n\\int_0^1 x\\,dx\n$$')
-    assert html.strip() == '$$\n\\int_0^1 x\\,dx\n$$'
+    expected = '<div class="arithmatex">\\[\n\\int_0^1 x\\,dx\n\\]</div>'
+    assert html.strip() == expected
 
 
 def test_render_markdown_preserves_complex_latex():
     expr = '$$Y_t = Y^{*}_t + \\frac{1}{\\sigma}\\big(P_t - E_t P_{t+1}\\big)$$'
     html, _ = render_markdown(expr)
-    assert html.strip() == expr
+    expected = '<div class="arithmatex">\\[Y_t = Y^{*}_t + \\frac{1}{\\sigma}\\big(P_t - E_t P_{t+1}\\big)\\]</div>'
+    assert html.strip() == expected
 
 
 def test_render_markdown_converts_inline_double_dollar():
     html, _ = render_markdown('with targets $$x=1$$, $$y=2$$ inside')
-    assert '\\(x=1\\)' in html
-    assert '\\(y=2\\)' in html
+    assert '<span class="arithmatex">\\(x=1\\)</span>' in html
+    assert '<span class="arithmatex">\\(y=2\\)</span>' in html
 
 
 def test_render_markdown_single_space_indented_list():
