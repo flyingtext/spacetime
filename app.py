@@ -2964,6 +2964,34 @@ def delete_citation_everywhere():
     return redirect(url_for('citation_stats'))
 
 
+@app.route('/admin/citations/delete-url', methods=['GET', 'POST'])
+@login_required
+def admin_delete_citation_url():
+    if not current_user.is_admin():
+        abort(403)
+    if request.method == 'POST':
+        url = request.form.get('url', '').strip()
+        if url:
+            query = PostCitation.query.filter(
+                or_(
+                    PostCitation.citation_text == url,
+                    PostCitation.citation_part.contains({'url': url}),
+                )
+            )
+            user_query = UserPostCitation.query.filter(
+                or_(
+                    UserPostCitation.citation_text == url,
+                    UserPostCitation.citation_part.contains({'url': url}),
+                )
+            )
+            query.delete(synchronize_session=False)
+            user_query.delete(synchronize_session=False)
+            db.session.commit()
+            flash(_('Citations deleted.'))
+            return redirect(url_for('admin_delete_citation_url'))
+    return render_template('admin/delete_citation_url.html')
+
+
 if __name__ == '__main__':
     with app.app_context():
         PostWatch.__table__.create(bind=db.engine, checkfirst=True)

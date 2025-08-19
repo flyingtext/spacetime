@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Delete Citations by URL') }}{% endblock %}
+{% block content %}
+<h1>{{ _('Delete Citations by URL') }}</h1>
+<form method="post">
+  <div class="mb-3">
+    <input type="text" name="url" placeholder="{{ _('Citation URL') }}" class="form-control" />
+  </div>
+  <button type="submit" class="btn btn-danger">{{ _('Delete') }}</button>
+</form>
+{% endblock %}
