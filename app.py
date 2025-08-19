@@ -892,6 +892,34 @@ def detect_latex_parens(text: str) -> str:
     or ``^`` will be treated as LaTeX. Nested parentheses are supported so
     expressions like ``(U(x_{1},x_{2})=a x_{1}+b x_{2})`` are also converted.
     """
+
+    def strip_outer_parentheses(s: str) -> str:
+        """Remove pairs of outer parentheses that wrap the entire string.
+
+        This is used to handle cases like ``((x_1))`` where multiple
+        parentheses surround the LaTeX expression. Only balanced pairs that
+        enclose the full string are stripped, leaving necessary inner
+        parentheses intact.
+        """
+
+        while s.startswith('(') and s.endswith(')'):
+            depth = 0
+            balanced = True
+            for idx, ch in enumerate(s):
+                if ch == '(':
+                    depth += 1
+                elif ch == ')':
+                    depth -= 1
+                    if depth == 0 and idx != len(s) - 1:
+                        balanced = False
+                        break
+            if depth != 0:
+                balanced = False
+            if not balanced:
+                break
+            s = s[1:-1]
+        return s
+
     out: list[str] = []
     i = 0
     while i < len(text):
@@ -916,7 +944,8 @@ def detect_latex_parens(text: str) -> str:
                     is_latex = True
                 j += 1
             if depth == 0 and not has_newline and is_latex:
-                out.append('$$' + text[i + 1:j] + '$$')
+                content = strip_outer_parentheses(text[i + 1:j])
+                out.append('$$' + content + '$$')
                 i = j + 1
                 continue
         out.append(ch)

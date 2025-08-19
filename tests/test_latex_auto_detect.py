@@ -17,3 +17,11 @@ def test_nested_parenthesized_latex_converted():
             r"Substitutes, (U(x_{1},x_{2})=a x_{1}+b x_{2}), test"
         )
     assert "$$U(x_{1},x_{2})=a x_{1}+b x_{2}$$" in html
+
+
+def test_double_parenthesized_latex_converted():
+    """Ensure outer nested parentheses are fully stripped."""
+
+    with app.app_context():
+        html, _ = render_markdown(r"Coordinates ((x_{1}, x_{2})) test")
+    assert "$$x_{1}, x_{2}$$" in html
