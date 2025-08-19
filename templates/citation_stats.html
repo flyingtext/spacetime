@@ -16,7 +16,7 @@
       ({{ item.count }})
       <form method="post" action="{{ url_for('delete_citation_everywhere') }}" class="d-inline ms-2" onsubmit="return confirm('{{ _('Are you sure?') }}');">
         <input type="hidden" name="doi" value="{{ item.doi | default('') }}" />
-        <textarea name="citation_text" hidden>{{- item.citation_text -}}</textarea>
+        <textarea name="citation_text" class="d-none">{{- item.citation_text -}}</textarea>
         <button type="submit" class="btn btn-sm btn-danger">{{ _('Delete') }}</button>
       </form>
     </td>
