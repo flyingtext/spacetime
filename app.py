@@ -869,15 +869,38 @@ def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> t
     try:
         tag_map: dict[str, dict[str, str]] = {}
         for tag in Tag.query.all():
-            posts = [
-                {
+            posts: list[dict[str, object]] = []
+            for p in tag.posts:
+                if not p.title or not p.body:
+                    continue
+                doc: dict[str, object] = {
                     'title': p.display_title,
                     'url': f"/{p.language}/{p.path}",
                     'snippet': (p.body.splitlines()[0] if p.body else ''),
                 }
-                for p in tag.posts
-                if p.title and p.body
-            ]
+                lat = p.latitude
+                lon = p.longitude
+                if lat is None or lon is None:
+                    meta = {m.key: m.value for m in p.metadata}
+                    locs = meta.get('locations')
+                    if isinstance(locs, list) and locs:
+                        first = locs[0]
+                        lat = first.get('lat')
+                        lon = first.get('lon')
+                    else:
+                        lat = meta.get('lat') or meta.get('latitude')
+                        lon = (
+                            meta.get('lon')
+                            or meta.get('longitude')
+                            or meta.get('lng')
+                        )
+                if lat is not None and lon is not None:
+                    try:
+                        doc['lat'] = float(lat)
+                        doc['lon'] = float(lon)
+                    except (TypeError, ValueError):
+                        pass
+                posts.append(doc)
             if posts:
                 info = {
                     'url': f"/tag/{quote(tag.name)}",
