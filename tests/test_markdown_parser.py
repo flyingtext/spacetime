@@ -58,6 +58,12 @@ def test_render_markdown_preserves_multiline_mathjax():
     assert html.strip() == '$$\n\\int_0^1 x\\,dx\n$$'
 
 
+def test_render_markdown_preserves_complex_latex():
+    expr = '$$Y_t = Y^{*}_t + \\frac{1}{\\sigma}\\big(P_t - E_t P_{t+1}\\big)$$'
+    html, _ = render_markdown(expr)
+    assert html.strip() == expr
+
+
 def test_render_markdown_single_space_indented_list():
     """A single leading space should create a nested list."""
     html, _ = render_markdown('- a\n - b\n- c')
