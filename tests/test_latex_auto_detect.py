@@ -8,7 +8,7 @@ from app import app, render_markdown
 def test_parenthesized_latex_converted():
     with app.app_context():
         html, _ = render_markdown(r"Equation (\min\max_a) test")
-    assert "$$\\min\\max_a$$" in html
+    assert "\\(\\min\\max_a\\)" in html
 
 
 def test_nested_parenthesized_latex_converted():
@@ -16,7 +16,7 @@ def test_nested_parenthesized_latex_converted():
         html, _ = render_markdown(
             r"Substitutes, (U(x_{1},x_{2})=a x_{1}+b x_{2}), test"
         )
-    assert "$$U(x_{1},x_{2})=a x_{1}+b x_{2}$$" in html
+    assert "\\(U(x_{1},x_{2})=a x_{1}+b x_{2}\\)" in html
 
 
 def test_double_parenthesized_latex_converted():
@@ -24,7 +24,7 @@ def test_double_parenthesized_latex_converted():
 
     with app.app_context():
         html, _ = render_markdown(r"Coordinates ((x_{1}, x_{2})) test")
-    assert "$$x_{1}, x_{2}$$" in html
+    assert "\\(x_{1}, x_{2}\\)" in html
 
 
 def test_dollar_wrapped_latex_preserved():

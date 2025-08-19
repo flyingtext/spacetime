@@ -1006,6 +1006,26 @@ def detect_latex_parens(text: str) -> str:
     return ''.join(out)
 
 
+def convert_inline_dollars(text: str) -> str:
+    """Replace inline ``$$`` math with ``\(\)`` delimiters.
+
+    ``$$`` is traditionally used for display math, but some users include it
+    within regular sentences. MathJax ignores display delimiters that are not
+    on their own line, so convert those inline occurrences to ``\(\)`` so they
+    are rendered properly.
+    """
+
+    def repl(match: re.Match) -> str:
+        start, end = match.span()
+        before = text[:start]
+        after = text[end:]
+        if before.strip() and after.strip():
+            return f"\\({match.group(1)}\\)"
+        return match.group(0)
+
+    return re.sub(r'\$\$([^\n]*?)\$\$', repl, text)
+
+
 # Markup rendering helpers
 def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> tuple[str, str]:
     """Return HTML and optional TOC from Markdown text with wiki links."""
@@ -1064,6 +1084,7 @@ def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> t
         pass
     normalized = re.sub(r'(?m)^\s{3}([*+-]|\d+\.)', r' \1', text or '')
     normalized = detect_latex_parens(normalized)
+    normalized = convert_inline_dollars(normalized)
     normalized, math_segments = extract_math_segments(normalized)
     if with_toc:
         md = markdown.Markdown(extensions=extensions + ['toc'], tab_length=1)
