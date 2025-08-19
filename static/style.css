@@ -1,3 +1,28 @@
+/* KoPub World Batang font */
+@font-face {
+  font-family: 'KoPubWorldBatang';
+  font-style: normal;
+  font-weight: 300;
+  src: url('https://cdn.jsdelivr.net/gh/adrinerDP/font-kopubworld/fonts/KoPubWorld-Batang-Light.woff2') format('woff2');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'KoPubWorldBatang';
+  font-style: normal;
+  font-weight: 400;
+  src: url('https://cdn.jsdelivr.net/gh/adrinerDP/font-kopubworld/fonts/KoPubWorld-Batang-Medium.woff2') format('woff2');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'KoPubWorldBatang';
+  font-style: normal;
+  font-weight: 700;
+  src: url('https://cdn.jsdelivr.net/gh/adrinerDP/font-kopubworld/fonts/KoPubWorld-Batang-Bold.woff2') format('woff2');
+  font-display: swap;
+}
+
 /* Color variables */
 :root {
   --background-color: #ffffff;
@@ -9,6 +34,7 @@
   --visited-link-color: #551a8b;
   --bs-body-bg: var(--background-color);
   --bs-body-color: var(--text-color);
+  --bs-body-font-family: 'KoPubWorldBatang', serif;
   --bs-border-color: var(--border-color);
   --bs-link-color: var(--link-color);
   --bs-list-group-bg: var(--background-color);
@@ -50,7 +76,7 @@ html, body {
 }
 
 body {
-  font-family: Arial, sans-serif;
+  font-family: 'KoPubWorldBatang', serif;
   padding: 20px;
   background: var(--background-color);
   color: var(--text-color);
