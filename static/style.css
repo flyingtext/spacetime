@@ -384,6 +384,22 @@ footer a {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   z-index: 1000;
   max-width: 500px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.tag-tooltip-card::-webkit-scrollbar {
+  width: 6px;
+}
+.tag-tooltip-card::-webkit-scrollbar-track {
+  background: var(--nav-bg-color);
+}
+.tag-tooltip-card::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+.tag-tooltip-card::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 .tag-tooltip-card .tag-doc {
