@@ -857,6 +857,16 @@ def sanitize_tag_links(html: str) -> str:
     return ''.join(tostring(child, encoding='unicode') for child in root)
 
 
+def unwrap_math_blocks(html: str) -> str:
+    """Remove paragraph wrappers around display-math blocks.
+
+    Markdown wraps ``$$`` blocks in ``<p>`` tags which prevents MathJax from
+    recognizing multi-line display formulas. Unwrap those paragraphs so that
+    MathJax sees the raw ``$$`` delimiters.
+    """
+    return re.sub(r'<p>\s*(\$\$[\s\S]*?\$\$)\s*</p>', r'\1', html)
+
+
 # Markup rendering helpers
 def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> tuple[str, str]:
     """Return HTML and optional TOC from Markdown text with wiki links."""
@@ -918,11 +928,13 @@ def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> t
         md = markdown.Markdown(extensions=extensions + ['toc'], tab_length=1)
         html = md.convert(normalized)
         html = sanitize_tag_links(html)
+        html = unwrap_math_blocks(html)
         if not getattr(md, 'toc_tokens', None):
             return html, ''
         return html, md.toc
     html = markdown.markdown(normalized, extensions=extensions, tab_length=1)
     html = sanitize_tag_links(html)
+    html = unwrap_math_blocks(html)
     return html, ''
 
 
