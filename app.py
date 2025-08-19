@@ -51,6 +51,7 @@ from langdetect import detect, DetectorFactory, LangDetectException
 import zoneinfo
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from search_utils import expand_with_synonyms
+from keyword_highlight_plugin import apply_keyword_highlight_plugin
 
 from models import (
     db,
@@ -241,6 +242,25 @@ def ensure_user_distance_unit_column() -> None:
 
 
 ensure_user_distance_unit_column()
+
+
+def ensure_user_keyword_highlight_plugin_column() -> None:
+    with app.app_context():
+        inspector = inspect(db.engine)
+        try:
+            cols = [c["name"] for c in inspector.get_columns("user")]
+        except NoSuchTableError:
+            return
+        if "keyword_highlight_plugin" not in cols:
+            with db.engine.begin() as conn:
+                conn.execute(
+                    text(
+                        "ALTER TABLE user ADD COLUMN keyword_highlight_plugin BOOLEAN DEFAULT 1"
+                    )
+                )
+
+
+ensure_user_keyword_highlight_plugin_column()
 
 
 def ensure_post_created_at_column() -> None:
@@ -1522,6 +1542,9 @@ def profile(username: str):
             return redirect(url_for('profile', username=user.username))
         user.timezone = tz_norm
         user.tag_modal_new_tab = request.form.get('tag_modal_new_tab') == 'on'
+        user.keyword_highlight_plugin = (
+            request.form.get('keyword_highlight_plugin') == 'on'
+        )
         unit = request.form.get('distance_unit', 'km')
         user.distance_unit = unit if unit in ('km', 'mi') else 'km'
         db.session.commit()
@@ -1844,6 +1867,13 @@ def post_detail(post_id: int):
     html_body, toc = render_markdown(
         post.body, base, with_toc=True, enable_mathjax=enable_parens
     )
+    enabled = True
+    if current_user.is_authenticated:
+        enabled = current_user.keyword_highlight_plugin
+    if enabled:
+        html_body = Markup(
+            apply_keyword_highlight_plugin(str(html_body), post.language)
+        )
     canonical_url = url_for('document', language=post.language, doc_path=post.path, _external=True)
     plain = re.sub('<[^<]+?>', '', html_body)
     meta_description = ' '.join(plain.split())[:160]
@@ -2078,6 +2108,11 @@ def markdown_preview():
     language = data.get('language', 'en')
     base = url_for('document', language=language, doc_path='')
     html, _ = render_markdown(text, base)
+    enabled = True
+    if current_user.is_authenticated:
+        enabled = current_user.keyword_highlight_plugin
+    if enabled:
+        html = Markup(apply_keyword_highlight_plugin(str(html), language))
     return {'html': str(Markup(html))}
 
 
