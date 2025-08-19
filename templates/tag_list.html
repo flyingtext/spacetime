@@ -107,10 +107,27 @@ function positionInfoDiv(){
 }
 
 positionInfoDiv();
-window.addEventListener('resize', positionInfoDiv);
+let lastMarker = null;
+function positionInfoDivNearMarker(marker){
+  if(infoDiv.dataset.dragged === 'true') return;
+  positionInfoDiv();
+  const point = map.latLngToContainerPoint(marker.getLatLng());
+  const mapRect = mapDiv.getBoundingClientRect();
+  infoDiv.style.left = (mapRect.left + point.x + 10) + 'px';
+  infoDiv.style.top = (mapRect.top + point.y + 10) + 'px';
+  ensureInfoInViewport();
+}
+window.addEventListener('resize', () => {
+  if(lastMarker){
+    positionInfoDivNearMarker(lastMarker);
+  } else {
+    positionInfoDiv();
+  }
+});
 
 closeBtn.addEventListener('click', () => {
   infoDiv.style.display = 'none';
+  lastMarker = null;
 });
 
 let isDragging = false;
@@ -199,8 +216,8 @@ const allMarkers = [];
         infoContent.innerHTML = html;
         infoDiv.style.display = 'block';
         infoDiv.dataset.dragged = 'false';
-        positionInfoDiv();
-        ensureInfoInViewport();
+        lastMarker = marker;
+        positionInfoDivNearMarker(marker);
       }
     });
     marker.tagName = t.name;
