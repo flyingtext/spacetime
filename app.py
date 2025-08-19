@@ -3001,6 +3001,7 @@ def admin_delete_citation_url():
     if request.method == 'POST':
         url = request.form.get('url', '').strip()
         if url:
+            url = url.replace('\r\n', '\n')
             query = PostCitation.query.filter(
                 or_(
                     PostCitation.citation_text == url,

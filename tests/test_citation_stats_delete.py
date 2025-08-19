@@ -42,8 +42,8 @@ def test_delete_citation_everywhere(client):
     resp = client.get('/citations/stats')
     assert b'Cite Me' in resp.data
     resp = client.post(
-        '/citations/delete',
-        data={'doi': '10.1234/abc', 'citation_text': 'Cite Me'},
+        '/admin/citations/delete-url',
+        data={'url': 'Cite Me'},
         follow_redirects=True,
     )
     assert resp.status_code == 200
