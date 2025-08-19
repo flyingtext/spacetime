@@ -14,8 +14,12 @@
         <a href="https://scholar.google.com/scholar?q={{ item.citation_text | urlencode }}">{{ item.citation_text }}</a>
       {% endif %}
       ({{ item.count }})
-        <form method="post" action="{{ url_for('admin_delete_citation_url') }}" class="d-inline ms-2" onsubmit="return confirm('{{ _('Are you sure?') }}');">
-          <textarea name="url" class="d-none">{{- item.citation_text -}}</textarea>
+        <form method="post" action="{{ url_for('delete_citation_everywhere') }}" class="d-inline ms-2" onsubmit="return confirm('{{ _('Are you sure?') }}');">
+          <textarea name="citation_text" class="d-none">{{- item.citation_text -}}</textarea>
+          {% if item.doi %}
+          <input type="hidden" name="doi" value="{{ item.doi }}">
+          {% endif %}
+          <input type="hidden" name="page" value="{{ pagination.page }}">
           <button type="submit" class="btn btn-sm btn-danger">{{ _('Delete') }}</button>
         </form>
     </td>

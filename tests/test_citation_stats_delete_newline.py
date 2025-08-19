@@ -43,13 +43,14 @@ def test_delete_citation_with_newline(client):
     client.post('/login', data={'username': 'admin', 'password': 'pw'})
     resp = client.get('/citations/stats')
     html = resp.data.decode()
-    m = re.search(r'<textarea name="url"[^>]*>(.*?)</textarea>', html, re.S)
+    m = re.search(r'href="https://doi.org/([^\"]+)">.*?<textarea name="citation_text" class="d-none">(.*?)</textarea>', html, re.S)
     assert m is not None
-    value = m.group(1)
+    doi = m.group(1)
+    value = m.group(2)
     value = value.replace('\n', '\r\n')
     client.post(
-        '/admin/citations/delete-url',
-        data={'url': value},
+        '/citations/delete',
+        data={'citation_text': value, 'doi': doi, 'page': 1},
         follow_redirects=True,
     )
     resp = client.get('/citations/stats')
