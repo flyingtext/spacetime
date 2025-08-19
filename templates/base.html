@@ -14,6 +14,7 @@
   <link rel="canonical" href="{{ canonical_url|default(request.url, true) }}">
   {% block extra_head %}{% endblock %}
   {{ get_setting('head_tags')|safe }}
+  {% if get_setting('mathjax_enabled', 'false').lower() in ['true', '1', 'yes', 'on'] %}
   <script>
   window.MathJax = {
     tex: {
@@ -23,6 +24,7 @@
   };
   </script>
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  {% endif %}
 </head>
 <body>
 <nav class="navbar navbar-expand-lg">

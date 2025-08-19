@@ -2632,6 +2632,7 @@ def settings():
     head_tags = get_setting('head_tags', '')
     category_tags = get_setting('post_categories', '')
     breadcrumb_limit = get_setting('breadcrumb_limit', '10')
+    mathjax_enabled_val = get_setting('mathjax_enabled', 'false')
     if request.method == 'POST':
 
         title = request.form.get('site_title', title).strip()
@@ -2644,6 +2645,7 @@ def settings():
             return redirect(url_for('settings'))
         timezone_value = tz_norm
         rss_enabled_val = 'rss_enabled' in request.form
+        mathjax_enabled_val = 'mathjax_enabled' in request.form
         rss_limit = request.form.get('rss_limit', rss_limit).strip() or '20'
         breadcrumb_limit = request.form.get('breadcrumb_limit', breadcrumb_limit).strip() or '10'
         head_tags_input = request.form.get('head_tags', head_tags)
@@ -2712,6 +2714,12 @@ def settings():
             breadcrumb_setting.value = breadcrumb_limit
         else:
             db.session.add(Setting(key='breadcrumb_limit', value=breadcrumb_limit))
+        mathjax_setting = Setting.query.filter_by(key='mathjax_enabled').first()
+        mathjax_value = 'true' if mathjax_enabled_val else 'false'
+        if mathjax_setting:
+            mathjax_setting.value = mathjax_value
+        else:
+            db.session.add(Setting(key='mathjax_enabled', value=mathjax_value))
 
         db.session.commit()
         flash(_('Settings updated.'))
@@ -2726,7 +2734,8 @@ def settings():
         rss_limit=rss_limit,
         head_tags=head_tags,
         post_categories=category_tags,
-        breadcrumb_limit=breadcrumb_limit
+        breadcrumb_limit=breadcrumb_limit,
+        mathjax_enabled=mathjax_enabled_val.lower() in ['true', '1', 'yes', 'on']
     )
 
 
