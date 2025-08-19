@@ -178,7 +178,7 @@ and `radius`.
 
 ### `/settings` (`GET, POST`)
 View or update user settings. POST accepts various configuration fields such as
-`home_page_path`, `rss_enabled`, or `mathjax_enabled`.
+`home_page_path`, `rss_enabled`, `mathjax_tags`, or `paren_tags`.
 
 ### `/geocode` (`GET`)
 Return coordinates for the provided `address` query parameter.

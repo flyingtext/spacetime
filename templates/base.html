@@ -14,7 +14,7 @@
   <link rel="canonical" href="{{ canonical_url|default(request.url, true) }}">
   {% block extra_head %}{% endblock %}
   {{ get_setting('head_tags')|safe }}
-  {% if get_setting('mathjax_enabled', 'false').lower() in ['true', '1', 'yes', 'on'] %}
+  {% if mathjax_enabled|default(false) %}
   <script>
   window.MathJax = {
     tex: {

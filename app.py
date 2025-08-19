@@ -1027,19 +1027,22 @@ def convert_inline_dollars(text: str) -> str:
 
 
 # Markup rendering helpers
-def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> tuple[str, str]:
+def render_markdown(
+    text: str,
+    base_url: str = '/',
+    with_toc: bool = False,
+    enable_mathjax: bool = False,
+) -> tuple[str, str]:
     """Return HTML and optional TOC from Markdown text with wiki links."""
     extensions: list[Extension | str] = [
         WikiLinkExtension(base_url=base_url),
         PreserveOrderedListExtension(),
         'tables',
-        'pymdownx.arithmatex',
     ]
-    extension_configs = {
-        'pymdownx.arithmatex': {
-            'generic': True,
-        }
-    }
+    extension_configs: dict[str, dict[str, object]] = {}
+    if enable_mathjax:
+        extensions.append('pymdownx.arithmatex')
+        extension_configs['pymdownx.arithmatex'] = {'generic': True}
     # Attempt to add automatic tag linking if tags are available
     try:
         tag_map: dict[str, dict[str, str]] = {}
@@ -1089,8 +1092,9 @@ def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> t
     except Exception:
         pass
     normalized = re.sub(r'(?m)^\s{3}([*+-]|\d+\.)', r' \1', text or '')
-    normalized = detect_latex_parens(normalized)
-    normalized = convert_inline_dollars(normalized)
+    if enable_mathjax:
+        normalized = detect_latex_parens(normalized)
+        normalized = convert_inline_dollars(normalized)
     if with_toc:
         md = markdown.Markdown(
             extensions=extensions + ['toc'],
@@ -1802,8 +1806,23 @@ def post_detail(post_id: int):
             .order_by(UserPostCitation.created_at.desc())
             .all()
         )
+    tag_names = [t.name.lower() for t in post.tags]
+    mathjax_tags = [
+        t.strip().lower()
+        for t in get_setting('mathjax_tags', '').split(',')
+        if t.strip()
+    ]
+    paren_tags = [
+        t.strip().lower()
+        for t in get_setting('paren_tags', '').split(',')
+        if t.strip()
+    ]
+    enable_mathjax = bool(set(tag_names) & set(mathjax_tags))
+    enable_parens = bool(set(tag_names) & set(paren_tags))
     base = url_for('document', language=post.language, doc_path='')
-    html_body, toc = render_markdown(post.body, base, with_toc=True)
+    html_body, toc = render_markdown(
+        post.body, base, with_toc=True, enable_mathjax=enable_parens
+    )
     canonical_url = url_for('document', language=post.language, doc_path=post.path, _external=True)
     plain = re.sub('<[^<]+?>', '', html_body)
     meta_description = ' '.join(plain.split())[:160]
@@ -1832,6 +1851,7 @@ def post_detail(post_id: int):
         bibtex=bibtex,
         canonical_url=canonical_url,
         meta_description=meta_description,
+        mathjax_enabled=enable_mathjax,
     )
 
 
@@ -1982,8 +2002,23 @@ def document(language: str, doc_path: str):
             .order_by(UserPostCitation.created_at.desc())
             .all()
         )
+    tag_names = [t.name.lower() for t in post.tags]
+    mathjax_tags = [
+        t.strip().lower()
+        for t in get_setting('mathjax_tags', '').split(',')
+        if t.strip()
+    ]
+    paren_tags = [
+        t.strip().lower()
+        for t in get_setting('paren_tags', '').split(',')
+        if t.strip()
+    ]
+    enable_mathjax = bool(set(tag_names) & set(mathjax_tags))
+    enable_parens = bool(set(tag_names) & set(paren_tags))
     base = url_for('document', language=language, doc_path='')
-    html_body, toc = render_markdown(post.body, base, with_toc=True)
+    html_body, toc = render_markdown(
+        post.body, base, with_toc=True, enable_mathjax=enable_parens
+    )
     translations = Post.query.filter(
         Post.path == doc_path, Post.language != language
     ).all()
@@ -2004,6 +2039,7 @@ def document(language: str, doc_path: str):
         views=views,
         created_at=created_at,
         address=address,
+        mathjax_enabled=enable_mathjax,
     )
 
 
@@ -2632,7 +2668,8 @@ def settings():
     head_tags = get_setting('head_tags', '')
     category_tags = get_setting('post_categories', '')
     breadcrumb_limit = get_setting('breadcrumb_limit', '10')
-    mathjax_enabled_val = get_setting('mathjax_enabled', 'false')
+    mathjax_tags_val = get_setting('mathjax_tags', '')
+    paren_tags_val = get_setting('paren_tags', '')
     if request.method == 'POST':
 
         title = request.form.get('site_title', title).strip()
@@ -2645,12 +2682,19 @@ def settings():
             return redirect(url_for('settings'))
         timezone_value = tz_norm
         rss_enabled_val = 'rss_enabled' in request.form
-        mathjax_enabled_val = 'mathjax_enabled' in request.form
         rss_limit = request.form.get('rss_limit', rss_limit).strip() or '20'
         breadcrumb_limit = request.form.get('breadcrumb_limit', breadcrumb_limit).strip() or '10'
         head_tags_input = request.form.get('head_tags', head_tags)
         head_tags = "\n".join(line.strip() for line in head_tags_input.splitlines() if line.strip())
         category_tags = request.form.get('post_categories', category_tags).strip()
+        mathjax_tags_val = request.form.get('mathjax_tags', mathjax_tags_val)
+        mathjax_tags_val = ','.join(
+            t.strip() for t in mathjax_tags_val.split(',') if t.strip()
+        )
+        paren_tags_val = request.form.get('paren_tags', paren_tags_val)
+        paren_tags_val = ','.join(
+            t.strip() for t in paren_tags_val.split(',') if t.strip()
+        )
         # Validate category mapping JSON
         try:
             if category_tags:
@@ -2714,12 +2758,16 @@ def settings():
             breadcrumb_setting.value = breadcrumb_limit
         else:
             db.session.add(Setting(key='breadcrumb_limit', value=breadcrumb_limit))
-        mathjax_setting = Setting.query.filter_by(key='mathjax_enabled').first()
-        mathjax_value = 'true' if mathjax_enabled_val else 'false'
+        mathjax_setting = Setting.query.filter_by(key='mathjax_tags').first()
         if mathjax_setting:
-            mathjax_setting.value = mathjax_value
+            mathjax_setting.value = mathjax_tags_val
         else:
-            db.session.add(Setting(key='mathjax_enabled', value=mathjax_value))
+            db.session.add(Setting(key='mathjax_tags', value=mathjax_tags_val))
+        paren_setting = Setting.query.filter_by(key='paren_tags').first()
+        if paren_setting:
+            paren_setting.value = paren_tags_val
+        else:
+            db.session.add(Setting(key='paren_tags', value=paren_tags_val))
 
         db.session.commit()
         flash(_('Settings updated.'))
@@ -2735,7 +2783,8 @@ def settings():
         head_tags=head_tags,
         post_categories=category_tags,
         breadcrumb_limit=breadcrumb_limit,
-        mathjax_enabled=mathjax_enabled_val.lower() in ['true', '1', 'yes', 'on']
+        mathjax_tags=mathjax_tags_val,
+        paren_tags=paren_tags_val,
     )
 
 
