@@ -64,6 +64,12 @@ def test_render_markdown_preserves_complex_latex():
     assert html.strip() == expr
 
 
+def test_render_markdown_converts_inline_double_dollar():
+    html, _ = render_markdown('with targets $$x=1$$, $$y=2$$ inside')
+    assert '\\(x=1\\)' in html
+    assert '\\(y=2\\)' in html
+
+
 def test_render_markdown_single_space_indented_list():
     """A single leading space should create a nested list."""
     html, _ = render_markdown('- a\n - b\n- c')
