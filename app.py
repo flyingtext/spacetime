@@ -2973,6 +2973,7 @@ def delete_citation_everywhere():
 
     doi = request.form.get('doi')
     citation_text = request.form.get('citation_text')
+    page = request.form.get('page', type=int)
 
     if citation_text is not None:
         citation_text = citation_text.replace('\r\n', '\n')
@@ -2990,6 +2991,8 @@ def delete_citation_everywhere():
     user_query.delete(synchronize_session=False)
     db.session.commit()
 
+    if page:
+        return redirect(url_for('citation_stats', page=page))
     return redirect(url_for('citation_stats'))
 
 
