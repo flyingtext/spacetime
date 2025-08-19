@@ -2330,6 +2330,7 @@ def admin_db_status():
         abort(403)
     inspector = inspect(db.engine)
     tables = []
+    perf = {}
     with db.engine.connect() as conn:
         for name in inspector.get_table_names():
             try:
@@ -2337,8 +2338,20 @@ def admin_db_status():
             except Exception:
                 count = 0
             tables.append({'name': name, 'count': count})
+        # Gather basic performance metrics for SQLite databases
+        if db.engine.dialect.name == 'sqlite':
+            for pragma in ['page_size', 'page_count', 'freelist_count', 'cache_size']:
+                try:
+                    perf[pragma] = conn.execute(text(f'PRAGMA {pragma}')).scalar()
+                except Exception:
+                    perf[pragma] = None
+            try:
+                size = (perf.get('page_size') or 0) * (perf.get('page_count') or 0)
+                perf['database_size'] = size
+            except Exception:
+                perf['database_size'] = None
     db_url = str(db.engine.url)
-    return render_template('admin/db_status.html', tables=tables, db_url=db_url)
+    return render_template('admin/db_status.html', tables=tables, db_url=db_url, perf=perf)
 
 @app.route('/admin/stats/posts_over_time')
 @login_required

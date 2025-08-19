@@ -11,4 +11,15 @@
     {% endfor %}
   </tbody>
 </table>
+{% if perf %}
+<h2>{{ _('Performance Stats') }}</h2>
+<table class="table table-striped">
+  <thead><tr><th>{{ _('Metric') }}</th><th>{{ _('Value') }}</th></tr></thead>
+  <tbody>
+    {% for key, value in perf.items() %}
+    <tr><td>{{ key }}</td><td>{{ value }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
 {% endblock %}

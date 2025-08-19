@@ -7,7 +7,7 @@ This document lists the HTTP endpoints provided by the Spacetime application.
 | `/` | `GET` | Home page listing posts or redirect to configured start page |
 | `/admin/posts` | `GET` | List posts for administrators |
 | `/admin/requested` | `GET, POST` | Manage user requested posts |
-| `/admin/db-status` | `GET` | View database status for administrators |
+| `/admin/db-status` | `GET` | View database status and performance statistics for administrators |
 | `/citation/fetch` | `POST` | Fetch citation metadata by DOI |
 | `/citation/suggest` | `POST` | Suggest citations for provided text |
 | `/citation/suggest_line` | `POST` | Return citation suggestions for a single line of text |
