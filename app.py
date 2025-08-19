@@ -881,6 +881,31 @@ def unwrap_math_blocks(html: str) -> str:
     return re.sub(r'<p>\s*(\$\$[\s\S]*?\$\$)\s*</p>', r'\1', html)
 
 
+# Protect math expressions from Markdown processing
+MATH_PATTERN = re.compile(r"\$\$[\s\S]*?\$\$|\\\(.*?\\\)|\\\[.*?\\\]", re.DOTALL)
+
+
+def extract_math_segments(text: str) -> tuple[str, dict[str, str]]:
+    """Replace math regions with placeholders before Markdown processing."""
+
+    segments: dict[str, str] = {}
+
+    def repl(match: re.Match) -> str:
+        key = f"@@MATH{len(segments)}@@"
+        segments[key] = match.group(0)
+        return key
+
+    return MATH_PATTERN.sub(repl, text), segments
+
+
+def restore_math_segments(text: str, segments: dict[str, str]) -> str:
+    """Restore previously extracted math regions."""
+
+    for key, val in segments.items():
+        text = text.replace(key, val)
+    return text
+
+
 def detect_latex_parens(text: str) -> str:
     """Convert parenthesized LaTeX expressions to ``$$`` blocks.
 
@@ -1039,16 +1064,19 @@ def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> t
         pass
     normalized = re.sub(r'(?m)^\s{3}([*+-]|\d+\.)', r' \1', text or '')
     normalized = detect_latex_parens(normalized)
+    normalized, math_segments = extract_math_segments(normalized)
     if with_toc:
         md = markdown.Markdown(extensions=extensions + ['toc'], tab_length=1)
         html = md.convert(normalized)
         html = sanitize_tag_links(html)
+        html = restore_math_segments(html, math_segments)
         html = unwrap_math_blocks(html)
         if not getattr(md, 'toc_tokens', None):
             return html, ''
         return html, md.toc
     html = markdown.markdown(normalized, extensions=extensions, tab_length=1)
     html = sanitize_tag_links(html)
+    html = restore_math_segments(html, math_segments)
     html = unwrap_math_blocks(html)
     return html, ''
 
