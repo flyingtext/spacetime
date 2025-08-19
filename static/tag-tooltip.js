@@ -59,8 +59,27 @@ document.addEventListener('DOMContentLoaded', () => {
     clearTimeout(hideTimeout);
     tooltip.style.display = 'block';
     const rect = this.getBoundingClientRect();
-    tooltip.style.left = `${rect.left + window.scrollX}px`;
-    tooltip.style.top = `${rect.bottom + window.scrollY + 5}px`;
+    let left = rect.left + window.scrollX;
+    let top = rect.bottom + window.scrollY + 5;
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+
+    const margin = 10;
+    const tipRect = tooltip.getBoundingClientRect();
+    if (tipRect.right > window.innerWidth - margin) {
+      left -= tipRect.right - (window.innerWidth - margin);
+    }
+    if (left < margin) {
+      left = margin;
+    }
+    if (tipRect.bottom > window.innerHeight - margin) {
+      top -= tipRect.bottom - (window.innerHeight - margin);
+    }
+    if (top < margin) {
+      top = margin;
+    }
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
 
     const maps = tooltip.querySelectorAll('.tooltip-map');
     if (maps.length > 0) {
