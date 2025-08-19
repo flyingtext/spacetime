@@ -11,10 +11,22 @@ Simple wiki-style bulletin board built with Flask and SQLite. Supports user regi
 - Permissions: authors or admins can edit posts
 
 ## Installation
-Install dependencies:
+Use the provided script to install all dependencies and download the complete
+NLTK dataset:
+
 ```bash
-pip install -r requirements.txt
+./install.sh
 ```
+
+If you prefer to perform the steps manually, install the required packages and
+download the NLTK resources yourself:
+
+```bash
+python -m pip install -r requirements.txt
+python -m nltk.downloader all
+```
+
+See [docs/INSTALLATION.md](docs/INSTALLATION.md) for additional details.
 
 The application uses the Crossref API through the `habanero` library, so network
 access is required when querying Crossref.
