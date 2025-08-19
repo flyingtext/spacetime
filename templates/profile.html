@@ -118,6 +118,10 @@
         <input class="form-check-input" type="checkbox" id="tag_modal_new_tab" name="tag_modal_new_tab" {% if user.tag_modal_new_tab %}checked{% endif %}>
         <label class="form-check-label" for="tag_modal_new_tab">{{ _('Open tag links in new tab') }}</label>
       </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="keyword_highlight_plugin" name="keyword_highlight_plugin" {% if user.keyword_highlight_plugin %}checked{% endif %}>
+        <label class="form-check-label" for="keyword_highlight_plugin">{{ _('Enable keyword sentence highlight') }}</label>
+      </div>
     <div class="mb-3">
       <button type="submit" class="btn btn-primary">{{ _('Update') }}</button>
     </div>
