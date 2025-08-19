@@ -53,6 +53,11 @@ def test_render_markdown_preserves_mathjax_delimiters():
     assert '$e^{i\\pi}+1=0$' in html
 
 
+def test_render_markdown_preserves_multiline_mathjax():
+    html, _ = render_markdown('$$\n\\int_0^1 x\\,dx\n$$')
+    assert html.strip() == '$$\n\\int_0^1 x\\,dx\n$$'
+
+
 def test_render_markdown_single_space_indented_list():
     """A single leading space should create a nested list."""
     html, _ = render_markdown('- a\n - b\n- c')
