@@ -922,9 +922,37 @@ def detect_latex_parens(text: str) -> str:
 
     out: list[str] = []
     i = 0
+    in_math = False
+    math_delim = ''
     while i < len(text):
         ch = text[i]
-        if ch == '(':
+        if ch == '$':
+            # Track math regions delimited by $ or $$ so we don't try to
+            # auto-detect parentheses inside real LaTeX blocks.
+            if in_math:
+                if math_delim == '$$' and text.startswith('$$', i):
+                    in_math = False
+                    out.append('$$')
+                    i += 2
+                    continue
+                if math_delim == '$' and text[i] == '$':
+                    in_math = False
+                    out.append('$')
+                    i += 1
+                    continue
+            else:
+                if text.startswith('$$', i):
+                    in_math = True
+                    math_delim = '$$'
+                    out.append('$$')
+                    i += 2
+                    continue
+                in_math = True
+                math_delim = '$'
+                out.append('$')
+                i += 1
+                continue
+        if not in_math and ch == '(':
             j = i + 1
             depth = 1
             has_newline = False
@@ -2653,7 +2681,8 @@ def tag_list():
     location_counts = {}
     for tag in tags:
         coords = None
-        for p in tag.posts:
+        # Sort posts by ID so that coordinate selection is deterministic
+        for p in sorted(tag.posts, key=lambda p: p.id):
             if not p.title or not p.body:
                 continue
             if p.latitude is not None and p.longitude is not None:
