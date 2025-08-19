@@ -6,6 +6,28 @@ document.addEventListener('DOMContentLoaded', () => {
   let hideTimeout;
   let leafletPromise;
 
+  function haversine(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const toRad = deg => (deg * Math.PI) / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) *
+        Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  function formatDistance(km) {
+    if (distanceUnit === 'mi') {
+      return `${(km * 0.621371).toFixed(1)} mi`;
+    }
+    return `${km.toFixed(1)} km`;
+  }
+
   function loadLeaflet() {
     if (leafletPromise) return leafletPromise;
     leafletPromise = new Promise(resolve => {
@@ -53,7 +75,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const mapDiv = d.lat !== undefined && d.lon !== undefined
           ? `<div class="tooltip-map" id="tooltip-map-${i}" data-lat="${d.lat}" data-lon="${d.lon}"></div>`
           : '';
-        const views = d.views !== undefined ? `<div class="small text-muted">${d.views} views</div>` : '';
+        let distanceText = '';
+        if (
+          typeof currentLat === 'number' &&
+          typeof currentLon === 'number' &&
+          d.lat !== undefined &&
+          d.lon !== undefined
+        ) {
+          const km = haversine(currentLat, currentLon, d.lat, d.lon);
+          distanceText = ` \u2022 ${formatDistance(km)}`;
+        }
+        const views = d.views !== undefined ? `<div class="small text-muted">${d.views} views${distanceText}</div>` : '';
         return `<div class="tag-doc">${mapDiv}<div class="tag-doc-text"><a href="${d.url}">${d.title}</a>${views}<p>${d.snippet}</p></div></div>`;
       })
       .join('');

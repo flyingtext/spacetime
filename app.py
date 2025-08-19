@@ -224,6 +224,25 @@ def ensure_user_tag_modal_new_tab_column() -> None:
 ensure_user_tag_modal_new_tab_column()
 
 
+def ensure_user_distance_unit_column() -> None:
+    with app.app_context():
+        inspector = inspect(db.engine)
+        try:
+            cols = [c["name"] for c in inspector.get_columns("user")]
+        except NoSuchTableError:
+            return
+        if "distance_unit" not in cols:
+            with db.engine.begin() as conn:
+                conn.execute(
+                    text(
+                        "ALTER TABLE user ADD COLUMN distance_unit VARCHAR(5) DEFAULT 'km'"
+                    )
+                )
+
+
+ensure_user_distance_unit_column()
+
+
 def ensure_post_created_at_column() -> None:
     with app.app_context():
         inspector = inspect(db.engine)
@@ -1503,6 +1522,8 @@ def profile(username: str):
             return redirect(url_for('profile', username=user.username))
         user.timezone = tz_norm
         user.tag_modal_new_tab = request.form.get('tag_modal_new_tab') == 'on'
+        unit = request.form.get('distance_unit', 'km')
+        user.distance_unit = unit if unit in ('km', 'mi') else 'km'
         db.session.commit()
         flash(_('Profile updated'))
         return redirect(url_for('profile', username=user.username))

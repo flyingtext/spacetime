@@ -33,6 +33,7 @@ class User(UserMixin, db.Model):
     locale = db.Column(db.String(8))
     timezone = db.Column(db.String(50), default="UTC")
     tag_modal_new_tab = db.Column(db.Boolean, default=False)
+    distance_unit = db.Column(db.String(5), default="km")
 
     def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)
