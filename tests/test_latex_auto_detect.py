@@ -33,3 +33,12 @@ def test_dollar_wrapped_latex_preserved():
         html, _ = render_markdown(expr)
     assert expr in html
     assert '$$$' not in html
+
+
+def test_caret_only_not_converted():
+    """Expressions with only ``^`` should not trigger LaTeX conversion."""
+
+    with app.app_context():
+        html, _ = render_markdown(r"Power (x^2) test")
+    assert "(x^2)" in html
+    assert "$$x^2$$" not in html

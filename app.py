@@ -888,8 +888,8 @@ def detect_latex_parens(text: str) -> str:
     parentheses with ``$$`` so that MathJax treats them as math blocks.
 
     This detection is intentionally permissive – any parenthesized segment
-    without newlines that contains common LaTeX markers such as ``\``, ``_``
-    or ``^`` will be treated as LaTeX. Nested parentheses are supported so
+    without newlines that contains common LaTeX markers such as ``\``, ``_``,
+    ``{``, or ``}`` will be treated as LaTeX. Nested parentheses are supported so
     expressions like ``(U(x_{1},x_{2})=a x_{1}+b x_{2})`` are also converted.
     """
 
@@ -968,7 +968,7 @@ def detect_latex_parens(text: str) -> str:
                     depth -= 1
                     if depth == 0:
                         break
-                if c in '\\_^{}':
+                if c in '\\_{}':
                     is_latex = True
                 j += 1
             if depth == 0 and not has_newline and is_latex:
