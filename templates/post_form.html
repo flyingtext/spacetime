@@ -244,8 +244,7 @@ document.getElementById('find-coordinates').addEventListener('click', function (
         document.getElementById('geocode-error').textContent = data.error;
       } else {
         document.getElementById('geocode-error').textContent = '';
-        latField.value = data.lat;
-        lonField.value = data.lon;
+        drawnItems.clearLayers();
         drawnItems.addLayer(L.marker([data.lat, data.lon]));
         map.setView([data.lat, data.lon], 10);
         updateLocations();
