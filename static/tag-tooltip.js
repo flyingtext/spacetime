@@ -53,7 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const mapDiv = d.lat !== undefined && d.lon !== undefined
           ? `<div class="tooltip-map" id="tooltip-map-${i}" data-lat="${d.lat}" data-lon="${d.lon}"></div>`
           : '';
-        return `<div class="tag-doc">${mapDiv}<div class="tag-doc-text"><a href="${d.url}">${d.title}</a><p>${d.snippet}</p></div></div>`;
+        const views = d.views !== undefined ? `<div class="small text-muted">${d.views} views</div>` : '';
+        return `<div class="tag-doc">${mapDiv}<div class="tag-doc-text"><a href="${d.url}">${d.title}</a>${views}<p>${d.snippet}</p></div></div>`;
       })
       .join('');
     clearTimeout(hideTimeout);

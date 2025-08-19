@@ -877,6 +877,7 @@ def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> t
                     'title': p.display_title,
                     'url': f"/{p.language}/{p.path}",
                     'snippet': (p.body.splitlines()[0] if p.body else ''),
+                    'views': get_view_count(p),
                 }
                 lat = p.latitude
                 lon = p.longitude
