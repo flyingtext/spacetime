@@ -33,6 +33,8 @@ def test_admin_can_view_db_status(client):
     assert resp.status_code == 200
     assert b'user' in resp.data
     assert b'post' in resp.data
+    assert b'page_size' in resp.data
+    assert b'page_count' in resp.data
 
 
 @pytest.fixture
