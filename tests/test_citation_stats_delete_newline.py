@@ -46,6 +46,7 @@ def test_delete_citation_with_newline(client):
     m = re.search(r'<textarea name="citation_text"[^>]*>(.*?)</textarea>', html, re.S)
     assert m is not None
     value = m.group(1)
+    value = value.replace('\n', '\r\n')
     client.post(
         '/citations/delete',
         data={'doi': '10.1234/abc', 'citation_text': value},

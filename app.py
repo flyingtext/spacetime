@@ -2809,6 +2809,9 @@ def delete_citation_everywhere():
     doi = request.form.get('doi')
     citation_text = request.form.get('citation_text')
 
+    if citation_text is not None:
+        citation_text = citation_text.replace('\r\n', '\n')
+
     query = PostCitation.query.filter_by(citation_text=citation_text)
     user_query = UserPostCitation.query.filter_by(citation_text=citation_text)
     if doi:
