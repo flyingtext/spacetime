@@ -31,8 +31,8 @@ def test_tag_links_skipped_inside_latex(monkeypatch):
         html, _ = render_markdown('$$foo$$ and foo')
 
     assert 'class="tag-link"' in html
-    assert '$$<a' not in html
-    assert '$$foo$$' in html
+    assert '<span class="arithmatex">\\(foo\\)</span>' in html
+    assert '<span class="arithmatex"><a' not in html
 
 
 def test_tag_links_skipped_inside_detected_latex(monkeypatch):
@@ -58,5 +58,5 @@ def test_tag_links_skipped_inside_detected_latex(monkeypatch):
         html, _ = render_markdown('(foo(x_{1},x_{2})=a x_{1}+b x_{2}) and foo')
 
     assert 'class="tag-link"' in html
-    assert '$$<a' not in html
-    assert '$$foo(x_{1},x_{2})=a x_{1}+b x_{2}$$' in html
+    assert '<span class="arithmatex">\\(foo(x_{1},x_{2})=a x_{1}+b x_{2}\\)</span>' in html
+    assert '<span class="arithmatex"><a' not in html

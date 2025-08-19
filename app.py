@@ -998,7 +998,7 @@ def detect_latex_parens(text: str) -> str:
                 j += 1
             if depth == 0 and not has_newline and is_latex:
                 content = strip_outer_parentheses(text[i + 1:j])
-                out.append('$$' + content + '$$')
+                out.append(f"\\({content}\\)")
                 i = j + 1
                 continue
         out.append(ch)
@@ -1019,7 +1019,7 @@ def convert_inline_dollars(text: str) -> str:
         start, end = match.span()
         before = text[:start]
         after = text[end:]
-        if before.strip() and after.strip():
+        if before.strip() or after.strip():
             return f"\\({match.group(1)}\\)"
         return match.group(0)
 
@@ -1033,7 +1033,13 @@ def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> t
         WikiLinkExtension(base_url=base_url),
         PreserveOrderedListExtension(),
         'tables',
+        'pymdownx.arithmatex',
     ]
+    extension_configs = {
+        'pymdownx.arithmatex': {
+            'generic': True,
+        }
+    }
     # Attempt to add automatic tag linking if tags are available
     try:
         tag_map: dict[str, dict[str, str]] = {}
@@ -1085,21 +1091,27 @@ def render_markdown(text: str, base_url: str = '/', with_toc: bool = False) -> t
     normalized = re.sub(r'(?m)^\s{3}([*+-]|\d+\.)', r' \1', text or '')
     normalized = detect_latex_parens(normalized)
     normalized = convert_inline_dollars(normalized)
-    normalized, math_segments = extract_math_segments(normalized)
     if with_toc:
-        md = markdown.Markdown(extensions=extensions + ['toc'], tab_length=1)
+        md = markdown.Markdown(
+            extensions=extensions + ['toc'],
+            extension_configs=extension_configs,
+            tab_length=1,
+        )
         html = md.convert(normalized)
         html = sanitize_tag_links(html)
-        html = restore_math_segments(html, math_segments)
         html = unwrap_math_blocks(html)
         if not getattr(md, 'toc_tokens', None):
-            return html, ''
-        return html, md.toc
-    html = markdown.markdown(normalized, extensions=extensions, tab_length=1)
+            return Markup(html), Markup('')
+        return Markup(html), Markup(md.toc)
+    html = markdown.markdown(
+        normalized,
+        extensions=extensions,
+        extension_configs=extension_configs,
+        tab_length=1,
+    )
     html = sanitize_tag_links(html)
-    html = restore_math_segments(html, math_segments)
     html = unwrap_math_blocks(html)
-    return html, ''
+    return Markup(html), Markup('')
 
 
 def get_setting(key: str, default: str = '') -> str:

@@ -7,7 +7,8 @@ Flask-SocketIO==5.5.1
 geopy==2.4.1
 habanero==2.3.0
 langdetect==1.0.9
-markdown==3.5.1
+markdown>=3
+pymdown-extensions>=10
 python-dotenv==1.0.1
 redis==5.0.0
 requests==2.31.0
