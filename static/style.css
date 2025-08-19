@@ -391,8 +391,8 @@ footer a {
 }
 
 .tag-tooltip-card .tooltip-map {
-  width: 120px;
-  height: 80px;
+  width: 150px;
+  height: 100px;
   margin-right: 0.5rem;
   flex-shrink: 0;
 }

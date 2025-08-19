@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
     }).addTo(map);
-    map.setView([lat, lon], 13);
+    map.setView([lat, lon], 11);
   }
 
   function showTooltip() {
