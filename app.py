@@ -854,7 +854,21 @@ def sanitize_tag_links(html: str) -> str:
                     prev = list(outer)[idx - 1]
                     prev.tail = (prev.tail or '') + text
                 outer.remove(inner)
-    return ''.join(tostring(child, encoding='unicode') for child in root)
+    cleaned = ''.join(tostring(child, encoding='unicode') for child in root)
+
+    def strip_links(match: re.Match) -> str:
+        segment = match.group(0)
+        return re.sub(
+            r'<a[^>]*class="tag-link"[^>]*>(.*?)</a>',
+            r'\1',
+            segment,
+            flags=re.DOTALL,
+        )
+
+    cleaned = re.sub(r'\$\$.*?\$\$', strip_links, cleaned, flags=re.DOTALL)
+    cleaned = re.sub(r'\\\(.*?\\\)', strip_links, cleaned, flags=re.DOTALL)
+    cleaned = re.sub(r'\\\[.*?\\\]', strip_links, cleaned, flags=re.DOTALL)
+    return cleaned
 
 
 def unwrap_math_blocks(html: str) -> str:
