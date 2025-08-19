@@ -387,22 +387,19 @@ footer a {
 }
 
 .tag-tooltip-card .tag-doc {
-  display: flex;
+  display: flow-root;
 }
 
 .tag-tooltip-card .tooltip-map {
   width: 120px;
   height: 80px;
   margin-right: 0.5rem;
-  flex-shrink: 0;
-}
-
-.tag-tooltip-card .tag-doc-text {
-  flex: 1;
+  float: left;
 }
 
 .tag-tooltip-card .tag-doc + .tag-doc {
   margin-top: 0.5rem;
+  clear: both;
 }
 
 .tag-tooltip-card p {
