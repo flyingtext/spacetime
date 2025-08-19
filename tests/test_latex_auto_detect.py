@@ -25,3 +25,11 @@ def test_double_parenthesized_latex_converted():
     with app.app_context():
         html, _ = render_markdown(r"Coordinates ((x_{1}, x_{2})) test")
     assert "$$x_{1}, x_{2}$$" in html
+
+
+def test_dollar_wrapped_latex_preserved():
+    expr = r"$(\text{GDP} = \sum_{i}(\text{GVA}_i) + \text{Taxes} - \text{Subsidies})$"
+    with app.app_context():
+        html, _ = render_markdown(expr)
+    assert expr in html
+    assert '$$$' not in html
