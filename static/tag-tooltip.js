@@ -4,6 +4,39 @@ document.addEventListener('DOMContentLoaded', () => {
   tooltip.style.display = 'none';
   document.body.appendChild(tooltip);
   let hideTimeout;
+  let leafletPromise;
+
+  function loadLeaflet() {
+    if (leafletPromise) return leafletPromise;
+    leafletPromise = new Promise(resolve => {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet/dist/leaflet.css';
+      document.head.appendChild(link);
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/leaflet/dist/leaflet.js';
+      script.onload = () => resolve();
+      document.body.appendChild(script);
+    });
+    return leafletPromise;
+  }
+
+  function initMap(id, lat, lon) {
+    const map = L.map(id, {
+      zoomControl: false,
+      attributionControl: false,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      boxZoom: false,
+      keyboard: false,
+      tap: false,
+    });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+    }).addTo(map);
+    map.setView([lat, lon], 13);
+  }
 
   function showTooltip() {
     const data = this.dataset.tooltip;
@@ -16,13 +49,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (!Array.isArray(docs) || docs.length === 0) return;
     tooltip.innerHTML = docs
-      .map(d => `<div class="tag-doc"><a href="${d.url}">${d.title}</a><p>${d.snippet}</p></div>`)
+      .map((d, i) => {
+        const mapDiv = d.lat !== undefined && d.lon !== undefined
+          ? `<div class="tooltip-map" id="tooltip-map-${i}" data-lat="${d.lat}" data-lon="${d.lon}"></div>`
+          : '';
+        return `<div class="tag-doc">${mapDiv}<div class="tag-doc-text"><a href="${d.url}">${d.title}</a><p>${d.snippet}</p></div></div>`;
+      })
       .join('');
     clearTimeout(hideTimeout);
     tooltip.style.display = 'block';
     const rect = this.getBoundingClientRect();
     tooltip.style.left = `${rect.left + window.scrollX}px`;
     tooltip.style.top = `${rect.bottom + window.scrollY + 5}px`;
+
+    const maps = tooltip.querySelectorAll('.tooltip-map');
+    if (maps.length > 0) {
+      loadLeaflet().then(() => {
+        maps.forEach(m => {
+          const lat = parseFloat(m.dataset.lat);
+          const lon = parseFloat(m.dataset.lon);
+          initMap(m.id, lat, lon);
+        });
+      });
+    }
   }
 
   function hideTooltip() {
