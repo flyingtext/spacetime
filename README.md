@@ -1,5 +1,21 @@
 # Spacetime
 
+[![License](https://img.shields.io/github/license/flyingtext/spacetime?color=blue)](https://github.com/flyingtext/spacetime/blob/main/LICENSE) 
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/flyingtext/spacetime?display_name=tag&color=brightgreen)](https://github.com/flyingtext/spacetime/releases) 
+[![Python](https://img.shields.io/badge/python-3.9%2B-%233776AB?logo=python&logoColor=white)](https://www.python.org) 
+[![Flask](https://img.shields.io/badge/Flask-2.3-%23000?logo=flask&logoColor=white)](https://palletsprojects.com/p/flask/) 
+[![SQLite](https://img.shields.io/badge/SQLite-3.x-%2307405e?logo=sqlite&logoColor=white)](https://www.sqlite.org) 
+[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/flyingtext/spacetime/python-app.yml?branch=main&logo=github&label=CI)](https://github.com/flyingtext/spacetime/actions) 
+[![Coverage Status](https://img.shields.io/codecov/c/gh/flyingtext/spacetime?logo=codecov&label=coverage)](https://app.codecov.io/gh/flyingtext/spacetime) 
+[![CodeQL](https://img.shields.io/github/workflow/status/flyingtext/spacetime/CodeQL?label=CodeQL&logo=github)](https://github.com/flyingtext/spacetime/security/code-scanning) 
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/flyingtext/spacetime/badge)](https://securityscorecards.dev/viewer/?uri=github.com/flyingtext/spacetime) 
+[![Stars](https://img.shields.io/github/stars/flyingtext/spacetime?style=flat-square)](https://github.com/flyingtext/spacetime/stargazers) 
+[![Forks](https://img.shields.io/github/forks/flyingtext/spacetime?style=flat-square)](https://github.com/flyingtext/spacetime/network/members) 
+[![Issues](https://img.shields.io/github/issues/flyingtext/spacetime?style=flat-square)](https://github.com/flyingtext/spacetime/issues) 
+[![Pull Requests](https://img.shields.io/github/issues-pr/flyingtext/spacetime?style=flat-square)](https://github.com/flyingtext/spacetime/pulls)
+[![Zenodo](https://zenodo.org/badge/DOI/10.5281/zenodo.16919675.svg)](https://doi.org/10.5281/zenodo.16919675)
+
+
 Simple wiki-style bulletin board built with Flask and SQLite. Supports user registration and login, Markdown posts, global tagging, hierarchical paths, and multilingual linking with per-user permissions.
 
 ## Features
