@@ -1,0 +1,42 @@
+{
+  "title": "Spacetime Wiki Engine",
+  "description": "A simple wiki‑style bulletin board built with Flask and SQLite.  It provides user registration & login, Markdown‑based pages, global tag management, hierarchical document paths, multilingual linking and per‑user permissions.  The project also ships a small REST API, a Crossref lookup helper and a test‑suite based on pytest.",
+  "creators": [
+    {
+      "name": "flyingtext",
+      "affiliation": "GitHub",
+      "orcid": ""
+    }
+  ],
+  "upload_type": "software",
+  "license": "MIT",
+  "version": "2025.08.19",
+  "keywords": [
+    "wiki",
+    "Flask",
+    "SQLite",
+    "Markdown",
+    "multilingual",
+    "tagging",
+    "REST API"
+  ],
+  "language": "eng",
+  "access_right": "open",
+  "related_identifiers": [
+    {
+      "scheme": "url",
+      "identifier": "https://github.com/flyingtext/spacetime",
+      "relation": "isSupplementTo"
+    }
+  ],
+  "metadata_source": {
+    "scheme": "url",
+    "identifier": "https://raw.githubusercontent.com/flyingtext/spacetime/main/README.md"
+  },
+  "publication_date": "2025-08-19",
+  "communities": [
+    {
+      "identifier": "zenodo"
+    }
+  ]
+}
